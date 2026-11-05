@@ -33,7 +33,7 @@ mod group;
 pub use self::group::Group;
 
 /// Where people send feedback on Labs features.
-pub const FEEDBACK_URL: &str = "https://github.com/anomalyco/opcode/issues/new";
+pub const FEEDBACK_URL: &str = "https://github.com/anomalyco/hex/issues/new";
 
 /// Who a Labs feature is for.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -109,15 +109,13 @@ pub enum Feature {
     NotchIndicator,
     MeetingFinishedEvent,
     GnomeMeetingCapsules,
-    MeetingPlatformIcons,
     Screenshots,
     FollowLiveTranscript,
-    CollapsibleMeetingSections,
     AnnotateReplay,
 }
 
 impl Feature {
-    pub const ALL: [Self; 50] = [
+    pub const ALL: [Self; 48] = [
         Self::Meetings,
         Self::VoiceFilter,
         Self::Playground,
@@ -163,10 +161,8 @@ impl Feature {
         Self::NotchIndicator,
         Self::MeetingFinishedEvent,
         Self::GnomeMeetingCapsules,
-        Self::MeetingPlatformIcons,
         Self::Screenshots,
         Self::FollowLiveTranscript,
-        Self::CollapsibleMeetingSections,
         Self::AnnotateReplay,
     ];
 
@@ -237,10 +233,8 @@ impl Feature {
             | Self::MeetingNotesVocabulary
             | Self::MeetingFinishedEvent
             | Self::GnomeMeetingCapsules
-            | Self::MeetingPlatformIcons
             | Self::Screenshots
             | Self::FollowLiveTranscript
-            | Self::CollapsibleMeetingSections
             | Self::AnnotateReplay
             | Self::NotchIndicator => Audience::Everyone,
         }
@@ -294,10 +288,8 @@ impl Feature {
             | Self::NotchIndicator => 20261103,
             Self::MeetingFinishedEvent
             | Self::GnomeMeetingCapsules
-            | Self::MeetingPlatformIcons
             | Self::Screenshots
             | Self::FollowLiveTranscript
-            | Self::CollapsibleMeetingSections
             | Self::AnnotateReplay => 20261104,
         }
     }
@@ -313,7 +305,7 @@ impl Feature {
             )
     }
 
-    /// The feature `opcode settings` key `key` switches (its toggle, or
+    /// The feature `hex settings` key `key` switches (its toggle, or
     /// Unload when idle's minutes).
     pub fn for_settings_key(key: &str) -> Option<Self> {
         if key == "labs.unload_idle_minutes" {
@@ -357,11 +349,11 @@ impl Feature {
             Self::TapOrHold => cfg!(any(target_os = "macos", target_os = "linux")),
             Self::KeyboardModelSwitching => crate::keyboard_input_sources::available(),
             Self::AnnotateReplay => {
-                #[cfg(opcode_capture)]
+                #[cfg(hex_capture)]
                 {
                     crate::capture_host::replay_available()
                 }
-                #[cfg(not(opcode_capture))]
+                #[cfg(not(hex_capture))]
                 {
                     false
                 }
@@ -385,14 +377,12 @@ impl Feature {
             | Self::MeetingSummaryModel
             | Self::MeetingNotesVocabulary
             | Self::MeetingFinishedEvent
-            | Self::MeetingPlatformIcons
             | Self::FollowLiveTranscript
-            | Self::CollapsibleMeetingSections
             | Self::FillerWords => true,
         }
     }
 
-    /// The name `opcode labs on|off` takes.
+    /// The name `hex labs on|off` takes.
     pub const fn name(self) -> &'static str {
         match self {
             Self::Meetings => "meetings",
@@ -440,19 +430,17 @@ impl Feature {
             Self::NotchIndicator => "notch-indicator",
             Self::MeetingFinishedEvent => "meeting-finished-event",
             Self::GnomeMeetingCapsules => "gnome-meeting-capsules",
-            Self::MeetingPlatformIcons => "meeting-platform-icons",
             Self::Screenshots => "screenshots",
             Self::FollowLiveTranscript => "follow-live-transcript",
-            Self::CollapsibleMeetingSections => "collapsible-meeting-sections",
             Self::AnnotateReplay => "annotate-replay",
         }
     }
 
-    /// Its `opcode settings` key.
+    /// Its `hex settings` key.
     pub const fn settings_key(self) -> &'static str {
         match self {
             Self::Meetings => "meetings.enabled",
-            Self::VoiceFilter => "experimental.opcode_microphone",
+            Self::VoiceFilter => "experimental.hex_microphone",
             Self::Playground => "labs.playground",
             Self::LiveText => "labs.live_text",
             Self::LiveChapters => "labs.live_chapters",
@@ -496,10 +484,8 @@ impl Feature {
             Self::NotchIndicator => "labs.notch_indicator",
             Self::MeetingFinishedEvent => "labs.meeting_finished_event",
             Self::GnomeMeetingCapsules => "labs.gnome_meeting_capsules",
-            Self::MeetingPlatformIcons => "labs.meeting_platform_icons",
             Self::Screenshots => "labs.screenshots",
             Self::FollowLiveTranscript => "labs.follow_live_transcript",
-            Self::CollapsibleMeetingSections => "labs.collapsible_meeting_sections",
             Self::AnnotateReplay => "labs.annotate_replay",
         }
     }
@@ -510,7 +496,7 @@ impl Feature {
         match self {
             Self::Meetings => "Record calls and keep transcripts (its own pane)",
             Self::VoiceFilter => {
-                "Opcode Microphone virtual input and real-time voice filters (its own pane)"
+                "Hex Microphone virtual input and real-time voice filters (its own pane)"
             }
             Self::Playground => "Scene and story browser in the window",
             Self::LiveText => "Show provisional words beside the HUD while dictating",
@@ -542,7 +528,7 @@ impl Feature {
                 "Remove filler words such as um and uh from dictations, without an AI model"
             }
             Self::SubtitleExport => {
-                "Export meeting transcripts as SRT or VTT subtitles with opcode meetings show"
+                "Export meeting transcripts as SRT or VTT subtitles with hex meetings show"
             }
             Self::SecondDictationShortcut => {
                 "Another shortcut that dictates like the main one (second_dictation_hotkey), such as a key on an external keyboard"
@@ -573,7 +559,7 @@ impl Feature {
                 "Use Menu, Pause, or Scroll Lock alone as a shortcut, such as Caps Lock remapped to Menu"
             }
             Self::HistoryStats => {
-                "Show a summary of your retained dictations at the top of History, with opcode history stats"
+                "Show a summary of your retained dictations at the top of History, with hex history stats"
             }
             Self::RecentDictations => {
                 "Copy one of your last five dictations from the menu bar, under Paste Last Dictation"
@@ -582,7 +568,7 @@ impl Feature {
                 "Shorten long pauses before a whole dictation goes to the model, so slow computers paste sooner"
             }
             Self::StopWhenCallEnds => {
-                "Stop a meeting recording Opcode started on its own 30 s after the call app leaves the microphone and goes quiet"
+                "Stop a meeting recording Hex started on its own 30 s after the call app leaves the microphone and goes quiet"
             }
             Self::OutputFixes => {
                 "Offer Vocabulary and Fix this beside Output's Try result, to correct a wrong result"
@@ -595,13 +581,13 @@ impl Feature {
                 "Show only downloaded speech models in the picker, with the space they take"
             }
             Self::SectionKeyAlone => {
-                "Use the § key, left of 1 on ISO keyboards, alone as a shortcut; Opcode takes § from every app while it's bound"
+                "Use the § key, left of 1 on ISO keyboards, alone as a shortcut; Hex takes § from every app while it's bound"
             }
             Self::KeepRecordings => {
                 "Keep the audio of dictations saved to History, so you can transcribe them again with another model"
             }
             Self::HideMenuBarIcon => {
-                "Hide Opcode's menu bar icon; shortcuts keep working, and opening Opcode again shows Settings"
+                "Hide Hex's menu bar icon; shortcuts keep working, and opening Hex again shows Settings"
             }
             Self::MovableMeetingCapsules => {
                 "Drag meeting capsules such as Meeting transcript ready out of the way; they come back in the corner you left them"
@@ -624,20 +610,14 @@ impl Feature {
             Self::GnomeMeetingCapsules => {
                 "Show the meeting capsules (recording offer, recording indicator) floating over your call on GNOME Wayland, through XWayland while XWayland is running"
             }
-            Self::MeetingPlatformIcons => {
-                "Show a small icon for the app or website each meeting was recorded from, beside its name in Meetings"
-            }
             Self::Screenshots => {
                 "Take a screenshot of an area or a window with a shortcut (Command-Shift-4 by default): copied, saved, and shown in the corner"
             }
             Self::FollowLiveTranscript => {
                 "While a meeting records, the transcript scrolls to the newest line. Scroll up to read earlier text; scroll back to the bottom to follow again."
             }
-            Self::CollapsibleMeetingSections => {
-                "Fold the summary, chapters, and day groups in Meetings"
-            }
             Self::AnnotateReplay => {
-                "Save the last 15 seconds of your screen with opcode capture replay or capture.replay_hotkey; macOS shows the screen-recording dot the whole time it's on (macOS 27+)"
+                "Save the last 15 seconds of your screen with hex capture replay or capture.replay_hotkey; macOS shows the screen-recording dot the whole time it's on (macOS 27+)"
             }
         }
     }
@@ -650,7 +630,7 @@ impl Feature {
     pub fn on(self, settings: &AppSettings) -> bool {
         match self {
             Self::Meetings => settings.meetings.enabled,
-            Self::VoiceFilter => settings.experimental.opcode_microphone,
+            Self::VoiceFilter => settings.experimental.hex_microphone,
             Self::Playground => settings.labs.playground,
             Self::LiveText => settings.labs.live_text,
             Self::LiveChapters => settings.labs.live_chapters,
@@ -694,10 +674,8 @@ impl Feature {
             Self::NotchIndicator => settings.labs.notch_indicator,
             Self::MeetingFinishedEvent => settings.labs.meeting_finished_event,
             Self::GnomeMeetingCapsules => settings.labs.gnome_meeting_capsules,
-            Self::MeetingPlatformIcons => settings.labs.meeting_platform_icons,
             Self::Screenshots => settings.labs.screenshots,
             Self::FollowLiveTranscript => settings.labs.follow_live_transcript,
-            Self::CollapsibleMeetingSections => settings.labs.collapsible_meeting_sections,
             Self::AnnotateReplay => settings.labs.annotate_replay,
         }
     }
@@ -708,7 +686,7 @@ impl Feature {
         let labs = &mut settings.labs;
         vec![
             &mut settings.meetings.enabled,
-            &mut settings.experimental.opcode_microphone,
+            &mut settings.experimental.hex_microphone,
             &mut settings.paste_with_shift,
             &mut settings.keyboard_model_switching.enabled,
             &mut settings.pause_browser_media,
@@ -752,10 +730,8 @@ impl Feature {
             &mut labs.notch_indicator,
             &mut labs.meeting_finished_event,
             &mut labs.gnome_meeting_capsules,
-            &mut labs.meeting_platform_icons,
             &mut labs.screenshots,
             &mut labs.follow_live_transcript,
-            &mut labs.collapsible_meeting_sections,
             &mut labs.annotate_replay,
         ]
     }
@@ -768,7 +744,7 @@ impl Feature {
     pub fn set(self, settings: &mut AppSettings, on: bool) {
         match self {
             Self::Meetings => settings.meetings.enabled = on,
-            Self::VoiceFilter => settings.experimental.opcode_microphone = on,
+            Self::VoiceFilter => settings.experimental.hex_microphone = on,
             Self::Playground => settings.labs.playground = on,
             Self::LiveText => settings.labs.live_text = on,
             Self::LiveChapters => settings.labs.live_chapters = on,
@@ -810,12 +786,8 @@ impl Feature {
             Self::NotchIndicator => settings.labs.notch_indicator = on,
             Self::MeetingFinishedEvent => settings.labs.meeting_finished_event = on,
             Self::GnomeMeetingCapsules => settings.labs.gnome_meeting_capsules = on,
-            Self::MeetingPlatformIcons => settings.labs.meeting_platform_icons = on,
             Self::Screenshots => settings.labs.screenshots = on,
             Self::FollowLiveTranscript => settings.labs.follow_live_transcript = on,
-            Self::CollapsibleMeetingSections => {
-                settings.labs.collapsible_meeting_sections = on;
-            }
             Self::AnnotateReplay => settings.labs.annotate_replay = on,
             // Off, no shortcut keeps a key only the feature allows.
             Self::StandaloneSpecialKeys => {
@@ -943,7 +915,7 @@ pub fn filler_words() -> bool {
     on(FILLER_WORDS)
 }
 
-/// `opcode meetings show --srt|--vtt` may export subtitles (read when the
+/// `hex meetings show --srt|--vtt` may export subtitles (read when the
 /// command starts).
 pub fn subtitle_export() -> bool {
     on(SUBTITLE_EXPORT)
@@ -977,7 +949,7 @@ pub fn parakeet_ultra() -> bool {
     on(PARAKEET_ULTRA)
 }
 
-/// History's summary of retained dictations and `opcode history stats` (read
+/// History's summary of retained dictations and `hex history stats` (read
 /// when the History pane reloads and when the command starts).
 pub fn history_stats() -> bool {
     on(HISTORY_STATS)
@@ -997,7 +969,7 @@ pub fn skip_pauses() -> bool {
     on(SKIP_PAUSES) && Feature::SkipPauses.on_this_os()
 }
 
-/// A meeting recording Opcode started on its own stops once its call app has
+/// A meeting recording Hex started on its own stops once its call app has
 /// left the microphone and gone quiet for a grace period (macOS; read on
 /// each pass of the meeting controller).
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
@@ -1077,7 +1049,7 @@ pub fn screenshots() -> bool {
 }
 
 /// Annotate's rolling 15 s display replay buffer (`SCClipBufferingOutput`,
-/// macOS 27+; read where the replay worker starts and on each `opcode capture
+/// macOS 27+; read where the replay worker starts and on each `hex capture
 /// replay`).
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn annotate_replay() -> bool {
@@ -1226,7 +1198,7 @@ fn encode_where(settings: &LabsSettings, reaches: impl Fn(Feature) -> bool) -> u
     .fold(KNOWN | minutes, |state, (_, _, bit)| state | bit)
 }
 
-/// The names of the features on, for `opcode status`.
+/// The names of the features on, for `hex status`.
 pub fn active_names(settings: &AppSettings) -> Vec<String> {
     Feature::available()
         .filter(|feature| feature.on(settings))
@@ -1234,7 +1206,7 @@ pub fn active_names(settings: &AppSettings) -> Vec<String> {
         .collect()
 }
 
-/// Logs the switches to process.log; call once logging is up in a long-lived Opcode.
+/// Logs the switches to process.log; call once logging is up in a long-lived Hex.
 pub fn log_launch() {
     tracing::info!(
         live_text = live_text(),
@@ -1253,12 +1225,12 @@ pub enum LabsCommand {
     On { feature: String },
     /// Turn a Labs feature off.
     Off { feature: String },
-    /// Print the link that opens Opcode's Labs page at a feature's row (macOS).
+    /// Print the link that opens Hex's Labs page at a feature's row (macOS).
     #[cfg(target_os = "macos")]
     Link { feature: String },
 }
 
-/// `opcode labs`: edits `settings.json`; a running Opcode applies most changes
+/// `hex labs`: edits `settings.json`; a running Hex applies most changes
 /// when it next starts.
 pub fn run(command: Option<&LabsCommand>) -> Result<()> {
     #[cfg(target_os = "macos")]
@@ -1272,7 +1244,7 @@ pub fn run(command: Option<&LabsCommand>) -> Result<()> {
         );
         return Ok(());
     }
-    // Listing, or handing the change to a running Opcode, never writes the file.
+    // Listing, or handing the change to a running Hex, never writes the file.
     let settings = AppSettings::read()?;
     let (name, on) = match command {
         None | Some(LabsCommand::List) => {
@@ -1294,18 +1266,18 @@ pub fn run(command: Option<&LabsCommand>) -> Result<()> {
     }
     if feature == Feature::VoiceFilter
         && !on
-        && crate::audio::opcode_microphone::driver_bundle_installed()
+        && crate::audio::hex_microphone::driver_bundle_installed()
     {
         return Err(eyre!(
-            "voice-filter stays on while the Opcode Microphone driver is installed; uninstall the driver in its pane to turn it off"
+            "voice-filter stays on while the Hex Microphone driver is installed; uninstall the driver in its pane to turn it off"
         ));
     }
     if !on && let Some(why) = feature.off_refusal(&settings) {
         return Err(eyre!(why));
     }
     let state = if on { "on" } else { "off" };
-    // A running Opcode saves and applies it at once, as its Labs row would.
-    if let Some(reply) = crate::control::cli::set_in_running_opcode(
+    // A running Hex saves and applies it at once, as its Labs row would.
+    if let Some(reply) = crate::control::cli::set_in_running_hex(
         feature.settings_key(),
         if on { "true" } else { "false" },
     ) {
@@ -1329,11 +1301,17 @@ pub fn run(command: Option<&LabsCommand>) -> Result<()> {
 }
 
 /// The feature `name` names, if this OS has it and `reaches` admits it.
-/// Features that left Labs: `opcode labs` still knows their names.
-const GRADUATED: [(&str, &str); 1] = [(
-    "custom-models",
-    "custom-models graduated: adding a model file and models found on this computer are always on now",
-)];
+/// Features that left Labs: `hex labs` still knows their names.
+const GRADUATED: [(&str, &str); 2] = [
+    (
+        "custom-models",
+        "custom-models graduated: adding a model file and models found on this computer are always on now",
+    ),
+    (
+        "meeting-platform-icons",
+        "meeting-platform-icons graduated: the Meetings list always shows each recording's call app icon now",
+    ),
+];
 
 fn resolve(name: &str, reaches: impl Fn(Feature) -> bool + Copy) -> Result<Feature> {
     if let Some((_, note)) = GRADUATED.iter().find(|(graduated, _)| *graduated == name) {
@@ -1343,7 +1321,7 @@ fn resolve(name: &str, reaches: impl Fn(Feature) -> bool + Copy) -> Result<Featu
         .filter(|feature| feature.on_this_os() && reaches(*feature))
         .ok_or_else(|| {
             eyre!(
-                "unknown Labs feature {name:?}; this Opcode has: {}",
+                "unknown Labs feature {name:?}; this Hex has: {}",
                 Feature::available_where(reaches)
                     .map(Feature::name)
                     .collect::<Vec<_>>()
@@ -1361,9 +1339,9 @@ fn list(settings: &AppSettings) -> String {
     for feature in Feature::available() {
         let on = feature.on(settings)
             || (feature == Feature::VoiceFilter
-                && crate::audio::opcode_microphone::driver_bundle_installed());
+                && crate::audio::hex_microphone::driver_bundle_installed());
         out.push_str(&format!(
-            "{:<width$}  {:<7}  {:<8}  {} (opcode settings {})\n",
+            "{:<width$}  {:<7}  {:<8}  {} (hex settings {})\n",
             feature.name(),
             if feature.managed().is_some() {
                 "managed"
@@ -1380,9 +1358,9 @@ fn list(settings: &AppSettings) -> String {
     out
 }
 
-/// `opcode experiments …`, from before Labs.
+/// `hex experiments …`, from before Labs.
 pub fn run_retired_experiments() -> Result<()> {
-    println!("Experiments are now Labs: opcode labs, opcode labs on|off <feature>");
+    println!("Experiments are now Labs: hex labs, hex labs on|off <feature>");
     Ok(())
 }
 
@@ -1395,6 +1373,11 @@ mod tests {
         let error = resolve("custom-models", |_| true).unwrap_err().to_string();
         assert!(error.contains("graduated"), "{error}");
         assert_eq!(Feature::from_name("custom-models"), None);
+        let error = resolve("meeting-platform-icons", |_| true)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("graduated"), "{error}");
+        assert_eq!(Feature::from_name("meeting-platform-icons"), None);
     }
 
     #[test]
@@ -1745,12 +1728,16 @@ mod tests {
     }
 
     #[test]
-    fn the_old_master_switch_is_read_and_ignored() {
-        let settings: AppSettings =
-            serde_json::from_str(r#"{"labs": {"enabled": true, "live_text": true}}"#).unwrap();
+    fn retired_switches_are_read_and_ignored() {
+        let settings: AppSettings = serde_json::from_str(
+            r#"{"labs": {"enabled": true, "collapsible_meeting_sections": true, "meeting_platform_icons": true, "live_text": true}}"#,
+        )
+        .unwrap();
         assert!(settings.labs.live_text);
         assert!(!settings.labs.playground);
         let json = serde_json::to_value(&settings).unwrap();
         assert!(json["labs"].get("enabled").is_none());
+        assert!(json["labs"].get("collapsible_meeting_sections").is_none());
+        assert!(json["labs"].get("meeting_platform_icons").is_none());
     }
 }

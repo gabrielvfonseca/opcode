@@ -77,7 +77,6 @@ impl Feature {
             | Self::MeetingSummaryModel
             | Self::MeetingNotesVocabulary
             | Self::MeetingFinishedEvent
-            | Self::MeetingPlatformIcons
             | Self::FollowLiveTranscript
             | Self::CollapsibleMeetingSections
             | Self::GnomeMeetingCapsules => Group::Meetings,

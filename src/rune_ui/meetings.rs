@@ -23,10 +23,8 @@ use super::platform::MeetingRequest;
 use super::{Menu, Ui};
 use crate::desktop::i18n::{tr, tr_fill, tr_named};
 
-mod folds;
-
 static MORE_ICON: rune::Icon = rune::Icon {
-    name: "opcode-more",
+    name: "hex-more",
     view: 16.0,
     body: r#"<circle cx="3.5" cy="8" r="1.25" fill="currentColor"/><circle cx="8" cy="8" r="1.25" fill="currentColor"/><circle cx="12.5" cy="8" r="1.25" fill="currentColor"/>"#,
 };
@@ -67,7 +65,7 @@ pub(super) struct Chapter {
     pub(super) summary: String,
     pub(super) start_ms: u64,
     /// What Copy section copies, from the same transcript lines as the menu
-    /// bar and `opcode meetings show --chapter`.
+    /// bar and `hex meetings show --chapter`.
     pub(super) markdown: String,
 }
 
@@ -178,8 +176,6 @@ pub(super) struct MeetingsPane {
     copied: Option<(String, String)>,
     pub(super) start_pending: bool,
     pub(super) stop_pending: bool,
-    /// Labs › Collapsible meeting sections: what is folded, until Opcode quits.
-    folds: folds::Folds,
     /// Where Linux and Windows perform meeting requests.
     #[cfg(not(target_os = "macos"))]
     pub(super) local: super::meetings_host::LocalMeetings,
@@ -397,9 +393,10 @@ impl MeetingsPane {
         }
     }
 
-    /// The fixture with recordings from more call services, for Labs ›
-    /// Meeting platform icons: a Zoom call, a Google Meet tab, a Teams
-    /// website call, a Slack huddle, FaceTime, and one started by hand.
+    /// The fixture with recordings from more call services: a Zoom call, a
+    /// Google Meet tab, a Teams website call, a Slack huddle, FaceTime, and
+    /// one started by hand.
+    #[cfg(all(test, not(target_os = "macos")))]
     pub(super) fn platforms_fixture() -> Self {
         let mut pane = Self::fixture();
         let mut more = Vec::new();
@@ -693,25 +690,18 @@ fn row_meta(pane: &MeetingsPane, meeting: &Meeting, p: Paint) -> (String, Option
     (parts.join(" · "), ink)
 }
 
-/// Labs › Meeting platform icons: the icon before a row's title, the call
-/// service's when its app names one and a neutral one otherwise (another
-/// app, or a meeting started by hand). `None` while the lab is off.
-fn platform_icon(ui: &Ui, meeting: &Meeting) -> Option<&'static rune::Icon> {
-    if !ui.settings.labs.meeting_platform_icons
-        || !crate::labs::Feature::MeetingPlatformIcons.shipped()
+/// The icon before a row's title: the call service's when its app names
+/// one and a neutral one otherwise (another app, or a meeting started by
+/// hand).
+fn platform_icon(meeting: &Meeting) -> &'static rune::Icon {
+    match meeting
+        .app
+        .as_deref()
+        .and_then(crate::calendar::CallProvider::from_meeting_app)
     {
-        return None;
+        Some(provider) => super::platform_settings::provider_icon(provider),
+        None => &super::icons::CALL,
     }
-    Some(
-        match meeting
-            .app
-            .as_deref()
-            .and_then(crate::calendar::CallProvider::from_meeting_app)
-        {
-            Some(provider) => super::platform_settings::provider_icon(provider),
-            None => &super::icons::CALL,
-        },
-    )
 }
 
 /// Copy transcript as an icon: a completed row's hover action, or the
@@ -779,29 +769,17 @@ fn recordings(ui: &Ui, p: Paint, layer: &mut Vec<El>, action: El) -> (Vec<El>, E
         let mut list = col().key("meetings-list").label(tr("Meetings"));
         let mut day: Option<&str> = None;
         let visible = pane.visible();
-        // Rows under a folded day (Labs) stay out of the list; their
-        // heading stays.
-        let count = visible
-            .iter()
-            .filter(|meeting| !folds::day_folded(ui, &meeting.day))
-            .count();
-        let mut position = 0;
+        let count = visible.len();
         for (index, meeting) in visible.into_iter().enumerate() {
             if day != Some(meeting.day.as_str()) {
-                list = list.child(folds::day_heading(
-                    ui,
+                list = list.child(ld::group(
                     p,
                     &format!("day{index}"),
                     day_label(&meeting.day),
-                    &meeting.day,
                     day.is_none(),
                 ));
                 day = Some(&meeting.day);
             }
-            if folds::day_folded(ui, &meeting.day) {
-                continue;
-            }
-            position += 1;
             let (meta, meta_ink) = row_meta(pane, meeting, p);
             let completed = meeting.status == Status::Complete && !meeting.turns().is_empty();
             let id = meeting.id.clone();
@@ -820,10 +798,10 @@ fn recordings(ui: &Ui, p: Paint, layer: &mut Vec<El>, action: El) -> (Vec<El>, E
                             .collect(),
                         selected: pane.selected.as_deref() == Some(meeting.id.as_str()),
                     },
-                    platform_icon(ui, meeting),
+                    Some(platform_icon(meeting)),
                     move |ui: &mut Ui| ui.meetings.select(id.clone()),
                 )
-                .position_in_set(position, count),
+                .position_in_set(index + 1, count),
             );
         }
         let detail = match pane.selected.as_deref().and_then(|id| pane.meeting(id)) {
@@ -1006,8 +984,8 @@ fn detail(ui: &Ui, p: Paint, meeting: &Meeting, layer: &mut Vec<El>) -> El {
             col()
                 .key("notes")
                 .gap(6.0)
-                .child(folds::summary_label(ui, p))
-                .children(folds::summary_shown(ui).then(|| {
+                .child(section_label(p, "summary-label", tr("Summary")))
+                .child(
                     text(if summary.is_empty() {
                         tr("Nothing to summarize.")
                     } else {
@@ -1020,8 +998,8 @@ fn detail(ui: &Ui, p: Paint, meeting: &Meeting, layer: &mut Vec<El>) -> El {
                     } else {
                         p.text()
                     })
-                    .wrap()
-                })),
+                    .wrap(),
+                ),
         );
     } else if meeting.notes_running {
         body = body.child(
@@ -1032,7 +1010,7 @@ fn detail(ui: &Ui, p: Paint, meeting: &Meeting, layer: &mut Vec<El>) -> El {
         );
     }
     if !meeting.chapters.is_empty() {
-        body = body.child(chapters(ui, p, meeting, &copied));
+        body = body.child(chapters(p, meeting, &copied));
     }
     let transcript_label = match meeting.status {
         Status::Starting | Status::Recording if !pane.stop_pending => tr("Live transcript"),
@@ -1073,15 +1051,12 @@ fn follows_live_transcript(ui: &Ui, meeting: &Meeting) -> bool {
 
 /// The meeting's chapters, each with its start, name, line, and Copy
 /// section.
-fn chapters(ui: &Ui, p: Paint, meeting: &Meeting, copied: &dyn Fn(&str) -> bool) -> El {
+fn chapters(p: Paint, meeting: &Meeting, copied: &dyn Fn(&str) -> bool) -> El {
     let mut list = col()
         .key("chapters")
         .gap(10.0)
         .pb(16.0)
-        .child(folds::chapters_label(ui, p));
-    if !folds::chapters_shown(ui) {
-        return list;
-    }
+        .child(section_label(p, "chapters-label", tr("Chapters")));
     for (index, chapter) in meeting.chapters.iter().enumerate() {
         let what = format!("chapter{index}");
         let id = meeting.id.clone();
@@ -1340,30 +1315,18 @@ mod tests {
         assert!(ui.meetings.action_error.is_some());
     }
 
-    /// Labs › Meeting platform icons: no icon while off; on, a known call
-    /// service's icon, and the neutral one for any other or no app (#1290).
+    /// A known call service's icon, and the neutral one for any other or
+    /// no app (#1290).
     #[test]
-    fn platform_icons_show_only_with_their_lab_and_fall_back_to_a_neutral_one() {
-        let mut settings = crate::app_settings::AppSettings::default();
-        let ui = Ui::with(settings.clone(), Service::Fixture(Vec::new()));
+    fn platform_icons_fall_back_to_a_neutral_one() {
         let pane = MeetingsPane::platforms_fixture();
-        assert!(
-            pane.meetings
-                .iter()
-                .all(|meeting| platform_icon(&ui, meeting).is_none())
-        );
-        settings.labs.meeting_platform_icons = true;
-        let ui = Ui::with(settings, Service::Fixture(Vec::new()));
-        let name = |id: &str| {
-            let meeting = pane.meeting(id).unwrap();
-            platform_icon(&ui, meeting).map(|icon| icon.name)
-        };
-        assert_eq!(name("preview-live"), Some("opcode-provider-zoom"));
-        assert_eq!(name("preview-meet"), Some("opcode-provider-meet"));
-        assert_eq!(name("preview-teams"), Some("opcode-provider-teams"));
-        assert_eq!(name("preview-huddle"), Some("opcode-provider-slack"));
-        assert_eq!(name("preview-design"), Some("opcode-row-call"));
-        assert_eq!(name("preview-failed"), Some("opcode-row-call"));
+        let name = |id: &str| platform_icon(pane.meeting(id).unwrap()).name;
+        assert_eq!(name("preview-live"), "hex-provider-zoom");
+        assert_eq!(name("preview-meet"), "hex-provider-meet");
+        assert_eq!(name("preview-teams"), "hex-provider-teams");
+        assert_eq!(name("preview-huddle"), "hex-provider-slack");
+        assert_eq!(name("preview-design"), "hex-row-call");
+        assert_eq!(name("preview-failed"), "hex-row-call");
     }
 
     /// Labs › Follow live transcript: only a recording meeting's transcript

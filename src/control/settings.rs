@@ -1,4 +1,4 @@
-//! The `opcode settings` registry: one key per persisted setting, named by its
+//! The `hex settings` registry: one key per persisted setting, named by its
 //! dotted path in `settings.json`, with the same rules and side effects the
 //! window applies when you change it there.
 
@@ -11,7 +11,7 @@ use crate::app_settings::{
     ModifierSide,
 };
 
-/// One setting as `opcode settings get` reports it.
+/// One setting as `hex settings get` reports it.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct SettingValue {
     pub key: String,
@@ -22,7 +22,7 @@ pub struct SettingValue {
     pub choices: Vec<String>,
     pub writable: bool,
     pub about: String,
-    /// False where this OS's Opcode lacks what the setting needs ([`needs`]):
+    /// False where this OS's Hex lacks what the setting needs ([`needs`]):
     /// it is kept, but does nothing here and `set` refuses it.
     #[serde(default = "available")]
     pub available: bool,
@@ -39,7 +39,7 @@ enum Kind {
         min: f64,
         max: f64,
     },
-    #[cfg_attr(not(opcode_capture), allow(dead_code))]
+    #[cfg_attr(not(hex_capture), allow(dead_code))]
     Integer {
         min: u64,
         max: u64,
@@ -107,7 +107,7 @@ const fn read_only(key: &'static str, kind: Kind, about: &'static str, why: &'st
 }
 
 const UNIT: Kind = Kind::Number { min: 0.0, max: 1.0 };
-const MODEL_CHANGE: &str = "change the transcription model with `opcode model use`";
+const MODEL_CHANGE: &str = "change the transcription model with `hex model use`";
 
 /// Choice keys whose values are numbers in settings.json.
 const NUMERIC_CHOICES: [&str; 2] = ["meetings.calendar.lead_minutes", "labs.unload_idle_minutes"];
@@ -149,7 +149,7 @@ const KEYS: &[Key] = &[
             "analog",
             "thock",
         ]),
-        "Which sounds play; classic, Opcode's original tones, is the default",
+        "Which sounds play; classic, Hex's original tones, is the default",
     ),
     optional(
         "microphone",
@@ -205,7 +205,7 @@ const KEYS: &[Key] = &[
         "cancel_hotkey",
         Kind::Shortcut(HotkeySlot::Cancel),
         "Toggle mode's cancel shortcut, Escape by default: discards the recording, \
-         nothing pasted or saved. Opcode takes the key only while a toggled recording runs",
+         nothing pasted or saved. Hex takes the key only while a toggled recording runs",
     ),
     optional(
         "raw_dictation_hotkey",
@@ -234,7 +234,7 @@ const KEYS: &[Key] = &[
     key(
         "show_dock_icon",
         Kind::Bool,
-        "Keep Opcode in the Dock when Settings is closed (macOS)",
+        "Keep Hex in the Dock when Settings is closed (macOS)",
     ),
     read_only(
         "transcription.model",
@@ -252,7 +252,7 @@ const KEYS: &[Key] = &[
         "transcription_recents",
         Kind::Json,
         "Recently used models, each with its language",
-        "Opcode records these as you switch models",
+        "Hex records these as you switch models",
     ),
     key(
         "vocabulary_boost",
@@ -342,7 +342,7 @@ const KEYS: &[Key] = &[
     key(
         "labs.subtitle_export",
         Kind::Bool,
-        "Labs: export meeting transcripts as SRT or VTT subtitles with opcode meetings show --srt|--vtt",
+        "Labs: export meeting transcripts as SRT or VTT subtitles with hex meetings show --srt|--vtt",
     ),
     key(
         "labs.second_dictation_shortcut",
@@ -397,7 +397,7 @@ const KEYS: &[Key] = &[
     key(
         "labs.history_stats",
         Kind::Bool,
-        "Labs: a summary of retained dictations at the top of History, and opcode history stats",
+        "Labs: a summary of retained dictations at the top of History, and hex history stats",
     ),
     key(
         "labs.recent_dictations",
@@ -407,7 +407,7 @@ const KEYS: &[Key] = &[
     key(
         "labs.hide_menu_bar_icon",
         Kind::Bool,
-        "Labs: hide Opcode's menu bar icon while nothing records; shortcuts keep working, and opening Opcode again from Finder or Spotlight shows Settings (macOS)",
+        "Labs: hide Hex's menu bar icon while nothing records; shortcuts keep working, and opening Hex again from Finder or Spotlight shows Settings (macOS)",
     ),
     key(
         "labs.notch_indicator",
@@ -422,7 +422,7 @@ const KEYS: &[Key] = &[
     key(
         "labs.stop_when_call_ends",
         Kind::Bool,
-        "Labs: a meeting recording Opcode started on its own stops 30 s after its call app leaves the microphone and goes quiet, unless you keep recording (macOS)",
+        "Labs: a meeting recording Hex started on its own stops 30 s after its call app leaves the microphone and goes quiet, unless you keep recording (macOS)",
     ),
     key(
         "labs.movable_meeting_capsules",
@@ -452,7 +452,7 @@ const KEYS: &[Key] = &[
     key(
         "labs.annotate_replay",
         Kind::Bool,
-        "Labs: keep a rolling 15-second screen buffer so opcode capture replay or capture.replay_hotkey saves what just happened; macOS shows the screen-recording dot the whole time it's on (macOS 27+)",
+        "Labs: keep a rolling 15-second screen buffer so hex capture replay or capture.replay_hotkey saves what just happened; macOS shows the screen-recording dot the whole time it's on (macOS 27+)",
     ),
     key(
         "labs.gnome_clipboard_restore",
@@ -465,19 +465,9 @@ const KEYS: &[Key] = &[
         "Labs: on Wayland desktops without layer-shell, such as GNOME, the meeting capsules float over the call through XWayland while it is already running (Linux)",
     ),
     key(
-        "labs.meeting_platform_icons",
-        Kind::Bool,
-        "Labs: each recording in the Meetings list shows a small icon for its call app or website, or a neutral one when Opcode doesn't know it",
-    ),
-    key(
         "labs.follow_live_transcript",
         Kind::Bool,
         "Labs: while a meeting records, its transcript in Meetings scrolls to the newest line; scroll up to read earlier text, back to the bottom to follow again",
-    ),
-    key(
-        "labs.collapsible_meeting_sections",
-        Kind::Bool,
-        "Labs: the summary, chapters, and day groups in Meetings fold and unfold with a click; folds last until Opcode quits",
     ),
     key(
         "labs.output_fixes",
@@ -507,7 +497,7 @@ const KEYS: &[Key] = &[
     optional(
         "meetings.output_folder",
         Kind::Path,
-        "Folder for meeting Markdown; none uses ~/Documents/Opcode Meetings",
+        "Folder for meeting Markdown; none uses ~/Documents/Hex Meetings",
     ),
     key(
         "meetings.summarize_with_apple_intelligence",
@@ -522,7 +512,7 @@ const KEYS: &[Key] = &[
     optional(
         "meetings.opencode_model",
         Kind::Text,
-        "The OpenCode provider/model meeting notes use, with labs.meeting_summary_model; none tries Opcode's ranked fast models",
+        "The OpenCode provider/model meeting notes use, with labs.meeting_summary_model; none tries Hex's ranked fast models",
     ),
     key(
         "meetings.show_recording_indicator",
@@ -566,12 +556,12 @@ const KEYS: &[Key] = &[
         "Minutes before a meeting its reminder shows",
     ),
     key(
-        "experimental.opcode_microphone",
+        "experimental.hex_microphone",
         Kind::Bool,
-        "Labs: the Voice Filter and its Opcode Microphone virtual input",
+        "Labs: the Voice Filter and its Hex Microphone virtual input",
     ),
     key(
-        "experimental.opcode_microphone_mode",
+        "experimental.hex_microphone_mode",
         Kind::Choice(&[
             "normal",
             "muffled",
@@ -583,22 +573,22 @@ const KEYS: &[Key] = &[
             "underwater",
             "far",
         ]),
-        "What Opcode Microphone does to your voice while you dictate",
+        "What Hex Microphone does to your voice while you dictate",
     ),
     key(
-        "experimental.opcode_microphone_comfort_noise",
+        "experimental.hex_microphone_comfort_noise",
         Kind::Bool,
-        "Opcode Microphone fills silence with soft noise",
+        "Hex Microphone fills silence with soft noise",
     ),
     key(
-        "experimental.opcode_microphone_strength",
+        "experimental.hex_microphone_strength",
         UNIT,
-        "How strongly Opcode Microphone applies its filter, from 0 to 1",
+        "How strongly Hex Microphone applies its filter, from 0 to 1",
     ),
     key(
         "enable_on_launch",
         Kind::Bool,
-        "Start listening when Opcode opens (Windows and Linux)",
+        "Start listening when Hex opens (Windows and Linux)",
     ),
     key(
         "paste_with_shift",
@@ -608,7 +598,7 @@ const KEYS: &[Key] = &[
     key(
         "gnome_keyboard_shortcuts",
         Kind::Bool,
-        "Opcode's own GNOME custom keyboard shortcuts, for GNOME without a shortcuts portal (Linux)",
+        "Hex's own GNOME custom keyboard shortcuts, for GNOME without a shortcuts portal (Linux)",
     ),
     key(
         "share_dictation_shortcut",
@@ -640,7 +630,7 @@ const KEYS: &[Key] = &[
 ];
 
 /// Captures exist only in builds with the `capture` build option.
-#[cfg(opcode_capture)]
+#[cfg(hex_capture)]
 const CAPTURE_KEYS: &[Key] = &[
     key(
         "capture.enabled",
@@ -660,7 +650,7 @@ const CAPTURE_KEYS: &[Key] = &[
     key(
         "capture.transcriber",
         Kind::Choice(&["parakeet", "apple"]),
-        "What transcribes a capture's narration: Opcode's loaded model or Apple's",
+        "What transcribes a capture's narration: Hex's loaded model or Apple's",
     ),
     optional(
         "capture.folder",
@@ -691,15 +681,15 @@ const CAPTURE_KEYS: &[Key] = &[
     key(
         "capture.show_overlays_in_recordings",
         Kind::Bool,
-        "Let screen recordings, captures included, show Opcode's capsules, ink, and HUD (for demos)",
+        "Let screen recordings, captures included, show Hex's capsules, ink, and HUD (for demos)",
     ),
 ];
-#[cfg(not(opcode_capture))]
+#[cfg(not(hex_capture))]
 const CAPTURE_KEYS: &[Key] = &[];
-#[cfg(opcode_capture)]
+#[cfg(hex_capture)]
 const RETENTION_DAYS: Kind = Kind::Integer { min: 1, max: 3650 };
 
-/// Settings that act only where Opcode has a capability (by its
+/// Settings that act only where Hex has a capability (by its
 /// `rune_ui::capabilities` name), the same one that shows their row in the
 /// window. The first matching prefix decides.
 const NEEDS: &[(&str, &str)] = &[
@@ -712,10 +702,8 @@ const NEEDS: &[(&str, &str)] = &[
     ("labs.meeting_summary_model", "meetings"),
     ("labs.meeting_notes_vocabulary", "meetings"),
     ("labs.meeting_finished_event", "meetings"),
-    ("labs.meeting_platform_icons", "meetings"),
     ("labs.follow_live_transcript", "meetings"),
-    ("labs.collapsible_meeting_sections", "meetings"),
-    ("experimental.opcode_microphone", "fun"),
+    ("experimental.hex_microphone", "fun"),
     ("show_dock_icon", "dock_icon"),
     ("labs.hide_menu_bar_icon", "dock_icon"),
     ("keyboard_model_switching.", "keyboard_model_switching"),
@@ -731,7 +719,7 @@ fn needs(key: &str) -> Option<&'static str> {
         .map(|(_, capability)| *capability)
 }
 
-/// Why `opcode settings set` refuses `name` on this OS, if it does.
+/// Why `hex settings set` refuses `name` on this OS, if it does.
 pub fn unavailable(name: &str) -> Option<ControlError> {
     unavailable_under(name, crate::policy::Policy::current())
 }
@@ -768,7 +756,7 @@ fn unavailable_under(name: &str, policy: crate::policy::Policy) -> Option<Contro
     Some(ControlError::new(
         "unsupported",
         format!(
-            "`{name}` does nothing on this OS: it needs {capability}, which Opcode has only elsewhere"
+            "`{name}` does nothing on this OS: it needs {capability}, which Hex has only elsewhere"
         ),
     ))
 }
@@ -785,11 +773,11 @@ fn keys() -> impl Iterator<Item = &'static Key> {
     KEYS.iter().chain(CAPTURE_KEYS)
 }
 
-/// Settings `opcode settings` never shows: Opcode's own bookkeeping.
+/// Settings `hex settings` never shows: Hex's own bookkeeping.
 #[cfg(test)]
 const INTERNAL: &[&str] = &["migrations", "mouse_shortcut_notice", "labs.groups"];
 
-/// Settings another `opcode` command edits instead (`opcode vocabulary`).
+/// Settings another `hex` command edits instead (`hex vocabulary`).
 #[cfg(test)]
 const OWN_COMMAND: &[&str] = &["vocabulary"];
 
@@ -842,7 +830,7 @@ fn recognition_hints(settings: &AppSettings) -> SettingValue {
         kind: Kind::Text.name().into(),
         choices: Vec::new(),
         writable: true,
-        about: "Deprecated: the vocabulary's terms; setting it adds names to the vocabulary                 (use `opcode vocabulary`)"
+        about: "Deprecated: the vocabulary's terms; setting it adds names to the vocabulary                 (use `hex vocabulary`)"
             .into(),
         available: true,
     }
@@ -883,7 +871,7 @@ fn unknown(name: &str) -> ControlError {
         .unwrap_or_default();
     ControlError::new(
         "unknown-setting",
-        format!("unknown setting `{name}`.{near} Run `opcode settings list` for every key."),
+        format!("unknown setting `{name}`.{near} Run `hex settings list` for every key."),
     )
 }
 
@@ -936,7 +924,7 @@ pub fn apply(
             settings: candidate,
             effects: Vec::new(),
             message: "Added the names to the vocabulary (transcription.recognition_hints is \
-                      deprecated; use `opcode vocabulary`)"
+                      deprecated; use `hex vocabulary`)"
                 .into(),
         });
     }
@@ -1004,9 +992,9 @@ pub fn apply(
                 HotkeySlot::SecondDictation => candidate.second_dictation_hotkey.as_ref(),
                 HotkeySlot::Cancel => Some(&candidate.cancel_hotkey),
                 HotkeySlot::Screenshot => Some(&candidate.screenshots.hotkey),
-                #[cfg(opcode_capture)]
+                #[cfg(hex_capture)]
                 HotkeySlot::Capture => Some(&candidate.capture.hotkey),
-                #[cfg(opcode_capture)]
+                #[cfg(hex_capture)]
                 HotkeySlot::CaptureReplay => candidate.capture.replay_hotkey.as_ref(),
             };
             if let Some(binding) = binding {
@@ -1016,7 +1004,7 @@ pub fn apply(
                 {
                     return Err(invalid(
                         name,
-                        "mouse buttons need Labs › Mouse shortcuts: opcode labs on mouse-shortcuts",
+                        "mouse buttons need Labs › Mouse shortcuts: hex labs on mouse-shortcuts",
                     ));
                 }
                 if let Some(why) = special_key_refusal(&candidate, binding) {
@@ -1027,7 +1015,7 @@ pub fn apply(
                     return Err(ControlError::new(
                         "shortcut-in-use",
                         format!(
-                            "{} is already in use by another Opcode shortcut",
+                            "{} is already in use by another Hex shortcut",
                             format_hotkey(binding)
                         ),
                     ));
@@ -1056,7 +1044,7 @@ pub fn apply(
                 }
             }
         }
-        #[cfg(opcode_capture)]
+        #[cfg(hex_capture)]
         "capture.enabled"
             if candidate.capture.enabled
                 && candidate.hotkey_in_use(HotkeySlot::Capture, &candidate.capture.hotkey) =>
@@ -1098,10 +1086,10 @@ pub fn apply(
 }
 
 /// Validates every `key: value` in `values` against `settings` and returns
-/// the settings to save, all or none (`opcode settings apply`, the Home Manager
+/// the settings to save, all or none (`hex settings apply`, the Home Manager
 /// module). Values are JSON: booleans, numbers, `null` for `none`, objects
 /// and arrays for json settings, text for the rest. `transcription.model`
-/// and `transcription.language` select a model, as `opcode model use` would,
+/// and `transcription.language` select a model, as `hex model use` would,
 /// without needing it installed. Keys that depend on each other (a
 /// double-tap-only start and its shortcut) apply in any order.
 pub fn apply_all(
@@ -1364,13 +1352,13 @@ fn special_key_refusal(settings: &AppSettings, binding: &HotkeyBinding) -> Optio
     // The § key alone needs Labs › Section key alone (Linux).
     if cfg!(target_os = "linux") && binding.is_lone_section_key() && !settings.section_key_allowed()
     {
-        return Some("section needs Labs › Section key alone: opcode labs on section-key".into());
+        return Some("section needs Labs › Section key alone: hex labs on section-key".into());
     }
     if cfg!(target_os = "windows") {
         let key = binding.key.as_ref()?;
         return (binding.is_lone_navigation_key() && !settings.special_keys_allowed()).then(|| {
             format!(
-                "{} alone needs Labs › Special keys alone: opcode labs on special-keys",
+                "{} alone needs Labs › Special keys alone: hex labs on special-keys",
                 key.label.to_lowercase().replace(' ', "")
             )
         });
@@ -1382,7 +1370,7 @@ fn special_key_refusal(settings: &AppSettings, binding: &HotkeyBinding) -> Optio
     let name = key.label.to_lowercase().replace(' ', "");
     if cfg!(target_os = "linux") {
         return Some(format!(
-            "{name} needs Labs › Special keys alone: opcode labs on special-keys"
+            "{name} needs Labs › Special keys alone: hex labs on special-keys"
         ));
     }
     binding
@@ -1511,9 +1499,9 @@ mod tests {
         }
     }
 
-    /// Fails when a persisted setting has no `opcode settings` key: add one to
-    /// `KEYS` (or to `INTERNAL` if it is Opcode's own bookkeeping, or to
-    /// `OWN_COMMAND` if another `opcode` command edits it).
+    /// Fails when a persisted setting has no `hex settings` key: add one to
+    /// `KEYS` (or to `INTERNAL` if it is Hex's own bookkeeping, or to
+    /// `OWN_COMMAND` if another `hex` command edits it).
     #[test]
     fn every_persisted_setting_has_a_cli_key() {
         // Lists left empty and unchosen options are left out of the file;
@@ -1541,7 +1529,7 @@ mod tests {
                 .any(|key| path == key || path.starts_with(&format!("{key}.")));
             assert!(
                 covered,
-                "settings.json has `{path}`, which `opcode settings` can't name"
+                "settings.json has `{path}`, which `hex settings` can't name"
             );
         }
         for key in keys() {
@@ -1584,7 +1572,7 @@ mod tests {
         }
     }
 
-    #[cfg(opcode_capture)]
+    #[cfg(hex_capture)]
     #[test]
     fn capture_routing_is_set_as_one_object_without_a_jev_key() {
         let settings = AppSettings::default();
