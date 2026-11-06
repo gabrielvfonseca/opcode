@@ -395,9 +395,9 @@ pub(super) fn conflicts(
         ShortcutTarget::PasteLast => HotkeySlot::PasteLast,
         ShortcutTarget::RawDictation => HotkeySlot::RawDictation,
         ShortcutTarget::Cancel => HotkeySlot::Cancel,
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         ShortcutTarget::Capture => HotkeySlot::Capture,
-        #[cfg(all(hex_capture, target_os = "macos"))]
+        #[cfg(all(opcode_capture, target_os = "macos"))]
         ShortcutTarget::CaptureReplay => HotkeySlot::CaptureReplay,
         #[cfg(target_os = "macos")]
         ShortcutTarget::SecondDictation => HotkeySlot::SecondDictation,
@@ -429,9 +429,9 @@ pub(super) fn binding(settings: &AppSettings, target: ShortcutTarget) -> Option<
         ShortcutTarget::PasteLast => settings.paste_last_hotkey.as_ref(),
         ShortcutTarget::RawDictation => settings.raw_dictation_hotkey.as_ref(),
         ShortcutTarget::Cancel => Some(&settings.cancel_hotkey),
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         ShortcutTarget::Capture => Some(&settings.capture.hotkey),
-        #[cfg(all(hex_capture, target_os = "macos"))]
+        #[cfg(all(opcode_capture, target_os = "macos"))]
         ShortcutTarget::CaptureReplay => settings.capture.replay_hotkey.as_ref(),
         #[cfg(target_os = "macos")]
         ShortcutTarget::SecondDictation => settings.second_dictation_hotkey.as_ref(),
@@ -450,9 +450,9 @@ pub(super) fn set_binding(
         ShortcutTarget::PasteLast => settings.paste_last_hotkey = Some(binding),
         ShortcutTarget::RawDictation => settings.raw_dictation_hotkey = Some(binding),
         ShortcutTarget::Cancel => settings.cancel_hotkey = binding,
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         ShortcutTarget::Capture => settings.capture.hotkey = binding,
-        #[cfg(all(hex_capture, target_os = "macos"))]
+        #[cfg(all(opcode_capture, target_os = "macos"))]
         ShortcutTarget::CaptureReplay => settings.capture.replay_hotkey = Some(binding),
         #[cfg(target_os = "macos")]
         ShortcutTarget::SecondDictation => settings.second_dictation_hotkey = Some(binding),
@@ -515,7 +515,7 @@ pub(super) fn refresh_microphones(ui: &mut Ui) {
     ui.microphones_route = Some(crate::audio::input_route_generation());
     let (sender, receiver) = std::sync::mpsc::sync_channel(1);
     let spawned = std::thread::Builder::new()
-        .name("hex-microphones".into())
+        .name("opcode-microphones".into())
         .spawn(move || {
             let _ = sender.send(crate::audio::input_devices().map_err(|error| error.to_string()));
         });
@@ -601,7 +601,7 @@ pub(super) fn error_notes(p: Paint, error: &str) -> [El; 2] {
     [
         note(
             "error-title",
-            tr("Hex could not apply this change."),
+            tr("Opcode could not apply this change."),
             p.danger(),
         ),
         note("error", error, p.muted()),
@@ -618,7 +618,7 @@ pub(super) fn listener_card(ui: &Ui, p: Paint) -> El {
         None => tr("Connecting…").to_string(),
     };
     // The key the desktop granted, which it may have changed in its own
-    // settings (#723), else the one Hex records.
+    // settings (#723), else the one Opcode records.
     let shortcut = match portal_grant(ui, ShortcutTarget::Dictation) {
         Some(DesktopGrantedShortcut {
             trigger: Some(trigger),
@@ -628,7 +628,7 @@ pub(super) fn listener_card(ui: &Ui, p: Paint) -> El {
     };
     let no_model = super::general::missing_model(ui).is_some();
     let hint = match (running, ui.settings.shortcut_mode) {
-        _ if no_model => tr("Hex can't dictate until a speech model is installed").to_string(),
+        _ if no_model => tr("Opcode can't dictate until a speech model is installed").to_string(),
         _ if !ui.records_shortcuts() => {
             tr("Ready anywhere · Use your desktop's shortcuts to dictate").to_string()
         }
@@ -637,7 +637,7 @@ pub(super) fn listener_card(ui: &Ui, p: Paint) -> El {
             &shortcut,
         ),
         (true, ShortcutMode::Hold) => tr_fill("Ready anywhere · Hold {} to dictate", &shortcut),
-        (false, _) => tr_fill("Enable Hex to dictate into any app with {}", &shortcut),
+        (false, _) => tr_fill("Enable Opcode to dictate into any app with {}", &shortcut),
     };
     let failure = ui
         .view
@@ -718,7 +718,7 @@ pub(super) fn listener_card(ui: &Ui, p: Paint) -> El {
 }
 
 /// What a shortcuts portal granted for `target`, since the desktop decides
-/// which trigger Hex actually gets.
+/// which trigger Opcode actually gets.
 pub(super) fn granted(ui: &Ui, p: Paint, target: ShortcutTarget) -> Option<(String, rune::Color)> {
     Some(match portal_grant(ui, target)? {
         DesktopGrantedShortcut {
@@ -730,7 +730,7 @@ pub(super) fn granted(ui: &Ui, p: Paint, target: ShortcutTarget) -> Option<(Stri
             unconfirmed: true,
             ..
         } => (
-            tr("Your desktop assigns this key itself, so Hex can't confirm it").to_string(),
+            tr("Your desktop assigns this key itself, so Opcode can't confirm it").to_string(),
             p.muted(),
         ),
         DesktopGrantedShortcut { trigger: None, .. } => (
@@ -751,9 +751,9 @@ fn portal_grant(ui: &Ui, target: ShortcutTarget) -> Option<&DesktopGrantedShortc
         // The portal never holds the cancel key.
         ShortcutTarget::Cancel => return None,
         // The portal lists Annotate's shortcut under that name.
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         ShortcutTarget::Capture => "Annotate",
-        #[cfg(all(hex_capture, target_os = "macos"))]
+        #[cfg(all(opcode_capture, target_os = "macos"))]
         ShortcutTarget::CaptureReplay => return None,
         // macOS has no shortcuts portal.
         #[cfg(target_os = "macos")]
@@ -765,7 +765,7 @@ fn portal_grant(ui: &Ui, target: ShortcutTarget) -> Option<&DesktopGrantedShortc
 /// Keys GNOME keeps for itself by default (window menu, input sources, app
 /// switching, the overview, screenshots, …), normalized as [`chord`] writes
 /// them. A portal shortcut on one is listed in GNOME Settings but never
-/// reaches Hex (#723).
+/// reaches Opcode (#723).
 const GNOME_KEYS: &[&str] = &[
     "alt+space",
     "super+space",
@@ -826,7 +826,7 @@ fn on_gnome() -> bool {
 }
 
 /// On GNOME, the note under `target`'s row when its key, the one GNOME
-/// granted or else the one Hex asks for, is one GNOME keeps for itself.
+/// granted or else the one Opcode asks for, is one GNOME keeps for itself.
 pub(super) fn gnome_clash_note(ui: &Ui, p: Paint, target: ShortcutTarget) -> Option<El> {
     if !on_gnome() {
         return None;
@@ -842,7 +842,7 @@ pub(super) fn gnome_clash_note(ui: &Ui, p: Paint, target: ShortcutTarget) -> Opt
         note(
             "gnome-clash",
             &tr_fill(
-                "GNOME uses {} itself, so it never reaches Hex. Record another shortcut, or change it in GNOME Settings › Keyboard › Keyboard Shortcuts.",
+                "GNOME uses {} itself, so it never reaches Opcode. Record another shortcut, or change it in GNOME Settings › Keyboard › Keyboard Shortcuts.",
                 &keys,
             ),
             p.danger(),
@@ -858,7 +858,7 @@ pub(super) fn refused_note(ui: &Ui, p: Paint, target: ShortcutTarget) -> Option<
             note(
                 "refused",
                 if binding(&ui.settings, target).is_some_and(|binding| binding.key.as_ref().is_some_and(HotkeyKey::is_mouse)) {
-                    tr("Configure mouse shortcuts in your Wayland desktop using the hex commands")
+                    tr("Configure mouse shortcuts in your Wayland desktop using the opcode commands")
                 } else {
                     tr("Your desktop kept a shortcut for itself. Record another one, or free it in your desktop's keyboard settings (on niri, remove its bind from config.kdl).")
                 },
@@ -883,31 +883,31 @@ pub(super) fn desktop_commands(ui: &Ui, p: Paint) -> El {
             "hold",
             tr("Hold to dictate"),
             tr("Bind start to the key press and stop to its release"),
-            &["hex dictation start", "hex dictation stop"],
+            &["opcode dictation start", "opcode dictation stop"],
         ),
         command_row(
             p,
             "toggle",
             tr("Toggle dictation"),
             tr("Press to start dictating, press again to transcribe"),
-            &["hex dictation toggle"],
+            &["opcode dictation toggle"],
         ),
         command_row(
             p,
             "paste-last",
             tr("Paste last dictation"),
             tr("Re-paste the most recent dictation"),
-            &["hex paste-last"],
+            &["opcode paste-last"],
         ),
         command_row(
             p,
             "raw-dictation",
             tr("Dictate without processing"),
-            tr("Paste your words as Hex heard them, skipping every step"),
-            &["hex dictation toggle --raw"],
+            tr("Paste your words as Opcode heard them, skipping every step"),
+            &["opcode dictation toggle --raw"],
         ),
     ];
-    // GNOME without a shortcuts portal (GNOME 46 and older, #781): Hex writes
+    // GNOME without a shortcuts portal (GNOME 46 and older, #781): Opcode writes
     // the commands into GNOME's own custom shortcuts.
     if on_gnome() {
         rows.insert(1, gnome_shortcuts_row(ui, p));
@@ -915,12 +915,12 @@ pub(super) fn desktop_commands(ui: &Ui, p: Paint) -> El {
     section(p, "desktop-shortcuts", tr("Desktop shortcuts"), rows)
 }
 
-/// Adds or removes Hex's GNOME custom keyboard shortcuts.
+/// Adds or removes Opcode's GNOME custom keyboard shortcuts.
 fn gnome_shortcuts_row(ui: &Ui, p: Paint) -> El {
     let on = ui.settings.gnome_keyboard_shortcuts;
     let description = if on {
         tr(
-            "Added to GNOME Settings › Keyboard › Custom Shortcuts while Hex is enabled. GNOME runs them on the key press, so your dictation shortcut toggles dictation. Change the keys there.",
+            "Added to GNOME Settings › Keyboard › Custom Shortcuts while Opcode is enabled. GNOME runs them on the key press, so your dictation shortcut toggles dictation. Change the keys there.",
         )
     } else {
         tr(
@@ -1200,9 +1200,9 @@ pub(super) fn hotkey_key(target: ShortcutTarget) -> &'static str {
         ShortcutTarget::PasteLast => "paste-last-hotkey",
         ShortcutTarget::RawDictation => "raw-dictation-hotkey",
         ShortcutTarget::Cancel => "cancel-hotkey",
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         ShortcutTarget::Capture => "capture-hotkey",
-        #[cfg(all(hex_capture, target_os = "macos"))]
+        #[cfg(all(opcode_capture, target_os = "macos"))]
         ShortcutTarget::CaptureReplay => "capture-replay-hotkey",
         #[cfg(target_os = "macos")]
         ShortcutTarget::SecondDictation => "second-dictation-hotkey",

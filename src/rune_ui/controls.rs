@@ -279,7 +279,7 @@ pub(super) fn described_row(
 
 /// One numbered step of a how-to card: the number, the title with the
 /// step's keys beside it when it has any, and the description under them.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub(super) fn step_row(
     p: Paint,
     key: &str,
@@ -781,7 +781,7 @@ pub(super) enum ButtonKind {
     Danger,
 }
 
-/// Builds push buttons at Hex's sizes, which keep tighter padding and
+/// Builds push buttons at Opcode's sizes, which keep tighter padding and
 /// corners than the kit's `ControlSize`s of the same height.
 pub(super) trait PushSize {
     /// 28 pt, the kit's Large height.
@@ -1085,7 +1085,7 @@ pub(super) fn keycaps(p: Paint, key: &str, parts: &[String]) -> El {
 
 /// The width [`keycaps`] draws `parts` at, with `measure` giving a
 /// legend's width.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub(super) fn keycaps_width(parts: &[String], measure: impl Fn(&str, TextStyle) -> f32) -> f32 {
     let size = KeySize::Small;
     let caps: f32 = parts

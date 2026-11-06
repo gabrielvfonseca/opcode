@@ -161,12 +161,12 @@ impl AppSettings {
             self.second_dictation_hotkey = None;
             reset = true;
         }
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         if matches(&self.capture.hotkey) {
             self.capture.hotkey = HotkeyBinding::capture_default();
             reset = true;
         }
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         if self.capture.replay_hotkey.as_ref().is_some_and(&matches) {
             self.capture.replay_hotkey = None;
             reset = true;

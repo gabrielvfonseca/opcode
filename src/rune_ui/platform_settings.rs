@@ -1,6 +1,6 @@
 //! Rows only some OSes show, chosen by
 //! [`Capabilities`](super::platform::Capabilities): macOS's permission
-//! warnings, Meetings › Settings, Show Dock icon, and the Hex Microphone
+//! warnings, Meetings › Settings, Show Dock icon, and the Opcode Microphone
 //! driver row Voice Filter shows; Launch at login on macOS and Windows. Their
 //! state is [`PlatformState`](super::platform::PlatformState)
 //! data and their actions are [`PlatformRequest`]s.
@@ -20,13 +20,13 @@ use crate::app_settings::{
     AppSettings, CALENDAR_LEAD_MINUTES, HotkeyBinding, KNOWN_MEETING_PROVIDERS, MeetingPolicy,
     MeetingProviderChoice, MeetingRetention, ModifierSide,
 };
-use crate::audio::hex_microphone::DriverActionState;
+use crate::audio::opcode_microphone::DriverActionState;
 use crate::calendar::{CalendarAccess, CallProvider};
 use crate::desktop::i18n::{tr, tr_fill, tr_named};
 use crate::desktop::onboarding::{PermissionAction, PermissionKind, PermissionWarning};
 
 /// A permission's row key, its name as System Settings lists it, and what
-/// Hex cannot do without it.
+/// Opcode cannot do without it.
 fn permission_copy(
     kind: PermissionKind,
     accessibility_renamed: bool,
@@ -35,12 +35,12 @@ fn permission_copy(
         PermissionKind::Microphone => (
             "permission-microphone",
             tr("Microphone"),
-            tr("Hex cannot record dictation until microphone access is restored."),
+            tr("Opcode cannot record dictation until microphone access is restored."),
         ),
         PermissionKind::Accessibility => (
             "permission-accessibility",
             accessibility_name(accessibility_renamed),
-            tr("Hex cannot recognize the dictation shortcut or paste into other apps."),
+            tr("Opcode cannot recognize the dictation shortcut or paste into other apps."),
         ),
         PermissionKind::SystemAudio => (
             "permission-system-audio",
@@ -94,11 +94,11 @@ pub(super) fn permissions_section(ui: &Ui, p: Paint) -> Option<El> {
                     p,
                     key,
                     name,
-                    Some(tr("Turns on when Hex restarts")),
+                    Some(tr("Turns on when Opcode restarts")),
                     button(
                         p,
                         &format!("{key}-restart"),
-                        tr("Restart Hex"),
+                        tr("Restart Opcode"),
                         ButtonKind::Secondary,
                         |ui: &mut Ui, _| {
                             ui.ask(PlatformRequest::Permission(PermissionAction::Restart))
@@ -109,7 +109,7 @@ pub(super) fn permissions_section(ui: &Ui, p: Paint) -> Option<El> {
             let stale =
                 warning.kind == PermissionKind::Accessibility && ui.platform.stale(warning.kind);
             let description = if stale {
-                tr("An older Hex entry can keep this off")
+                tr("An older Opcode entry can keep this off")
             } else {
                 description
             };
@@ -139,9 +139,9 @@ fn paste_permission(ui: &Ui, p: Paint) -> Option<El> {
         .paste
         .filter(|paste| *paste != PasteAccess::Allowed)?;
     let description = if paste == PasteAccess::Declined {
-        tr("Without it, Hex copies your words and you press Ctrl+V.")
+        tr("Without it, Opcode copies your words and you press Ctrl+V.")
     } else {
-        tr("Hex only sends the paste keystroke. It never sees your screen.")
+        tr("Opcode only sends the paste keystroke. It never sees your screen.")
     };
     let control = permission_control(
         p,
@@ -164,7 +164,7 @@ fn paste_permission(ui: &Ui, p: Paint) -> Option<El> {
 }
 
 /// Records which untrusted permission rows are currently visible in the window
-/// so the macOS host clears retired Hex bundle IDs' stale TCC rows once in the
+/// so the macOS host clears retired Opcode bundle IDs' stale TCC rows once in the
 /// background when a row appears.
 pub(super) fn update_shown_permissions(ui: &mut Ui) {
     use crate::desktop::onboarding::PermissionState;
@@ -189,7 +189,7 @@ pub(super) fn update_shown_permissions(ui: &mut Ui) {
             {
                 shown.push(PermissionKind::SystemAudio);
             }
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             if ui.pane == Pane::Annotate
                 && ui.settings.capture.enabled
                 && ui
@@ -300,7 +300,7 @@ pub(super) fn meetings_settings(ui: &Ui, p: Paint, layer: &mut Vec<El>) -> Vec<E
     let meetings = &ui.settings.meetings;
     let mut rows = vec![meetings_toggle(ui, p)];
     let mut more = Vec::new();
-    // Only macOS asks before Hex may hear the other participants.
+    // Only macOS asks before Opcode may hear the other participants.
     if meetings.enabled && ui.platform.caps.permissions {
         let permitted = ui.platform.system_audio;
         let stale = !permitted && ui.platform.stale(PermissionKind::SystemAudio);
@@ -312,7 +312,7 @@ pub(super) fn meetings_settings(ui: &Ui, p: Paint, layer: &mut Vec<El>) -> Vec<E
             Some(if permitted {
                 tr("Captures the other participants' audio")
             } else if stale {
-                tr("An older Hex entry can keep this off")
+                tr("An older Opcode entry can keep this off")
             } else {
                 tr("Required to hear the other participants.")
             }),
@@ -482,11 +482,11 @@ fn retention_row(ui: &Ui, p: Paint, layer: &mut Vec<El>) -> El {
         tr("Keep meetings"),
         match chosen {
             None => Some(tr(
-                "Audio, transcripts, notes, and Hex's Markdown copy move to the Trash. Meetings from before this setting stay until you choose",
+                "Audio, transcripts, notes, and Opcode's Markdown copy move to the Trash. Meetings from before this setting stay until you choose",
             )),
             Some(MeetingRetention::Forever) => None,
             Some(_) => Some(tr(
-                "Audio, transcripts, notes, and Hex's Markdown copy move to the Trash",
+                "Audio, transcripts, notes, and Opcode's Markdown copy move to the Trash",
             )),
         },
         control,
@@ -525,38 +525,38 @@ pub(super) fn summary_model_about(saved: &str) -> String {
             &[("model", &format!("{provider}/{model}"))],
         ),
         None if saved.trim().is_empty() => tr(
-            "Empty: Hex tries its list of fast models in order and uses the first one OpenCode has",
+            "Empty: Opcode tries its list of fast models in order and uses the first one OpenCode has",
         )
         .to_owned(),
         None => tr(
-            "Write it as provider/model, such as openai/gpt-5.4-mini. Until then, Hex tries its list of fast models",
+            "Write it as provider/model, such as openai/gpt-5.4-mini. Until then, Opcode tries its list of fast models",
         )
         .to_owned(),
     }
 }
 
 static ZOOM_ICON: Icon = Icon {
-    name: "hex-provider-zoom",
+    name: "opcode-provider-zoom",
     view: 16.0,
     body: include_str!("../../assets/icons/providers/zoom.svg"),
 };
 static MEET_ICON: Icon = Icon {
-    name: "hex-provider-meet",
+    name: "opcode-provider-meet",
     view: 16.0,
     body: include_str!("../../assets/icons/providers/meet.svg"),
 };
 static TEAMS_ICON: Icon = Icon {
-    name: "hex-provider-teams",
+    name: "opcode-provider-teams",
     view: 16.0,
     body: include_str!("../../assets/icons/providers/teams.svg"),
 };
 static SLACK_ICON: Icon = Icon {
-    name: "hex-provider-slack",
+    name: "opcode-provider-slack",
     view: 16.0,
     body: include_str!("../../assets/icons/providers/slack.svg"),
 };
 static WEBEX_ICON: Icon = Icon {
-    name: "hex-provider-webex",
+    name: "opcode-provider-webex",
     view: 16.0,
     body: include_str!("../../assets/icons/providers/webex.svg"),
 };
@@ -589,7 +589,7 @@ fn calendar_section(ui: &Ui, p: Paint, layer: &mut Vec<El>) -> Option<El> {
             &icons::CALENDAR,
             tr("Calendar access is off"),
             Some(tr(
-                "Allow Hex under Privacy & Security › Calendars to get meeting reminders",
+                "Allow Opcode under Privacy & Security › Calendars to get meeting reminders",
             )),
             button(
                 p,
@@ -839,10 +839,10 @@ const POLICIES: [MeetingPolicy; 3] = [
 /// The virtual microphone driver's row: install, update, or uninstall it.
 pub(super) fn driver_row(ui: &Ui, p: Paint) -> El {
     let title = tr("Virtual microphone driver");
-    let Some(status) = &ui.platform.hex_microphone else {
+    let Some(status) = &ui.platform.opcode_microphone else {
         return setting_row(
             p,
-            "hex-mic-driver",
+            "opcode-mic-driver",
             title,
             Some(tr("Checking…")),
             row().key("none"),
@@ -861,14 +861,14 @@ pub(super) fn driver_row(ui: &Ui, p: Paint) -> El {
         action(
             "install",
             tr("Install"),
-            PlatformRequest::InstallHexMicrophone,
+            PlatformRequest::InstallOpcodeMicrophone,
         )
     };
     let uninstall = || {
         action(
             "uninstall",
             tr("Uninstall"),
-            PlatformRequest::UninstallHexMicrophone,
+            PlatformRequest::UninstallOpcodeMicrophone,
         )
     };
     let state_tag = |label: &str, tone: Tone| tone_tag(p, "state", label, tone);
@@ -900,7 +900,7 @@ pub(super) fn driver_row(ui: &Ui, p: Paint) -> El {
                     .child(action(
                         "update",
                         tr("Update"),
-                        PlatformRequest::InstallHexMicrophone,
+                        PlatformRequest::InstallOpcodeMicrophone,
                     ))
                     .child(uninstall()),
             )
@@ -921,7 +921,7 @@ pub(super) fn driver_row(ui: &Ui, p: Paint) -> El {
                         &status.active_apps.join(", "),
                     ),
                     _ => {
-                        tr("Choose Hex Microphone as your input in Slack, Zoom, or Discord").into()
+                        tr("Choose Opcode Microphone as your input in Slack, Zoom, or Discord").into()
                     }
                 },
                 controls
@@ -948,12 +948,12 @@ pub(super) fn driver_row(ui: &Ui, p: Paint) -> El {
                 .child(install()),
         ),
         _ => (
-            tr("Install the CoreAudio driver to choose Hex Microphone in Slack, Zoom, or Discord")
+            tr("Install the CoreAudio driver to choose Opcode Microphone in Slack, Zoom, or Discord")
                 .into(),
             controls.child(install()),
         ),
     };
-    setting_row(p, "hex-mic-driver", title, Some(&description), controls)
+    setting_row(p, "opcode-mic-driver", title, Some(&description), controls)
 }
 
 /// `target`'s modifier-only shortcut moved to `side`, unless that collides

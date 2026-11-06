@@ -1,7 +1,7 @@
 //! What the tray menu offers: the downloaded models the macOS menu bar and
 //! the Linux and Windows trays list, and the tray menu those two share
-//! (status, Show Hex, Paste last dictation, the meeting items, the model
-//! picker, the update, Enable / Disable Hex, Quit Hex). Each tray maps a picked [`TrayCommand`]
+//! (status, Show Opcode, Paste last dictation, the meeting items, the model
+//! picker, the update, Enable / Disable Opcode, Quit Opcode). Each tray maps a picked [`TrayCommand`]
 //! onto its own runtime.
 
 use crate::app_settings::AppSettings;
@@ -131,13 +131,13 @@ mod tray {
 
         pub(crate) fn tooltip(&self) -> &'static str {
             if self.recording() {
-                tr("Hex Dictation: recording")
+                tr("Opcode Dictation: recording")
             } else if self.transcribing() {
-                tr("Hex Dictation: transcribing")
+                tr("Opcode Dictation: transcribing")
             } else if self.update.is_some() {
-                tr("Hex Dictation: update available")
+                tr("Opcode Dictation: update available")
             } else {
-                tr("Hex Dictation")
+                tr("Opcode Dictation")
             }
         }
 
@@ -155,7 +155,7 @@ mod tray {
                 menu.push(TrayItem::action("status", status).enabled(false));
                 menu.push(TrayItem::Separator);
             }
-            menu.push(TrayItem::action("show", tr("Show Hex")));
+            menu.push(TrayItem::action("show", tr("Show Opcode")));
             menu.push(
                 TrayItem::action("paste-last", tr("Paste last dictation")).enabled(self.listening),
             );
@@ -199,8 +199,8 @@ mod tray {
                     .as_ref()
                     .map(|label| TrayItem::action("update", label.clone())),
             );
-            menu.push(TrayItem::action("toggle", tr("Enable / Disable Hex")));
-            menu.push(TrayItem::action("quit", tr("Quit Hex")));
+            menu.push(TrayItem::action("toggle", tr("Enable / Disable Opcode")));
+            menu.push(TrayItem::action("quit", tr("Quit Opcode")));
             menu
         }
     }
@@ -316,7 +316,7 @@ mod tests {
             Some(TrayCommand::PasteLast)
         );
         assert_eq!(TrayCommand::from_id("status"), None);
-        assert_eq!(view.tooltip(), "Hex Dictation: recording");
+        assert_eq!(view.tooltip(), "Opcode Dictation: recording");
         // Meetings on adds its items after Paste last dictation.
         let meeting = TrayView {
             meetings: Some(MeetingTray::Recording),
@@ -365,6 +365,6 @@ mod tests {
             &DesktopUpdateStatus::Current,
             Vec::new(),
         );
-        assert_eq!(stopped.tooltip(), "Hex Dictation");
+        assert_eq!(stopped.tooltip(), "Opcode Dictation");
     }
 }

@@ -45,7 +45,7 @@ pub(crate) const DISCARD_LINGER_S: f64 = 1.5;
 /// router has that many, and the most a search shows.
 pub(crate) const SUGGEST_ROWS: usize = 5;
 /// The menu-bar flow's hint of the guesses stays this long, then the
-/// capsule folds into Hex's menu-bar item, where the capture waits.
+/// capsule folds into Opcode's menu-bar item, where the capture waits.
 pub(crate) const MENU_HINT_S: f64 = 4.0;
 /// The permission helper waits this long for a grant, then folds; the
 /// capture shortcut brings it back.
@@ -68,7 +68,7 @@ impl Mode {
     pub(crate) fn chips(phone: bool) -> impl Iterator<Item = Mode> {
         [Mode::Area, Mode::Window, Mode::Screen]
             .into_iter()
-            // Wayland gives Hex no pointer to aim an area with yet.
+            // Wayland gives Opcode no pointer to aim an area with yet.
             .filter(|mode| cfg!(not(target_os = "linux")) || *mode != Mode::Area)
             .chain(phone.then_some(Mode::Iphone))
     }
@@ -177,7 +177,7 @@ pub(crate) enum Delivered {
     },
 }
 
-/// How a send the capsule asked to take back ended (Hex's router undo).
+/// How a send the capsule asked to take back ended (Opcode's router undo).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Undone {
     /// Taken back before the session saw it, or reverted.
@@ -203,7 +203,7 @@ pub(crate) enum Grant {
     Off,
     /// Allow was pressed: System Settings and its guide are open.
     Asked,
-    /// Granted, but Hex must restart to use it.
+    /// Granted, but Opcode must restart to use it.
     Restart,
     /// Granted: the next capture records.
     Ready,
@@ -212,7 +212,7 @@ pub(crate) enum Grant {
 /// Everything that moves the capsule.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Input {
-    /// A capture was refused for a permission Hex lacks: the helper opens
+    /// A capture was refused for a permission Opcode lacks: the helper opens
     /// in its place.
     NeedsPermission(CaptureNeed),
     /// How that permission stands now, while the helper shows.
@@ -267,7 +267,7 @@ pub(crate) enum Input {
     /// The ✕, or anything that should just close it.
     Dismiss,
     /// The recording it shows left the snapshot with no outcome: a chip's
-    /// discard (the picker is already up) or `hex capture discard`.
+    /// discard (the picker is already up) or `opcode capture discard`.
     Gone,
     /// A mouse button went down while the list was open: off the capsule,
     /// the list closes, so typing goes back to the app in front.
@@ -275,7 +275,7 @@ pub(crate) enum Input {
     /// The written capture has no words: the microphone heard no speech.
     NothingHeard,
     /// The router sent the capture, from the capsule or not
-    /// (`hex capture send`): it no longer waits for a pick.
+    /// (`opcode capture send`): it no longer waits for a pick.
     Settled,
 }
 
@@ -291,7 +291,7 @@ pub(crate) enum Action {
     /// The permission helper's Allow: macOS's prompt, or System Settings
     /// with the guide beside it.
     Allow(CaptureNeed),
-    /// The permission helper's Restart Hex.
+    /// The permission helper's Restart Opcode.
     Restart,
     /// Switch the recording's mode.
     Switch(Mode),
@@ -662,7 +662,7 @@ pub(crate) struct Flow {
     /// out); news of it leaves the capsule closed.
     closed: bool,
     /// The latest capture's list, closed before anything was picked: kept
-    /// until a pick, a paste, a send from elsewhere (`hex capture send`), or
+    /// until a pick, a paste, a send from elsewhere (`opcode capture send`), or
     /// the next capture.
     waiting: Option<Routed>,
     /// The latest capture was pasted, inspected, or sent from elsewhere:
@@ -927,7 +927,7 @@ impl Flow {
         }
     }
 
-    /// The keys the capsule takes from Hex's tap: the picker's, an open
+    /// The keys the capsule takes from Opcode's tap: the picker's, an open
     /// list's (Escape only in a list Kit opened or the picker). Closed or
     /// routed with nothing open, it takes none.
     pub(crate) fn keys(&self) -> Option<crate::capture_host::CapsuleKeys> {
@@ -1130,7 +1130,7 @@ mod tests {
         Route::Guess {
             suggested: vec![
                 Dest::new("SEER", "same page"),
-                Dest::new("HEX", "last sent"),
+                Dest::new("OPCODE", "last sent"),
             ],
             recent: vec![Dest::new("HOME", "yesterday")],
             site: Some("problems.kitlangton.com".into()),
@@ -1196,7 +1196,7 @@ mod tests {
                 })
             );
             flow.input(Input::Cycle(1), 0.5);
-            assert_eq!(done(&flow, 0.5).text, "Send to HEX");
+            assert_eq!(done(&flow, 0.5).text, "Send to OPCODE");
             flow.input(Input::Cycle(-1), 0.6);
             flow.input(Input::Cycle(-1), 0.7);
             assert_eq!(
@@ -1226,11 +1226,11 @@ mod tests {
             flow.input(Input::Routed(guess()), 0.0);
             let shown = done(&flow, 0.1);
             let names: Vec<&str> = shown.picks.iter().map(|(n, _)| n.as_str()).collect();
-            assert_eq!(names, ["SEER", "HEX", "HOME"]);
+            assert_eq!(names, ["SEER", "OPCODE", "HOME"]);
             assert!(shown.open.is_none());
             flow.tick(MENU_HINT_S + 0.1);
             assert_eq!(flow.pres(MENU_HINT_S + 0.1), Pres::Hidden);
-            assert_eq!(flow.keys(), None, "no key is Hex's once it's gone");
+            assert_eq!(flow.keys(), None, "no key is Opcode's once it's gone");
 
             let mut flow = Flow::new();
             flow.input(Input::Stage(Stage::Done), 0.0);
@@ -1239,7 +1239,7 @@ mod tests {
             assert_eq!(
                 sent,
                 [Action::Send {
-                    to: "HEX".into(),
+                    to: "OPCODE".into(),
                     always: None
                 }]
             );
@@ -1300,7 +1300,7 @@ mod tests {
         assert_eq!(flow.keys(), None);
     }
 
-    /// The search's field is a `TextEdit` fed by Hex's tap: typing inserts
+    /// The search's field is a `TextEdit` fed by Opcode's tap: typing inserts
     /// at the caret, Backspace takes one character (not one byte) back,
     /// and the caret follows the text.
     #[test]
@@ -1507,7 +1507,7 @@ mod tests {
             "taken back, the list opens"
         );
         // Escape never takes a send back or closes it, in the window or
-        // after it: it was never Hex's.
+        // after it: it was never Opcode's.
         for at in [1.0, 5.5] {
             let mut late = Flow::new();
             late.input(Input::Routed(rule()), 0.0);
@@ -1655,7 +1655,7 @@ mod tests {
             to: to.clone(),
             suggested: vec![to],
             recent: vec![
-                Dest::new("HEX", "last sent").session("ses_hex"),
+                Dest::new("OPCODE", "last sent").session("ses_opcode"),
                 Dest::new("HOME", "recent").session("ses_home"),
             ],
             site: Some("problems.kitlangton.com".into()),
@@ -1688,7 +1688,7 @@ mod tests {
                 "{how}"
             );
             // At once, the same suggestions, the wrong one last.
-            assert_eq!(rows(&flow, 1.0), ["HEX", "HOME", "SEER"], "{how}");
+            assert_eq!(rows(&flow, 1.0), ["OPCODE", "HOME", "SEER"], "{how}");
             // 1-3 pick; Escape stays the app's.
             assert_eq!(
                 flow.keys(),
@@ -1700,7 +1700,7 @@ mod tests {
             );
             // The router's answer changes nothing, and nothing times out.
             flow.input(Input::Undone(Undone::TakenBack), 1.3);
-            assert_eq!(rows(&flow, 1.3), ["HEX", "HOME", "SEER"], "{how}");
+            assert_eq!(rows(&flow, 1.3), ["OPCODE", "HOME", "SEER"], "{how}");
             assert!(flow.next_due(1.3).is_none(), "{how}");
             assert!(!flow.tick(1_000.0), "{how}");
             // Pick 2: sent to #2.
@@ -1744,7 +1744,7 @@ mod tests {
         );
         flow.input(Input::Undone(Undone::TakenBack), 1.2);
         // The same sessions, the wrongly picked one last; nothing sent.
-        assert_eq!(rows(&flow, 1.2), ["HEX", "HOME", "SEER"]);
+        assert_eq!(rows(&flow, 1.2), ["OPCODE", "HOME", "SEER"]);
         let (_, list) = done(&flow, 1.2).open.unwrap();
         assert_eq!(list.rows[2].why, "taken back");
         assert_eq!(list.selected, 0);
@@ -1789,7 +1789,7 @@ mod tests {
         assert_eq!(flow.pres(1_000.0), Pres::Hidden);
         assert_eq!(flow.keys(), waiting);
         flow.input(Input::OpenList, 1_000.0);
-        assert_eq!(rows(&flow, 1_000.0)[0], "HEX");
+        assert_eq!(rows(&flow, 1_000.0)[0], "OPCODE");
         assert!(flow.input(Input::Escape, 1_001.0).is_empty());
         let kept = done(&flow, 1_001.0);
         assert_eq!((kept.text.as_str(), kept.why.as_deref()), ("Kept", None));
@@ -1857,7 +1857,7 @@ mod tests {
         let shown = done(&flow, 1.2);
         assert_eq!(shown.text, "Already sent to SEER");
         assert_eq!(shown.why, None);
-        assert_eq!(rows(&flow, 1.2), ["HEX", "HOME", "SEER"]);
+        assert_eq!(rows(&flow, 1.2), ["OPCODE", "HOME", "SEER"]);
         let (_, list) = shown.open.unwrap();
         assert_eq!(list.rows[2].why, "already sent");
         assert!(!flow.tick(1_000.0), "it waits for a pick");
@@ -1907,7 +1907,7 @@ mod tests {
             [Action::Undo { to: "SEER".into() }]
         );
         flow.input(Input::Undone(Undone::TakenBack), 2.2);
-        assert_eq!(rows(&flow, 2.2), ["HEX", "HOME", "SEER"], "last of all");
+        assert_eq!(rows(&flow, 2.2), ["OPCODE", "HOME", "SEER"], "last of all");
         let (_, list) = done(&flow, 2.2).open.unwrap();
         assert_eq!(list.always, Some(("problems.kitlangton.com".into(), false)));
     }
@@ -1923,7 +1923,7 @@ mod tests {
             recent: vec![
                 Dest::new("SEER", "2 min ago").session("ses_twin"),
                 to.clone(),
-                Dest::new("HEX", "last sent").session("ses_hex"),
+                Dest::new("OPCODE", "last sent").session("ses_opcode"),
             ],
             site: None,
         };
@@ -1944,7 +1944,7 @@ mod tests {
             .chain(recent)
             .map(|dest| dest.session.as_str())
             .collect();
-        assert_eq!(sessions, ["ses_twin", "ses_hex", "ses_seer"]);
+        assert_eq!(sessions, ["ses_twin", "ses_opcode", "ses_seer"]);
         assert_eq!(recent.last().unwrap().why, "taken back");
     }
 
@@ -1992,7 +1992,7 @@ mod tests {
         assert!(flow.take_cues().is_empty());
     }
 
-    /// A queued send that went on a retry can't be taken back by Hex: it
+    /// A queued send that went on a retry can't be taken back by Opcode: it
     /// says so plainly, with no Undo and no Escape.
     #[test]
     fn a_retried_send_has_no_undo() {
@@ -2099,9 +2099,9 @@ mod tests {
         let picked = |flow: &mut Flow| {
             flow.input(Input::Routed(rule_of_three()), 0.0);
             flow.input(Input::Undo, 1.0);
-            assert_eq!(rows(flow, 1.0), ["HEX", "HOME", "SEER"]);
+            assert_eq!(rows(flow, 1.0), ["OPCODE", "HOME", "SEER"]);
             flow.input(Input::SendRow(0), 1.1);
-            assert_eq!(done(flow, 1.1).text, "Sent to HEX");
+            assert_eq!(done(flow, 1.1).text, "Sent to OPCODE");
         };
         let mut flow = Flow::new();
         picked(&mut flow);
@@ -2115,7 +2115,7 @@ mod tests {
         flow.input(Input::Undone(Undone::TakenBack), 1.3);
         flow.input(Input::Settled, 1.4);
         let shown = done(&flow, 1.4);
-        assert_eq!(shown.text, "Sent to HEX");
+        assert_eq!(shown.text, "Sent to OPCODE");
         assert_eq!(shown.open, None);
         assert!(shown.undo, "the pick can still be taken back");
         assert_eq!(flow.take_cues(), [Cue::TakenBack, Cue::Sent]);
@@ -2126,7 +2126,7 @@ mod tests {
         picked(&mut flow);
         flow.input(Input::Settled, 1.4);
         assert!(flow.settled && !flow.undoing);
-        assert_eq!(done(&flow, 1.4).text, "Sent to HEX");
+        assert_eq!(done(&flow, 1.4).text, "Sent to OPCODE");
     }
 
     /// An Undo asked for while the rule's send is still under way keeps
@@ -2144,9 +2144,9 @@ mod tests {
             flow.input(Input::Routed(rule_of_three()), 0.0);
             flow.input(Input::Undo, 0.5);
             flow.input(ended.clone(), 0.6);
-            assert_eq!(rows(&flow, 0.6), ["HEX", "HOME", "SEER"], "{ended:?}");
+            assert_eq!(rows(&flow, 0.6), ["OPCODE", "HOME", "SEER"], "{ended:?}");
             flow.input(Input::Undone(Undone::TakenBack), 0.8);
-            assert_eq!(rows(&flow, 0.8), ["HEX", "HOME", "SEER"], "{ended:?}");
+            assert_eq!(rows(&flow, 0.8), ["OPCODE", "HOME", "SEER"], "{ended:?}");
             assert_eq!(flow.take_cues(), [Cue::TakenBack], "once: {ended:?}");
         }
     }
@@ -2159,11 +2159,11 @@ mod tests {
         assert_eq!(
             flow.click(Id::Row(1), 1.0),
             [Action::Send {
-                to: "HEX".into(),
+                to: "OPCODE".into(),
                 always: None
             }]
         );
-        assert_eq!(done(&flow, 1.0).text, "Sent to HEX");
+        assert_eq!(done(&flow, 1.0).text, "Sent to OPCODE");
         assert!(done(&flow, 1.0).undo);
 
         let mut flow = Flow::new();
@@ -2241,8 +2241,8 @@ mod tests {
         use super::super::surface::Id;
         let twins = || Route::Guess {
             suggested: vec![
-                Dest::new("HEX", "same page").session("ses_a"),
-                Dest::new("HEX", "last sent").session("ses_b"),
+                Dest::new("OPCODE", "same page").session("ses_a"),
+                Dest::new("OPCODE", "last sent").session("ses_b"),
             ],
             recent: Vec::new(),
             site: None,
@@ -2256,7 +2256,7 @@ mod tests {
                 always: None
             }]
         );
-        assert_eq!(done(&flow, 1.0).text, "Sent to HEX");
+        assert_eq!(done(&flow, 1.0).text, "Sent to OPCODE");
 
         let mut flow = Flow::new();
         flow.input(Input::Routed(twins()), 0.0);
@@ -2274,7 +2274,7 @@ mod tests {
     #[test]
     fn suggestions_stop_at_three() {
         let mut flow = Flow::new();
-        let suggested = ["SEER", "HEX", "HOME", "A VERY LONG SESSION TITLE", "FIFTH"]
+        let suggested = ["SEER", "OPCODE", "HOME", "A VERY LONG SESSION TITLE", "FIFTH"]
             .map(|name| Dest::new(name, ""))
             .to_vec();
         flow.input(
@@ -2398,7 +2398,7 @@ mod tests {
         flow.input(Input::Routed(guess()), 0.0);
         let (_, list) = done(&flow, 0.0).open.unwrap();
         let names: Vec<_> = list.rows().map(|dest| dest.name.as_str()).collect();
-        assert_eq!(names, ["SEER", "HEX", "HOME"], "suggested, then recent");
+        assert_eq!(names, ["SEER", "OPCODE", "HOME"], "suggested, then recent");
         assert_eq!(list.selected, 0, "the best is marked");
         assert_eq!(list.footer, Footer::Suggesting);
         assert_eq!(list.always, Some(("problems.kitlangton.com".into(), false)));
@@ -2415,7 +2415,7 @@ mod tests {
         assert_eq!(
             flow.input(Input::SendRow(1), 5.0),
             [Action::Send {
-                to: "HEX".into(),
+                to: "OPCODE".into(),
                 always: None
             }],
             "without Shift, a pick saves no rule"
@@ -2483,12 +2483,12 @@ mod tests {
             flow.input(Input::Type(typed.into()), 1.0);
         }
         let (query, list) = done(&flow, 1.0).open.unwrap();
-        assert_eq!(query.text, "hex");
+        assert_eq!(query.text, "opcode");
         assert_eq!(query.range(), (3, 3), "the caret follows what was typed");
         assert_eq!(list.title, "All sessions");
         assert_eq!(
             list.rows().map(|d| d.name.as_str()).collect::<Vec<_>>(),
-            ["HEX"]
+            ["OPCODE"]
         );
         assert_eq!(
             flow.keys(),
@@ -2567,8 +2567,8 @@ mod tests {
                     "annotate-type-to-search",
                     "ses_1",
                 ),
-                ("Fix the capture tap", "hex", "ses_2"),
-                ("Hex release notes", "docs", "ses_3"),
+                ("Fix the capture tap", "opcode", "ses_2"),
+                ("Opcode release notes", "docs", "ses_3"),
             ])
         };
         let names = |query| -> Vec<String> {
@@ -2583,27 +2583,27 @@ mod tests {
             "any order, any case"
         );
         assert_eq!(
-            search(route(), "hex"),
+            search(route(), "opcode"),
             [
-                ("Hex release notes".into(), "1 h ago".into()),
-                ("Fix the capture tap".into(), "hex · 1 h ago".into()),
+                ("Opcode release notes".into(), "1 h ago".into()),
+                ("Fix the capture tap".into(), "opcode · 1 h ago".into()),
             ],
             "titles first, and a folder match names its folder"
         );
         assert_eq!(
-            names("capture hex"),
+            names("capture opcode"),
             ["Fix the capture tap"],
             "title and folder"
         );
-        assert_eq!(names("ses_3"), ["Hex release notes"], "the id");
-        assert!(names("hex search").is_empty(), "every word, in one session");
+        assert_eq!(names("ses_3"), ["Opcode release notes"], "the id");
+        assert!(names("opcode search").is_empty(), "every word, in one session");
     }
 
     #[test]
     fn a_row_names_its_folder_only_beside_a_row_with_the_same_title() {
         let route = sessions(&[
             ("HOME", "home", "ses_1"),
-            ("Hex", "hex", "ses_2"),
+            ("Opcode", "opcode", "ses_2"),
             ("home", "dotfiles", "ses_3"),
         ]);
         let mut flow = Flow::new();
@@ -2635,17 +2635,17 @@ mod tests {
         assert_eq!(
             flow.input(Input::SendRow(1), 2.0),
             [Action::Send {
-                to: "HEX".into(),
+                to: "OPCODE".into(),
                 always: Some("problems.kitlangton.com".into())
             }]
         );
         let sent = done(&flow, 2.0);
-        assert_eq!(sent.text, "Sent to HEX");
+        assert_eq!(sent.text, "Sent to OPCODE");
         assert_eq!(sent.why.as_deref(), Some("always"));
         assert!(sent.undo);
         assert_eq!(
             flow.click(Id::Undo, 2.5),
-            [Action::Undo { to: "HEX".into() }],
+            [Action::Undo { to: "OPCODE".into() }],
             "Undo takes back the send, and the router the rule with it"
         );
         // A Shift click saves it too.
@@ -2665,7 +2665,7 @@ mod tests {
     fn a_click_away_folds_the_suggestions_and_they_leave_like_any_capsule() {
         let mut flow = Flow::new();
         flow.input(Input::Routed(guess()), 0.0);
-        // Escape is never Hex's here: it changes nothing.
+        // Escape is never Opcode's here: it changes nothing.
         assert!(flow.input(Input::Escape, 0.5).is_empty());
         assert!(done(&flow, 0.5).open.is_some());
         flow.input(Input::ClickAway, 1.0);
@@ -2721,7 +2721,7 @@ mod tests {
 
     /// Send to… after a guess opens the list while the capsule shows, and
     /// brings it back after it closed with nothing picked, until something
-    /// settles the capture. No key is Hex's while it's closed.
+    /// settles the capture. No key is Opcode's while it's closed.
     #[test]
     fn send_to_brings_back_a_capture_waiting_for_a_pick() {
         use crate::capture_host::CapsuleKeys;
@@ -2752,11 +2752,11 @@ mod tests {
         assert_eq!(flow.pres(32.0 + hold), Pres::Hidden);
         flow.input(Input::OpenList, 40.0);
         assert!(done(&flow, 40.0).open.is_some());
-        // A pick settles it: no key is Hex's, Escape goes to the app.
+        // A pick settles it: no key is Opcode's, Escape goes to the app.
         assert_eq!(
             flow.input(Input::SendRow(1), 41.0),
             [Action::Send {
-                to: "HEX".into(),
+                to: "OPCODE".into(),
                 always: None
             }]
         );
@@ -2764,7 +2764,7 @@ mod tests {
         flow.tick(41.0 + hold + 1.0);
         assert_eq!(flow.keys(), None);
 
-        // `hex capture send` while it's closed settles it too.
+        // `opcode capture send` while it's closed settles it too.
         let mut flow = Flow::new();
         flow.input(Input::Stage(Stage::Done), 0.0);
         flow.input(Input::Routed(guess()), 0.0);
@@ -2817,7 +2817,7 @@ mod tests {
         assert_eq!(
             flow.input(Input::Send { always: true }, 1.0),
             [Action::Send {
-                to: "ses_hex".into(),
+                to: "ses_opcode".into(),
                 always: Some("problems.kitlangton.com".into())
             }]
         );
@@ -2831,7 +2831,7 @@ mod tests {
         assert_eq!(
             flow.input(Input::Send { always: true }, 2.0),
             [Action::Send {
-                to: "ses_hex".into(),
+                to: "ses_opcode".into(),
                 always: Some("problems.kitlangton.com".into())
             }]
         );
@@ -3073,7 +3073,7 @@ mod tests {
         flow.input(Input::NeedsPermission(screen), 1.0);
         let shown = done(&flow, 1.0);
         assert_eq!(shown.lead, Lead::Warning);
-        assert_eq!(shown.text, "Hex needs Screen Recording");
+        assert_eq!(shown.text, "Opcode needs Screen Recording");
         assert_eq!(shown.why.as_deref(), Some("to see your screen"));
         assert_eq!(shown.ask.as_deref(), Some("Allow"));
         assert_eq!(flow.keys(), None);
@@ -3086,7 +3086,7 @@ mod tests {
         let waiting = done(&flow, 4.0);
         assert_eq!(
             waiting.why.as_deref(),
-            Some("turn Hex on in System Settings")
+            Some("turn Opcode on in System Settings")
         );
         // It waits a good while, and never folds under the pointer.
         flow.tick(60.0);
@@ -3095,7 +3095,7 @@ mod tests {
         flow.input(Input::Permission(screen, Grant::Restart), 61.0);
         let restart = done(&flow, 61.0);
         assert_eq!(restart.text, "Screen Recording is on");
-        assert_eq!(restart.ask.as_deref(), Some("Restart Hex"));
+        assert_eq!(restart.ask.as_deref(), Some("Restart Opcode"));
         assert_eq!(flow.click(Id::Ask, 62.0), vec![Action::Restart]);
 
         flow.input(Input::Permission(screen, Grant::Ready), 63.0);
@@ -3110,7 +3110,7 @@ mod tests {
 
         // Unanswered, it folds; ✕ closes it at once.
         flow.input(Input::NeedsPermission(CaptureNeed::Microphone), 70.0);
-        assert_eq!(done(&flow, 70.0).text, "Hex needs Microphone");
+        assert_eq!(done(&flow, 70.0).text, "Opcode needs Microphone");
         assert!(flow.tick(70.0 + PERMISSION_HOLD_S));
         assert_eq!(flow.pres(70.0 + PERMISSION_HOLD_S), Pres::Hidden);
         flow.input(Input::NeedsPermission(screen), 300.0);

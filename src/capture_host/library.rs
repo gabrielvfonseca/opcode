@@ -1,4 +1,4 @@
-//! The captures folder as `hex capture list|show|send|route` read it. Reads
+//! The captures folder as `opcode capture list|show|send|route` read it. Reads
 //! and explanations run on the control thread, off the listener; a send goes
 //! through the `capture-route` thread so it orders with the capsule's.
 
@@ -12,7 +12,7 @@ use crate::control::{
     ControlError, ControlReply, ScrawlCaptureDetail, ScrawlCaptureSession, ScrawlCaptureSummary,
 };
 
-/// How many captures `hex capture list` shows unless told.
+/// How many captures `opcode capture list` shows unless told.
 const LIST: usize = 20;
 
 pub fn list(limit: Option<usize>) -> Result<ControlReply, ControlError> {
@@ -148,7 +148,7 @@ mod tests {
     #[test]
     fn a_capture_on_disk_summarizes_its_mode_words_and_send() {
         let root = std::env::temp_dir().join(format!(
-            "hex-capture-library-{}",
+            "opcode-capture-library-{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
@@ -165,7 +165,7 @@ mod tests {
               "words":[{{"text":"make","t0":0,"t1":1}},{{"text":"it","t0":1,"t1":2}},
                        {{"text":"blue","t0":2,"t1":3}}]}},
             "strokes":[],"marks":[],"events":[],"keyframes":[],"contactSheet":"sheet.jpg",
-            "destination":{{"session":"ses_1","title":"Hex","via":"chosen"}}}}"#
+            "destination":{{"session":"ses_1","title":"Opcode","via":"chosen"}}}}"#
         );
         std::fs::write(dir.join("scrawl.json"), manifest).unwrap();
         std::fs::write(dir.join(delivery::PENDING), "{}").unwrap();
@@ -181,7 +181,7 @@ mod tests {
             summary.sent_to,
             Some(ScrawlCaptureSession {
                 session: "ses_1".into(),
-                title: "Hex".into()
+                title: "Opcode".into()
             })
         );
         assert!(summary.queued);

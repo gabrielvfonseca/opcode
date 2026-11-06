@@ -397,7 +397,7 @@ fn the_boundary_pass_fails_only_when_every_call_does() {
 #[test]
 fn a_stopped_boundary_pass_records_nothing_and_runs_again() {
     let directory = std::env::temp_dir().join(format!(
-        "hex-refine-stop-{}-{}",
+        "opcode-refine-stop-{}-{}",
         std::process::id(),
         crate::desktop::events::now_ms()
     ));
@@ -576,8 +576,8 @@ fn the_vocabulary_line_lists_trimmed_terms() {
     assert_eq!(vocabulary_line(&[]), "");
     assert_eq!(vocabulary_line(&[" ".into()]), "");
     assert_eq!(
-        vocabulary_line(&[" Rune ".into(), "Hex\n\tMicrophone".into()]),
-        "Names and terms that may appear: Rune, Hex Microphone\n\n"
+        vocabulary_line(&[" Rune ".into(), "Opcode\n\tMicrophone".into()]),
+        "Names and terms that may appear: Rune, Opcode Microphone\n\n"
     );
 }
 

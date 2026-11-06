@@ -2,10 +2,10 @@
 //! CleanShot does, and the shot lands on the clipboard, in the folder, and
 //! in a thumbnail in the corner.
 //!
-//! The shortcut is taken in Hex's session tap ([`key`]), never by the
+//! The shortcut is taken in Opcode's session tap ([`key`]), never by the
 //! listener: a press opens a second capture picker, Escape closes it and
 //! Space switches it between an area and a window. What it picks is shot
-//! by ScreenCaptureKit at the display's own pixels, with Hex's overlays and
+//! by ScreenCaptureKit at the display's own pixels, with Opcode's overlays and
 //! the pointer left out, on its own thread.
 
 pub(crate) mod save;
@@ -40,7 +40,7 @@ pub(crate) fn install<S: 'static>(app: &mut rune::App<S>) {
         app,
         picked,
         PickerRole {
-            name: "Hex screenshot picker",
+            name: "Opcode screenshot picker",
             screen_label: crate::desktop::i18n::tr("Full screen · Click to capture"),
             exclude_from_capture: true,
             prewarm: crate::labs::screenshots(),
@@ -65,7 +65,7 @@ pub(crate) fn begin() -> bool {
     WINDOW_MODE.store(false, Ordering::Release);
     // Off the tap's thread: a fresh Screen Recording read may take a moment.
     let spawned = std::thread::Builder::new()
-        .name("hex-screenshot-open".into())
+        .name("opcode-screenshot-open".into())
         .spawn(|| {
             if crate::capture_host::permission_state(CaptureNeed::ScreenRecording, true).is_some() {
                 PICKING.store(false, Ordering::Release);
@@ -111,14 +111,14 @@ fn picked(action: Action) {
     };
     cancel();
     let spawned = std::thread::Builder::new()
-        .name("hex-screenshot".into())
+        .name("opcode-screenshot".into())
         .spawn(move || shoot(target));
     if let Err(error) = spawned {
         tracing::warn!(%error, "could not start a screenshot");
     }
 }
 
-/// `hex screenshot`: the whole display under the pointer, at once.
+/// `opcode screenshot`: the whole display under the pointer, at once.
 pub(crate) fn shoot_display() -> anyhow::Result<std::path::PathBuf> {
     anyhow::ensure!(crate::labs::screenshots(), "Labs › Screenshots is off");
     let at = scrawl_capture::screens::pointer().unwrap_or_default();
@@ -205,8 +205,8 @@ fn source(target: CaptureTarget) -> anyhow::Result<(capture_core::Source, f64)> 
     })
 }
 
-/// Hex's own overlays (every window of Hex's above the normal layer) and
-/// the picker, left out of the shot. Hex's settings window stays in.
+/// Opcode's own overlays (every window of Opcode's above the normal layer) and
+/// the picker, left out of the shot. Opcode's settings window stays in.
 fn exclusions() -> capture_core::Exclusions {
     let pid = std::process::id() as i32;
     let mut windows: Vec<u32> = scrawl_capture::windows::raw_windows()
@@ -352,8 +352,8 @@ pub(crate) fn key(key: Key) -> Take {
     take
 }
 
-/// Whether macOS's own screenshot shortcut takes Hex's now: it's matched
-/// in the window server before any app's tap, so Hex never sees the press.
+/// Whether macOS's own screenshot shortcut takes Opcode's now: it's matched
+/// in the window server before any app's tap, so Opcode never sees the press.
 /// Read again at most every 2 s, since Settings draws it each frame.
 pub(crate) fn system_takes_shortcut() -> bool {
     use std::time::{Duration, Instant};

@@ -6,20 +6,20 @@
 #import <QuartzCore/QuartzCore.h>
 #import <dlfcn.h>
 
-typedef NS_ENUM(NSInteger, HexPermission) {
-    HexPermissionAccessibility = 1,
-    HexPermissionMicrophone = 2,
-    HexPermissionSystemAudio = 3,
-    HexPermissionScreenRecording = 4,
+typedef NS_ENUM(NSInteger, OpcodePermission) {
+    OpcodePermissionAccessibility = 1,
+    OpcodePermissionMicrophone = 2,
+    OpcodePermissionSystemAudio = 3,
+    OpcodePermissionScreenRecording = 4,
 };
 
 static NSPanel *guidePanel;
 static NSTimer *guideTimer;
 static BOOL sawSettingsWindow;
-static HexPermission activePermission;
+static OpcodePermission activePermission;
 static NSView *guideTile;
 
-/// The tile flies on its own from the click in Hex's window to its place in
+/// The tile flies on its own from the click in Opcode's window to its place in
 /// the guide, so the eye can follow it to System Settings.
 static NSPanel *flightPanel;
 static CALayer *flightLayer;
@@ -33,7 +33,7 @@ static const CFTimeInterval flightDuration = 0.62;
 /// Settings that has not opened by then gets no flight.
 static const CFTimeInterval flightPatience = 4;
 
-@interface HexDragView : NSView <NSDraggingSource>
+@interface OpcodeDragView : NSView <NSDraggingSource>
 @property(nonatomic, strong) NSURL *bundleURL;
 @property(nonatomic, strong) NSImage *appIcon;
 @property(nonatomic, copy) NSString *appName;
@@ -41,12 +41,12 @@ static const CFTimeInterval flightPatience = 4;
 @end
 
 /// The name System Settings lists the app under.
-static NSString *hexAppName(NSURL *bundleURL) {
+static NSString *opcodeAppName(NSURL *bundleURL) {
     NSString *name = [[NSFileManager defaultManager] displayNameAtPath:bundleURL.path];
     if ([name.pathExtension.lowercaseString isEqualToString:@"app"]) {
         name = name.stringByDeletingPathExtension;
     }
-    return name.length > 0 ? name : @"Hex";
+    return name.length > 0 ? name : @"Opcode";
 }
 
 /// macOS 27 renamed the Accessibility list.
@@ -57,14 +57,14 @@ static BOOL accessibilityRenamed(void) {
 
 /// The name of the Privacy & Security list each permission lives in.
 const char *hex_permission_list_name(int permission) {
-    switch ((HexPermission)permission) {
-        case HexPermissionAccessibility:
+    switch ((OpcodePermission)permission) {
+        case OpcodePermissionAccessibility:
             return accessibilityRenamed() ? "Device Control and Data Access" : "Accessibility";
-        case HexPermissionMicrophone:
+        case OpcodePermissionMicrophone:
             return "Microphone";
-        case HexPermissionSystemAudio:
+        case OpcodePermissionSystemAudio:
             return "System Audio Recording Only";
-        case HexPermissionScreenRecording:
+        case OpcodePermissionScreenRecording:
             return "Screen & System Audio Recording";
     }
     return "Privacy & Security";
@@ -127,7 +127,7 @@ static void drawTile(NSRect bounds, NSImage *icon, NSString *name, BOOL dark) {
     [name drawAtPoint:NSMakePoint(52, 14) withAttributes:attributes];
 }
 
-@implementation HexDragView
+@implementation OpcodeDragView
 
 - (instancetype)initWithFrame:(NSRect)frame bundleURL:(NSURL *)bundleURL {
     self = [super initWithFrame:frame];
@@ -245,8 +245,8 @@ static BOOL settingsHasWindow(void) {
 
 /// Bit 0: System Settings has an open window.
 /// Bit 1: System Settings is the frontmost application.
-/// Bit 2: Hex is the active application.
-int hex_permission_settings_state(void) {
+/// Bit 2: Opcode is the active application.
+int opcode_permission_settings_state(void) {
     NSCAssert(NSThread.isMainThread, @"settings state must run on the main thread");
     BOOL open = settingsHasWindow();
     NSRunningApplication *front = NSWorkspace.sharedWorkspace.frontmostApplication;
@@ -319,15 +319,15 @@ static BOOL systemAudioGranted(void) {
 static BOOL permissionGranted(void) {
     switch (activePermission) {
         // What System Settings shows now: the preflights keep their launch
-        // answer until Hex restarts.
-        case HexPermissionAccessibility:
+        // answer until Opcode restarts.
+        case OpcodePermissionAccessibility:
             return AXIsProcessTrusted();
-        case HexPermissionMicrophone:
+        case OpcodePermissionMicrophone:
             return [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeAudio] ==
                    AVAuthorizationStatusAuthorized;
-        case HexPermissionSystemAudio:
+        case OpcodePermissionSystemAudio:
             return systemAudioGranted();
-        case HexPermissionScreenRecording:
+        case OpcodePermissionScreenRecording:
             return CGPreflightScreenCaptureAccess();
     }
     return NO;
@@ -413,8 +413,8 @@ static void stepFlight(void) {
     }
 }
 
-/// The click that asked for the guide, when it was in one of Hex's windows.
-static BOOL clickInHexWindow(NSPoint point) {
+/// The click that asked for the guide, when it was in one of Opcode's windows.
+static BOOL clickInOpcodeWindow(NSPoint point) {
     for (NSWindow *window in NSApp.windows) {
         if (window.visible && window != guidePanel && window != flightPanel &&
             NSPointInRect(point, window.frame)) {
@@ -424,7 +424,7 @@ static BOOL clickInHexWindow(NSPoint point) {
     return NO;
 }
 
-/// Lifts a copy of the tile out of Hex's window at `origin`.
+/// Lifts a copy of the tile out of Opcode's window at `origin`.
 static void beginFlight(NSPoint origin, NSURL *bundleURL, NSSize tileSize) {
     flightOrigin = origin;
     flightShownAt = CACurrentMediaTime();
@@ -527,29 +527,29 @@ void hex_show_permission_guide(int permission) {
     BOOL fly = clickInHexWindow(click) &&
                !NSWorkspace.sharedWorkspace.accessibilityDisplayShouldReduceMotion;
     closeGuide();
-    activePermission = (HexPermission)permission;
+    activePermission = (OpcodePermission)permission;
 
     NSURL *bundleURL = NSBundle.mainBundle.bundleURL.standardizedURL;
     NSString *listName = [NSString stringWithUTF8String:hex_permission_list_name(permission)];
     NSString *appName = hexAppName(bundleURL);
     NSString *pane;
     switch (activePermission) {
-        case HexPermissionAccessibility:
+        case OpcodePermissionAccessibility:
             pane = @"Privacy_Accessibility";
             break;
-        case HexPermissionMicrophone:
+        case OpcodePermissionMicrophone:
             pane = @"Privacy_Microphone";
             break;
-        case HexPermissionSystemAudio:
+        case OpcodePermissionSystemAudio:
             pane = @"Privacy_AudioCapture";
             break;
-        case HexPermissionScreenRecording:
+        case OpcodePermissionScreenRecording:
             pane = @"Privacy_ScreenCapture";
             break;
     }
     // The Microphone list only holds apps that asked, so a refused
     // microphone is switched on rather than dragged in.
-    BOOL draggable = activePermission != HexPermissionMicrophone;
+    BOOL draggable = activePermission != OpcodePermissionMicrophone;
     NSURL *settingsURL = [NSURL URLWithString:[NSString stringWithFormat:
         @"x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?%@", pane]];
     openSettingsPane(settingsURL);
@@ -593,7 +593,7 @@ void hex_show_permission_guide(int permission) {
     [content addSubview:instruction];
 
     if (draggable) {
-        HexDragView *dragView = [[HexDragView alloc]
+        OpcodeDragView *dragView = [[OpcodeDragView alloc]
             initWithFrame:NSMakeRect(18, 17, panelSize.width - 36, 44)
                  bundleURL:bundleURL];
         [content addSubview:dragView];

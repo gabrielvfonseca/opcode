@@ -1,4 +1,4 @@
-# Hex for iPhone
+# Opcode for iPhone
 
 **Status:** Internal TestFlight app (`HEXMobile`), custom keyboard extension
 (`HEXKeyboard`), and Live Activity + Control Center widget extension
@@ -6,24 +6,24 @@
 transcribes on-device with Apple Speech (`SpeechTranscriber` on iOS 26+) or
 FluidAudio Parakeet V2 (iOS 18+), and removes each capture's file after
 inference, cancellation, or failure. The keyboard extension sends commands and
-inserts completed text over the shared App Group (`group.com.kitlangton.hex.mobile`);
+inserts completed text over the shared App Group (`group.com.kitlangton.opcode.mobile`);
 it never accesses the microphone, speech model, or network.
 
 ## Capabilities
 
 - **One-tap keyboard dictation (`HEXKeyboard`):**
-  - **Setup:** The keyboard needs Full Access to reach Hex through the App
-    Group. Without it, the keyboard shows the Settings path and an **Open Hex
-    setup** button (`hex-dictation://keyboard/setup`). The app's setup card
+  - **Setup:** The keyboard needs Full Access to reach Opcode through the App
+    Group. Without it, the keyboard shows the Settings path and an **Open Opcode
+    setup** button (`opcode-dictation://keyboard/setup`). The app's setup card
     shows live status for the keyboard, Full Access, the microphone, and the
-    speech model, and opens Hex's page in Settings. Full Access shows as on
+    speech model, and opens Opcode's page in Settings. Full Access shows as on
     once the keyboard has run with it (`keyboard.fullAccessSeenAt`).
-  - **Opening Hex:** SwiftUI `Link`, `openURL`, and `extensionContext.open`
-    do nothing in a keyboard extension, so the keyboard opens Hex through
+  - **Opening Opcode:** SwiftUI `Link`, `openURL`, and `extensionContext.open`
+    do nothing in a keyboard extension, so the keyboard opens Opcode through
     the `UIApplication` at the end of its responder chain
     (`ContainingAppOpener`).
   - **Cold start:** Tapping **Dictate** opens the containing app
-    (`hex-dictation://keyboard/record?...`) with a 10-second
+    (`opcode-dictation://keyboard/record?...`) with a 10-second
     handoff window, starts recording, and opens the selected host app's URL
     scheme (`messages://`, `slack://`, `claude://`, `chatgpt://`,
     `mobilenotes://`, `discord://`, `mail://`, `x-web-search://`, etc.) using
@@ -34,11 +34,11 @@ it never accesses the microphone, speech model, or network.
     bar and quick-jump chips. **Edit apps…** in the app's return menu picks and
     orders the apps the keyboard tray and jump bar offer.
   - **GPU Dot Scope (`HEXShared/DotScope.swift`, `DotScopeShader.metal`):**
-    Both `HEXMobile` and `HEXKeyboard` render Hex's desktop menu-bar braided
+    Both `HEXMobile` and `HEXKeyboard` render Opcode's desktop menu-bar braided
     oscilloscope (`src/dot_scope.rs`, `src/rune_hud.wgsl`) at native display
     refresh via `CAMetalLayer` + `CADisplayLink`, pausing at 0% CPU/GPU once
     settled in idle. Lock Screen / Dynamic Island Live Activities render a
-    matching `Canvas` dot-matrix badge (`HexDotMatrixBadge`) because WidgetKit
+    matching `Canvas` dot-matrix badge (`OpcodeDotMatrixBadge`) because WidgetKit
     archives static view snapshots rather than hosting live `CAMetalLayer`s.
     Meter polling stays alive through a temporary non-recording state of the
     same capture; it resumes app levels and keyboard snapshots when the recorder
@@ -52,12 +52,12 @@ it never accesses the microphone, speech model, or network.
     `Casual` (lowercase chat without trailing period), `Notes` (spoken
     `"bullet"` / `"next line"` markers), and `Verbatim`, with cursor-aware
     insertion spacing and repeating backspace.
-  - **Full keyboard Hex key (Experiments › Full keyboard):** A tap does
+  - **Full keyboard Opcode key (Experiments › Full keyboard):** A tap does
     nothing, so a stray one while typing is harmless. A still hold of 0.35 s
-    starts dictation in a warm session (or opens Hex without one), with a
+    starts dictation in a warm session (or opens Opcode without one), with a
     haptic. Moving more than 10 pt before then opens the style and **Return
     to** menu; releasing over a row picks it, and releasing elsewhere leaves
-    the menu open for taps (`HexKeyGesture`). VoiceOver activation dictates,
+    the menu open for taps (`OpcodeKeyGesture`). VoiceOver activation dictates,
     and the **Dictation styles** action opens the menu.
 - **Resilient capture & expiry contract (`DictationController`):**
   - Monotonic `jobGeneration`, retained `transcriptionTask`, and unique
@@ -71,8 +71,8 @@ it never accesses the microphone, speech model, or network.
     input is opt-in (**Use Bluetooth headphones**, default off) so AirPods stay
     in full-fidelity output by default.
 - **Action Button, Control Center, Back Tap & Live Activity:**
-  - `DictateWithHexIntent` (`AudioRecordingIntent` + `LiveActivityIntent`) and
-    `HexDictationControl` (`ControlWidget`) start recording on first press with
+  - `DictateWithOpcodeIntent` (`AudioRecordingIntent` + `LiveActivityIntent`) and
+    `OpcodeDictationControl` (`ControlWidget`) start recording on first press with
     a Dynamic Island / Lock Screen Live Activity (`Stop` and `Cancel` buttons)
     and transcribe + copy to the clipboard on second press.
 

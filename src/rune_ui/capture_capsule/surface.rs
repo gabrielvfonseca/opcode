@@ -96,7 +96,7 @@ pub(crate) const CURSOR_Y: f32 = 132.0;
 /// The pointer's tip, up and left of the card's corner.
 pub(crate) const POINTER_OFFSET: [f32; 2] = [12.0, 16.0];
 /// The menu-bar flow folds the capsule toward the panel's top right, the
-/// way Hex's menu-bar item lies.
+/// way Opcode's menu-bar item lies.
 pub(crate) const MENU_FOLD: [f32; 4] = [PANEL_W - 72.0, 2.0, 30.0, 14.0];
 
 /// Where the capsule rests in the panel.
@@ -1105,7 +1105,7 @@ mod tests {
             text: "Send to".into(),
             picks: vec![
                 ("SEER".into(), "same page".into()),
-                ("HEX".into(), "last sent".into()),
+                ("OPCODE".into(), "last sent".into()),
                 ("HOME".into(), "yesterday".into()),
             ],
             ..Done::plain(Lead::Check, "Send to")
@@ -1410,6 +1410,6 @@ mod tests {
             cut.ends_with('…') && measure(&cut, medium()) <= 120.0,
             "{cut}"
         );
-        assert_eq!(ellipsize("HEX", medium(), 120.0), "HEX");
+        assert_eq!(ellipsize("OPCODE", medium(), 120.0), "OPCODE");
     }
 }

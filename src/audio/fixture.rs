@@ -1,4 +1,4 @@
-//! `HEX_AUDIO_FIXTURE`: a WAV file that stands in for every microphone, so
+//! `OPCODE_AUDIO_FIXTURE`: a WAV file that stands in for every microphone, so
 //! benchmarks and tests drive the real capture, stream, and output pipeline
 //! without recording anyone. The file plays at real-time pace in 10 ms
 //! chunks, from its start at each open, and loops. Each chunk is stamped
@@ -23,11 +23,11 @@ pub(super) const NAME: &str = "Audio fixture";
 /// Chunks per second, as a device's 10 ms period delivers them.
 const CHUNKS_PER_SECOND: u32 = 100;
 
-/// The fixture's path, read once: `HEX_AUDIO_FIXTURE`.
+/// The fixture's path, read once: `OPCODE_AUDIO_FIXTURE`.
 pub(super) fn path() -> Option<&'static Path> {
     static PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
     PATH.get_or_init(|| {
-        std::env::var_os("HEX_AUDIO_FIXTURE")
+        std::env::var_os("OPCODE_AUDIO_FIXTURE")
             .filter(|value| !value.is_empty())
             .map(PathBuf::from)
     })
@@ -106,7 +106,7 @@ pub(super) fn open(path: &Path) -> Result<AudioInput> {
     tracing::warn!(
         path = %path.display(),
         sample_rate,
-        "HEX_AUDIO_FIXTURE replaces the microphone"
+        "OPCODE_AUDIO_FIXTURE replaces the microphone"
     );
     Ok(AudioInput {
         _stream: None,
@@ -117,7 +117,7 @@ pub(super) fn open(path: &Path) -> Result<AudioInput> {
         stream_errors,
         watch_service_restarts: false,
         restart_generation: super::audio_service_restart_generation(),
-        hex_microphone: crate::audio::hex_microphone::capture_feed(sample_rate).1,
+        opcode_microphone: crate::audio::opcode_microphone::capture_feed(sample_rate).1,
         stall_after: Some(STREAM_STALL_TIMEOUT),
         last_delivery: Mutex::new(Instant::now()),
     })
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn a_fixture_plays_its_file_from_the_start_in_ten_ms_chunks() {
-        let directory = std::env::temp_dir().join(format!("hex-fixture-{}", std::process::id()));
+        let directory = std::env::temp_dir().join(format!("opcode-fixture-{}", std::process::id()));
         std::fs::create_dir_all(&directory).unwrap();
         let path = directory.join("fixture.wav");
         let spec = hound::WavSpec {

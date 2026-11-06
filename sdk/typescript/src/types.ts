@@ -43,11 +43,11 @@ export interface ModelInfo {
   readonly downloadBytes: number | null
   readonly languages: readonly string[]
   readonly supportsLanguageDetection: boolean
-  /**
-   * Where the file is or comes from: `download`, `hex`, `imported`, or
-   * `found: owner/name@abcdef1` (another app's Hugging Face download, used
-   * where it is). `null` from hosts older than this field.
-   */
+/**
+    * Where the file is or comes from: `download`, `opcode`, `imported`, or
+    * `found: owner/name@abcdef1` (another app's Hugging Face download, used
+    * where it is). `null` from hosts older than this field.
+    */
   readonly source: string | null
 }
 
@@ -101,13 +101,13 @@ export interface DictationHandle {
   /** Source sample rate for the optional mono Float32 PCM audio tap. */
   readonly sampleRate: number
   readonly levels: AsyncIterable<DictationLevel>
-  /** Best-effort raw mono PCM from HEX's capture; no work occurs until iterated. */
+  /** Best-effort raw mono PCM from Opcode's capture; no work occurs until iterated. */
   readonly audio: AsyncIterable<Float32Array>
   finish(): Promise<TranscriptionResult>
   cancel(): Promise<void>
 }
 
-export interface HexClient {
+export interface OpcodeClient {
   health(options?: RequestOptions): Promise<Health>
   capabilities(options?: RequestOptions): Promise<Capabilities>
   readonly models: {
@@ -158,8 +158,8 @@ export interface ConnectOptions extends RequestOptions {
   readonly fetch?: typeof globalThis.fetch
 }
 
-export interface HexHost {
+export interface OpcodeHost {
   readonly pid: number
-  readonly client: HexClient
+  readonly client: OpcodeClient
   close(): Promise<void>
 }

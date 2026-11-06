@@ -11,7 +11,7 @@ on by default (no experiment) on 2026-10-29. Follows [`custom-vocabulary.md`](cu
 weren't said?
 
 **Answer:** Yes, at the default strength (Normal, 2.5 nats per piece). With
-"Cappuccino" in the list, Hex writes it right **12 of 19** times on Kit's real
+"Cappuccino" in the list, Opcode writes it right **12 of 19** times on Kit's real
 clips (was 4), and **13 of 19** when streaming (was 6). Across every listed term,
 recall goes from 136 to 146 of 157. Word error rate is no worse in any group.
 Clips that contain no term are unchanged, and every new term the boost wrote
@@ -21,7 +21,7 @@ finish when the clip has a candidate, and nothing when it doesn't.
 ## How it works
 
 The change lives in the `transcribe.cpp` fork (`anomalyco/transcribe.cpp`,
-branch `hex/parakeet-vocabulary`, `9badd2a`) under
+branch `opcode/parakeet-vocabulary`, `9badd2a`) under
 `src/arch/parakeet/vocabulary.cpp`. Streams and TDT models still use it.
 
 ```ts
@@ -36,7 +36,7 @@ greedy decode, unchanged ─▶ words with their frames
        └─ replace when log P(term) + boost × pieces ≥ log P(heard)
 ```
 
-Hex passes the list at the start of each run or stream
+Opcode passes the list at the start of each run or stream
 (`transcription::gguf_session::with_vocabulary`), only to Parakeet models that accept it and
 only when no Whisper-style hint family is set. `transcription/local_transcriber` shares that
 path, so macOS, Linux and Windows all get it. The list is capped at 64 terms and
@@ -70,7 +70,7 @@ stays a plain value per piece.
   contain no term.
 - **tc** (transcription-corpus): 274 clips: 51 synthesized term clips, 18
   synthesized look-alikes, 200 ordinary synthesized sentences, 5 private.
-- **Vocabulary:** Hex, Cappuccino, OpenCode, Rune, Scrawl, Effect, Anomaly, Dax,
+- **Vocabulary:** Opcode, Cappuccino, OpenCode, Rune, Scrawl, Effect, Anomaly, Dax,
   Aiden, Kit, Parakeet, Moonshine, GPUI, Sparkle, Argon, Astra, HiveMind.
 - **Model:** `parakeet-unified-en-0.6b-Q8_0`, Metal, on the MacBook Pro. Each
   clip runs offline and streaming, with and without the list.
@@ -115,7 +115,7 @@ Recall counts listed terms written correctly. WER is term-normalized.
 | WER, no-term clips | 1.63 | 1.63 | 1.61 | 1.61 |
 | Wrong insertions | — | 0 | — | 0 |
 
-¹ Strong was measured at 3.0 per piece. Hex's Strong level is 4.0, a
+¹ Strong was measured at 3.0 per piece. Opcode's Strong level is 4.0, a
 deliberate step up for users who want it.
 
 The scorer counted four "false" insertions on rve and one on tc at Normal. None
@@ -144,7 +144,7 @@ results and cost about twice as much.
 ## Decoder biasing (whole-clip RNN-T)
 
 Measured 2026-10-29 on the same clips and list, offline only. Fork branch
-`hex/parakeet-vocabulary-tree`, `7045d1c` (`decode_rnnt_tree` in
+`opcode/parakeet-vocabulary-tree`, `7045d1c` (`decode_rnnt_tree` in
 `src/arch/parakeet/decoder.cpp`). A whole-clip run on an RNN-T model now biases
 while decoding instead of rescoring afterwards:
 
@@ -184,7 +184,7 @@ streaming exists to save.
 ## Settings
 
 Vocabulary › Boost: Off (0), Light (2.0), Normal (2.5, default), Strong (4.0).
-CLI: `hex settings set vocabulary_boost normal`.
+CLI: `opcode settings set vocabulary_boost normal`.
 
 ## Next
 

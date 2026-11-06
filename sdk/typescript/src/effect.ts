@@ -1,11 +1,11 @@
 import { Context, Effect, Layer, Queue, Schema, Scope, Stream } from "effect"
-import { HexError as PromiseHexError } from "./errors.js"
+import { OpcodeError as PromiseOpcodeError } from "./errors.js"
 import { prepareTranscriber, startHost as createPromiseHost } from "./host.js"
 import type {
   Capabilities,
   CreateOptions as PromiseCreateOptions,
   Health,
-  HexHost,
+  OpcodeHost,
   ModelId,
   ModelInfo,
   ModelProgress,
@@ -21,17 +21,17 @@ const ErrorFields = {
 }
 
 export class StartupError extends Schema.TaggedError<StartupError>()(
-  "Hex.StartupError",
+  "Opcode.StartupError",
   ErrorFields,
 ) {}
 
 export class ProtocolError extends Schema.TaggedError<ProtocolError>()(
-  "Hex.ProtocolError",
+  "Opcode.ProtocolError",
   ErrorFields,
 ) {}
 
 export class RequestError extends Schema.TaggedError<RequestError>()(
-  "Hex.RequestError",
+  "Opcode.RequestError",
   {
     ...ErrorFields,
     status: Schema.optionalKey(Schema.Number),
@@ -40,7 +40,7 @@ export class RequestError extends Schema.TaggedError<RequestError>()(
 ) {}
 
 export class ModelPreparationError extends Schema.TaggedError<ModelPreparationError>()(
-  "Hex.ModelPreparationError",
+  "Opcode.ModelPreparationError",
   {
     ...ErrorFields,
     remoteCode: Schema.optionalKey(Schema.String),
@@ -48,11 +48,11 @@ export class ModelPreparationError extends Schema.TaggedError<ModelPreparationEr
 ) {}
 
 export class CancellationError extends Schema.TaggedError<CancellationError>()(
-  "Hex.CancellationError",
+  "Opcode.CancellationError",
   ErrorFields,
 ) {}
 
-export type HexError =
+export type OpcodeError =
   | StartupError
   | ProtocolError
   | RequestError
@@ -67,7 +67,7 @@ export interface Transcriber {
   readonly pid: number
   readonly model: ModelId
   readonly language: string
-  readonly transcribe: (audio: ArrayBuffer | Uint8Array) => Effect.Effect<TranscriptionResult, HexError>
+  readonly transcribe: (audio: ArrayBuffer | Uint8Array) => Effect.Effect<TranscriptionResult, OpcodeError>
 }
 
 export interface PrepareModelOptions {
@@ -79,15 +79,15 @@ export interface ListModelsOptions {
 }
 
 export interface Interface {
-  readonly health: () => Effect.Effect<Health, HexError>
-  readonly capabilities: () => Effect.Effect<Capabilities, HexError>
+  readonly health: () => Effect.Effect<Health, OpcodeError>
+  readonly capabilities: () => Effect.Effect<Capabilities, OpcodeError>
   readonly models: {
-    readonly list: (options?: ListModelsOptions) => Effect.Effect<readonly ModelInfo[], HexError>
-    readonly prepare: (id: ModelId, options?: PrepareModelOptions) => Stream.Stream<ModelProgress, HexError>
+    readonly list: (options?: ListModelsOptions) => Effect.Effect<readonly ModelInfo[], OpcodeError>
+    readonly prepare: (id: ModelId, options?: PrepareModelOptions) => Stream.Stream<ModelProgress, OpcodeError>
   }
   readonly transcribe: (
     request: Omit<TranscriptionRequest, "signal">,
-  ) => Effect.Effect<TranscriptionResult, HexError>
+  ) => Effect.Effect<TranscriptionResult, OpcodeError>
 }
 
 export interface Host {
@@ -95,11 +95,11 @@ export interface Host {
   readonly client: Interface
 }
 
-export class Service extends Context.Service<Service, Interface>()("@kitlangton/hex/Hex") {}
+export class Service extends Context.Service<Service, Interface>()("@kitlangton/opcode/Opcode") {}
 
-const toHexError = (error: unknown): HexError => {
-  if (!(error instanceof PromiseHexError)) {
-    return new RequestError({ code: "unknown", message: "HEX operation failed", cause: error })
+const toOpcodeError = (error: unknown): OpcodeError => {
+  if (!(error instanceof PromiseOpcodeError)) {
+    return new RequestError({ code: "unknown", message: "Opcode operation failed", cause: error })
   }
   const fields = {
     code: error.code,
@@ -131,23 +131,23 @@ const toHexError = (error: unknown): HexError => {
 
 const fromPromise = <A>(
   operation: (signal: AbortSignal) => Promise<A>,
-): Effect.Effect<A, HexError> => Effect.tryPromise({ try: operation, catch: toHexError })
+): Effect.Effect<A, OpcodeError> => Effect.tryPromise({ try: operation, catch: toOpcodeError })
 
 const makeClient = (client: Awaited<ReturnType<typeof createPromiseHost>>["client"]): Interface => ({
-  health: Effect.fn("Hex.health")(function* () {
+  health: Effect.fn("Opcode.health")(function* () {
     return yield* fromPromise((signal) => client.health({ signal }))
   }),
-  capabilities: Effect.fn("Hex.capabilities")(function* () {
+  capabilities: Effect.fn("Opcode.capabilities")(function* () {
     return yield* fromPromise((signal) => client.capabilities({ signal }))
   }),
   models: {
-    list: Effect.fn("Hex.models.list")(function* (options) {
+    list: Effect.fn("Opcode.models.list")(function* (options) {
       return yield* fromPromise((signal) => client.models.list({
         ...(options?.language === undefined ? {} : { language: options.language }),
         signal,
       }))
     }),
-    prepare: (id, options) => Stream.callback<ModelProgress, HexError>(
+    prepare: (id, options) => Stream.callback<ModelProgress, OpcodeError>(
       (queue) => fromPromise((signal) => client.models.prepare(id, {
         ...options,
         signal,
@@ -159,14 +159,14 @@ const makeClient = (client: Awaited<ReturnType<typeof createPromiseHost>>["clien
       { bufferSize: 32, strategy: "sliding" },
     ),
   },
-  transcribe: Effect.fn("Hex.transcribe")(function* (request) {
+  transcribe: Effect.fn("Opcode.transcribe")(function* (request) {
     return yield* fromPromise((signal) => client.transcribe({ ...request, signal }))
   }),
 })
 
-export function create(options: TranscriberOptions): Effect.Effect<Transcriber, HexError, Scope.Scope>
-export function create(options?: CreateOptions): Effect.Effect<Host, HexError, Scope.Scope>
-export function create(options: CreateOptions | TranscriberOptions = {}): Effect.Effect<Host | Transcriber, HexError, Scope.Scope> {
+export function create(options: TranscriberOptions): Effect.Effect<Transcriber, OpcodeError, Scope.Scope>
+export function create(options?: CreateOptions): Effect.Effect<Host, OpcodeError, Scope.Scope>
+export function create(options: CreateOptions | TranscriberOptions = {}): Effect.Effect<Host | Transcriber, OpcodeError, Scope.Scope> {
   const snapshot = { ...options }
   return withHost(snapshot, (host) => {
     if (snapshot.model === undefined) {
@@ -185,13 +185,13 @@ export function create(options: CreateOptions | TranscriberOptions = {}): Effect
   })
 }
 
-const closeHost = (host: Pick<HexHost, "close">) =>
-  Effect.tryPromise({ try: host.close, catch: toHexError }).pipe(Effect.orDie)
+const closeHost = (host: Pick<OpcodeHost, "close">) =>
+  Effect.tryPromise({ try: host.close, catch: toOpcodeError }).pipe(Effect.orDie)
 
 const withHost = <A>(
   options: Omit<CreateOptions, "model">,
-  use: (host: HexHost) => Effect.Effect<A, HexError>,
-): Effect.Effect<A, HexError, Scope.Scope> => Effect.uninterruptibleMask((restore) =>
+  use: (host: OpcodeHost) => Effect.Effect<A, OpcodeError>,
+): Effect.Effect<A, OpcodeError, Scope.Scope> => Effect.uninterruptibleMask((restore) =>
   Effect.gen(function* () {
     const host = yield* Effect.acquireRelease(
       fromPromise((signal) => createPromiseHost({ ...options, signal })),
@@ -202,5 +202,5 @@ const withHost = <A>(
   }),
 )
 
-export const layer = (options: CreateOptions = {}): Layer.Layer<Service, HexError> =>
+export const layer = (options: CreateOptions = {}): Layer.Layer<Service, OpcodeError> =>
   Layer.effect(Service, withHost(options, (host) => Effect.succeed(Service.of(makeClient(host.client)))))

@@ -202,8 +202,8 @@ fn the_send_list_searches_titles_first() {
         folder: Some(folder.into()),
     };
     let dests = vec![
-        dest("Fix the picker", "hex", "ses_a"),
-        dest("Hex editor", "rune", "ses_b"),
+        dest("Fix the picker", "opcode", "ses_a"),
+        dest("Opcode editor", "rune", "ses_b"),
         dest("Seer cards", "seer", "ses_c"),
     ];
     let names = |query| -> Vec<String> {
@@ -212,7 +212,7 @@ fn the_send_list_searches_titles_first() {
             .map(|d| d.name.clone())
             .collect()
     };
-    assert_eq!(names("hex"), ["Hex editor", "Fix the picker"]);
+    assert_eq!(names("opcode"), ["Opcode editor", "Fix the picker"]);
     assert_eq!(names("ses_c"), ["Seer cards"]);
     assert_eq!(names("").len(), 3);
 }
@@ -229,7 +229,7 @@ fn an_export_without_marks_is_the_crop_of_the_shot() {
         crop: Some([8.0, 4.0, 32.0, 20.0]),
     };
     let png = export.png().unwrap();
-    let path = std::env::temp_dir().join("hex-editor-export-test.png");
+    let path = std::env::temp_dir().join("opcode-editor-export-test.png");
     std::fs::write(&path, &png).unwrap();
     let back = export::decode(&path).unwrap();
     assert_eq!(back.size, [32, 20]);
@@ -288,8 +288,8 @@ fn key(key: Key) -> KeyEvent {
 
 /// The editor over a 960 × 640 display: a 1440 × 900 shot at 2× with an
 /// arrow, a box, text, and a crop, then with the Send to… list open,
-/// against `tests/golden/screenshot-editor-*.png`. `HEX_UPDATE_GOLDENS=1`
-/// rewrites them and `HEX_GOLDEN_RENDERS` also writes them there. Without a
+/// against `tests/golden/screenshot-editor-*.png`. `OPCODE_UPDATE_GOLDENS=1`
+/// rewrites them and `OPCODE_GOLDEN_RENDERS` also writes them there. Without a
 /// GPU adapter it skips. Checked on Linux only, like every golden.
 #[test]
 #[cfg_attr(not(target_os = "linux"), ignore = "goldens are checked on Linux")]
@@ -324,17 +324,17 @@ fn editor_goldens() {
             editor.crop = Some([160.0, 120.0, 1180.0, 720.0]);
             if send {
                 editor.send = Some(SendList {
-                    query: "hex".into(),
+                    query: "opcode".into(),
                     sessions: Sessions::Ready(vec![
                         Dest {
                             session: "ses_a".into(),
-                            name: "Hex editor".into(),
-                            folder: Some("hex".into()),
+                            name: "Opcode editor".into(),
+                            folder: Some("opcode".into()),
                         },
                         Dest {
                             session: "ses_b".into(),
                             name: "Fix the picker crosshair".into(),
-                            folder: Some("hex".into()),
+                            folder: Some("opcode".into()),
                         },
                     ]),
                     selected: 0,
@@ -355,14 +355,14 @@ fn editor_goldens() {
             );
             let (w, h) = ((SCREEN[0] * 2.0) as u32, (SCREEN[1] * 2.0) as u32);
             let pixels = crate::rune_ui::offscreen::draw(&gpu, &mut rt, w, h);
-            if let Some(renders) = std::env::var_os("HEX_GOLDEN_RENDERS") {
+            if let Some(renders) = std::env::var_os("OPCODE_GOLDEN_RENDERS") {
                 let renders = PathBuf::from(renders);
                 std::fs::create_dir_all(&renders).unwrap();
                 rune::render::write_png(&renders.join(format!("{name}.png")), w, h, &pixels)
                     .unwrap();
             }
             let path = folder.join(format!("{name}.png"));
-            if std::env::var_os("HEX_UPDATE_GOLDENS").is_some() {
+            if std::env::var_os("OPCODE_UPDATE_GOLDENS").is_some() {
                 rune::render::write_png(&path, w, h, &pixels).unwrap();
                 continue;
             }
@@ -391,13 +391,13 @@ fn editor_goldens() {
     assert!(misses.is_empty(), "{}", misses.join("\n"));
 }
 
-/// `HEX_SCREENSHOT_FRAMES=<folder>` writes the editor opening over a 960 ×
+/// `OPCODE_SCREENSHOT_FRAMES=<folder>` writes the editor opening over a 960 ×
 /// 640 display, a box and an arrow drawn, then closing, at 60 fps, dark, to
 /// `<folder>/editor/`. Without the variable or a GPU adapter it does
 /// nothing.
 #[test]
 fn editor_frames() {
-    let Some(folder) = std::env::var_os("HEX_SCREENSHOT_FRAMES") else {
+    let Some(folder) = std::env::var_os("OPCODE_SCREENSHOT_FRAMES") else {
         return;
     };
     let Ok(gpu) = rune::render::Gpu::try_new(rune::render::Gpu::instance(), None) else {

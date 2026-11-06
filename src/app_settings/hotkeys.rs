@@ -429,7 +429,7 @@ pub(super) fn key_label(name: &str) -> String {
     if shortcut_repair::is_scroll_lock(name) {
         return "Scroll Lock".into();
     }
-    // `section`, as `hex settings` may name the § key.
+    // `section`, as `opcode settings` may name the § key.
     if name.eq_ignore_ascii_case("section") {
         return "§".into();
     }
@@ -687,11 +687,11 @@ impl HotkeyBinding {
 
     /// Option-Shift-S, Scrawl's capture shortcut; F9 on Linux. Annotate's
     /// one key is held to draw while the other hand moves the mouse, so on
-    /// Linux it's a single key one hand holds easily: F9 is free in Hex's
+    /// Linux it's a single key one hand holds easily: F9 is free in Opcode's
     /// defaults (Alt+Space, Ctrl+Alt+V) and in the common desktops', where
     /// F10 opens GTK's menu bar, F11 is full screen and F12 is often a
     /// dropdown terminal.
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     pub fn capture_default() -> Self {
         #[cfg(target_os = "macos")]
         let binding = Self {
@@ -770,7 +770,7 @@ impl HotkeyBinding {
 
 /// Scrawl's record shortcut from its app's `{key_code, carbon_modifiers,
 /// label}` file; a shortcut without a modifier is not Scrawl's.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub(super) fn scrawl_shortcut(bytes: &[u8]) -> Option<HotkeyBinding> {
     #[derive(Deserialize)]
     struct Shortcut {
@@ -1098,7 +1098,7 @@ pub struct RuntimeHotkeys {
     pub dictation: RuntimeHotkey,
     pub paste_last: Option<RuntimeHotkey>,
     pub paste_meeting: Option<RuntimeHotkey>,
-    /// The capture shortcut, while captures are on (`cfg(hex_capture)`).
+    /// The capture shortcut, while captures are on (`cfg(opcode_capture)`).
     pub capture: Option<RuntimeHotkey>,
     /// Labs › Annotate 15 s replay shortcut (macOS 27+), while on and bound.
     pub capture_replay: Option<RuntimeHotkey>,
@@ -1107,12 +1107,12 @@ pub struct RuntimeHotkeys {
     /// Labs › Second dictation shortcut (macOS), while it is on and bound.
     pub second_dictation: Option<RuntimeHotkey>,
     /// Toggle mode's cancel shortcut. Not among [`RuntimeHotkeys::all`]:
-    /// Hex takes it only while a toggled recording runs.
+    /// Opcode takes it only while a toggled recording runs.
     pub cancel: Option<RuntimeHotkey>,
 }
 
 impl RuntimeHotkeys {
-    /// Every shortcut Hex matches, for suppression and chord evidence.
+    /// Every shortcut Opcode matches, for suppression and chord evidence.
     pub fn all(self) -> [Option<RuntimeHotkey>; 7] {
         [
             Some(self.dictation),

@@ -38,15 +38,15 @@ const EVENT_LEFT_MOUSE_DRAGGED: u32 = 6;
 const EVENT_RIGHT_MOUSE_DRAGGED: u32 = 7;
 const EVENT_OTHER_MOUSE_DRAGGED: u32 = 27;
 const MOUSE_EVENT_BUTTON_NUMBER: u32 = 3;
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 const EVENT_MOUSE_MOVED: u32 = 5;
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 const EVENT_SCROLL_WHEEL: u32 = 22;
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 const KEYBOARD_EVENT_AUTOREPEAT: u32 = 8;
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 const SCROLL_WHEEL_DELTA_AXIS_1: u32 = 11;
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 const SCROLL_WHEEL_DELTA_AXIS_2: u32 = 12;
 const EVENT_TAP_DISABLED_BY_TIMEOUT: u32 = u32::MAX - 1;
 const EVENT_TAP_DISABLED_BY_USER_INPUT: u32 = u32::MAX;
@@ -96,9 +96,9 @@ unsafe extern "C" {
     fn CGEventGetFlags(event: EventRef) -> u64;
     fn CGEventGetTimestamp(event: EventRef) -> u64;
     fn CGEventGetIntegerValueField(event: EventRef, field: u32) -> i64;
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     fn CGEventGetLocation(event: EventRef) -> CgPoint;
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     fn CGEventKeyboardGetUnicodeString(
         event: EventRef,
         max_length: usize,
@@ -107,7 +107,7 @@ unsafe extern "C" {
     );
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 #[repr(C)]
 #[derive(Clone, Copy)]
 struct CgPoint {
@@ -459,8 +459,8 @@ unsafe extern "C" fn physical_event_callback(
     event
 }
 
-/// Whether a HID key press can reveal a chord Hex would otherwise miss.
-/// Escape ends no dictation, and Hex's own shortcuts act through their session events.
+/// Whether a HID key press can reveal a chord Opcode would otherwise miss.
+/// Escape ends no dictation, and Opcode's own shortcuts act through their session events.
 fn is_chord_evidence(code: u16, flags: u64, hotkeys: RuntimeHotkeys) -> bool {
     code != ESCAPE_KEY_CODE
         && !is_own_globe_key(code, hotkeys.dictation)
@@ -542,22 +542,22 @@ unsafe extern "C" fn event_callback(
             event
         };
     }
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     let screenshot_swallows = match screenshot_tap(event_type, event) {
         crate::screenshots::Take::No => false,
         crate::screenshots::Take::Only => return ptr::null_mut(),
         crate::screenshots::Take::AfterListener => true,
     };
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     let list_swallows = screenshot_swallows
         || match list_tap(event_type, event) {
             ListSwallow::No => false,
             ListSwallow::Only => return ptr::null_mut(),
             ListSwallow::AfterListener => true,
         };
-    #[cfg(not(hex_capture))]
+    #[cfg(not(opcode_capture))]
     let list_swallows = false;
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     let capture_key = if crate::capture_host::wants_input() {
         match report_capture_input(event_type, event) {
             CaptureTap::Only => return event,
@@ -569,7 +569,7 @@ unsafe extern "C" fn event_callback(
     };
     // A press anywhere while the list or suggestions are open may fold it; the click still
     // goes to the app and to the listener as chord evidence.
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     if matches!(
         event_type,
         EVENT_LEFT_MOUSE_DOWN | EVENT_RIGHT_MOUSE_DOWN | EVENT_OTHER_MOUSE_DOWN
@@ -673,8 +673,8 @@ unsafe extern "C" fn event_callback(
         context.takes_escape.load(Ordering::Acquire),
     );
     context.activity.observe(input, suppress);
-    // A key Hex consumed (its shortcuts, Escape) was never the app's chord.
-    #[cfg(hex_capture)]
+    // A key Opcode consumed (its shortcuts, Escape) was never the app's chord.
+    #[cfg(opcode_capture)]
     if let Some(key) = capture_key
         && !suppress
         && !list_swallows
@@ -690,7 +690,7 @@ unsafe extern "C" fn event_callback(
 
 /// What the session tap does with a key while the capture capsule's list
 /// is open (`capture_host::list_open`).
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 enum ListSwallow {
     /// Not the list's.
     No,
@@ -706,14 +706,14 @@ enum ListSwallow {
 /// Whether the capsule's list or suggestions may take a key press: only
 /// while captures are on, something is open, and no shortcut is being
 /// recorded. With captures turned off, a capsule left open takes nothing.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 fn list_takes_keys(capture_on: bool, open: bool, recording_shortcut: bool) -> bool {
     capture_on && open && !recording_shortcut
 }
 
 /// Hands Labs › Screenshots its keys (`screenshots::key`): its shortcut,
 /// and Escape and Space while its picker shows.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 fn screenshot_tap(event_type: u32, event: EventRef) -> crate::screenshots::Take {
     if !matches!(event_type, EVENT_KEY_DOWN | EVENT_KEY_UP) {
         return crate::screenshots::Take::No;
@@ -736,7 +736,7 @@ fn screenshot_tap(event_type: u32, event: EventRef) -> crate::screenshots::Take 
 
 /// Hands the open list its keys (`capture_host::list_key`) on the tap's
 /// thread; their releases stay with it even after it closes.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 fn list_tap(event_type: u32, event: EventRef) -> ListSwallow {
     use crate::capture_host::{CapsuleKey, ListTap, capsule_key, list_key, list_open, suggesting};
     static TAKEN: Mutex<u128> = Mutex::new(0);
@@ -835,7 +835,7 @@ fn list_tap(event_type: u32, event: EventRef) -> ListSwallow {
 }
 
 /// What the session tap does with an event while a capture records.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 enum CaptureTap {
     /// Reported; only a capture wants it, so the listener never sees it.
     Only,
@@ -849,7 +849,7 @@ enum CaptureTap {
 
 /// Reports a pointer or modifier event to a recording capture
 /// (`capture_host::report_input`) and says what else happens to the event.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 fn report_capture_input(event_type: u32, event: EventRef) -> CaptureTap {
     use crate::capture_host::{Tapped, modifiers, report_input};
     use scrawl_capture::hosted_input::HostInput;
@@ -972,8 +972,8 @@ impl ShortcutSuppression {
         self.key_presses.clear();
     }
 
-    /// Whether the tap keeps `input` from the app in front: Hex's shortcuts,
-    /// Escape while Hex takes it, and `hotkeys.cancel`, which the caller
+    /// Whether the tap keeps `input` from the app in front: Opcode's shortcuts,
+    /// Escape while Opcode takes it, and `hotkeys.cancel`, which the caller
     /// leaves set only while a toggled recording runs.
     fn process_all(
         &mut self,

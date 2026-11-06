@@ -1,6 +1,6 @@
 {
   "vocabulary": [
-    "Hex",
+    "Opcode",
     "OpenCode",
     "Rune",
     "Scrawl",
@@ -29,33 +29,33 @@
   },
   "clips": [
     {
-      "id": "term-hex-1",
-      "audio": "audio/term-hex-1.wav",
-      "expected": "I use Hex to dictate my notes.",
+      "id": "term-opcode-1",
+      "audio": "audio/term-opcode-1.wav",
+      "expected": "I use Opcode to dictate my notes.",
       "expected_terms": [
-        "Hex"
+        "Opcode"
       ],
       "group": "target",
       "sha256": "01211cba2a40f03f914a92d761332dfef9ecb166e6031cc4378303b7f51e261d",
       "duration_s": 2.08
     },
     {
-      "id": "term-hex-2",
-      "audio": "audio/term-hex-2.wav",
-      "expected": "Please check whether Hex heard that correctly.",
+      "id": "term-opcode-2",
+      "audio": "audio/term-opcode-2.wav",
+      "expected": "Please check whether Opcode heard that correctly.",
       "expected_terms": [
-        "Hex"
+        "Opcode"
       ],
       "group": "target",
       "sha256": "a655ddb0236f23514cb80f99ad69d7a0f16f4a7544e0b4372beb571ae40eca02",
       "duration_s": 2.48
     },
     {
-      "id": "term-hex-3",
-      "audio": "audio/term-hex-3.wav",
-      "expected": "The latest Hex build is ready to test.",
+      "id": "term-opcode-3",
+      "audio": "audio/term-opcode-3.wav",
+      "expected": "The latest Opcode build is ready to test.",
       "expected_terms": [
-        "Hex"
+        "Opcode"
       ],
       "group": "target",
       "sha256": "df9d6e3e31e5de1e840b19ba8e0930634596f3c853861975b51f1a2b1eaefb55",

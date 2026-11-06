@@ -3,15 +3,15 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleDisplayName</key>
-  <string>HEX Service</string>
+  <string>Opcode Service</string>
   <key>CFBundleExecutable</key>
-  <string>hex-service</string>
+  <string>opcode-service</string>
   <key>CFBundleIdentifier</key>
-  <string>anomaly.hex.service</string>
+  <string>anomaly.opcode.service</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>HEX Service</string>
+  <string>Opcode Service</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
@@ -23,6 +23,6 @@
   <key>LSUIElement</key>
   <true/>
   <key>NSSpeechRecognitionUsageDescription</key>
-  <string>HEX Service uses on-device Apple Speech when you select it as your transcription model.</string>
+  <string>Opcode Service uses on-device Apple Speech when you select it as your transcription model.</string>
 </dict>
 </plist>

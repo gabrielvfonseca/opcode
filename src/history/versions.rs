@@ -107,7 +107,7 @@ mod tests {
 
     fn store(name: &str) -> (std::path::PathBuf, HistoryStore) {
         let directory = std::env::temp_dir().join(format!(
-            "hex-history-versions-{}-{name}",
+            "opcode-history-versions-{}-{name}",
             std::process::id()
         ));
         let _ = std::fs::remove_dir_all(&directory);

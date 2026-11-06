@@ -25,7 +25,7 @@ pub const TARGET: &str = "linux-arm64";
 pub const DOWNLOAD_TARGET: &str = TARGET;
 
 /// Anomaly's ed25519 Linux release key, `.github/release/linux-signing.pub`
-/// (the `HEX_RELEASE_SIGNING_KEY` secret signs with its private half).
+/// (the `OPCODE_RELEASE_SIGNING_KEY` secret signs with its private half).
 pub const SIGNING_KEY: [u8; 32] = [
     0xbf, 0xad, 0x02, 0xe6, 0x22, 0x08, 0xff, 0x14, 0x4b, 0x5c, 0x9d, 0x21, 0xc7, 0xe7, 0x9c, 0x7c,
     0x16, 0xc6, 0x90, 0x42, 0x99, 0xa4, 0x37, 0xd8, 0x57, 0x30, 0x30, 0x07, 0xcd, 0x4f, 0xf7, 0xd8,
@@ -37,7 +37,7 @@ pub fn signature_target() -> String {
 }
 
 fn signed_message(sha256: &str) -> String {
-    format!("anomaly.hex.linux-artifact.v1\n{sha256}\n")
+    format!("anomaly.opcode.linux-artifact.v1\n{sha256}\n")
 }
 
 /// Whether `signature` is Anomaly's release key signing the executable whose
@@ -128,7 +128,7 @@ pub fn updates_disabled_by_policy() -> bool {
 /// The Linux targets are the bare executable, so this build is the file
 /// whose SHA-256 it has.
 pub fn running_sha256() -> Option<String> {
-    crate::transcription::models::sha256_hex(&std::env::current_exe().ok()?, None).ok()
+    crate::transcription::models::sha256_opcode(&std::env::current_exe().ok()?, None).ok()
 }
 
 /// The support directory and this executable's version directory, when it
@@ -162,7 +162,7 @@ pub fn stage(file: &Path, version: &str) -> Result<Staged> {
         .open(support.join("updates").join("update.lock"))?;
     lock.try_lock_exclusive()
         .wrap_err("another Linux update is already in progress")?;
-    let staging = support.join("updates").join("hex.staging");
+    let staging = support.join("updates").join("opcode.staging");
     let _ = fs::remove_file(&staging);
     fs::copy(file, &staging)?;
     let activation =
@@ -175,7 +175,7 @@ pub fn stage(file: &Path, version: &str) -> Result<Staged> {
 
 pub fn restart_into(staged: &Staged) -> Result<()> {
     if !staged.0.is_file() {
-        bail!("the prepared Hex update is no longer installed");
+        bail!("the prepared Opcode update is no longer installed");
     }
     crate::linux::service::schedule_restart()
 }
@@ -209,8 +209,8 @@ fn activate(support: &Path, version: &str, staging: &Path) -> Result<PathBuf> {
     fs::create_dir_all(&version_dir)?;
     fs::set_permissions(&versions, fs::Permissions::from_mode(0o700))?;
     fs::set_permissions(&version_dir, fs::Permissions::from_mode(0o700))?;
-    let executable = version_dir.join("hex");
-    let staged = version_dir.join(".hex.partial");
+    let executable = version_dir.join("opcode");
+    let staged = version_dir.join(".opcode.partial");
     let _ = fs::remove_file(&staged);
     fs::rename(staging, &staged)?;
     fs::set_permissions(&staged, fs::Permissions::from_mode(0o755))?;
@@ -236,10 +236,10 @@ fn activate(support: &Path, version: &str, staging: &Path) -> Result<PathBuf> {
             && name.to_str().is_some_and(is_version_name)
             && let Err(error) = fs::remove_dir_all(entry.path())
         {
-            tracing::warn!(%error, path = %entry.path().display(), "could not prune an old Hex version");
+            tracing::warn!(%error, path = %entry.path().display(), "could not prune an old Opcode version");
         }
     }
-    Ok(current.join("hex"))
+    Ok(current.join("opcode"))
 }
 
 #[cfg(test)]
@@ -297,42 +297,42 @@ mod tests {
 
     #[test]
     fn activation_switches_current_without_removing_the_old_version() {
-        let root = std::env::temp_dir().join(format!("hex-linux-activate-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("opcode-linux-activate-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(root.join("versions/1.0.0")).unwrap();
-        fs::write(root.join("versions/1.0.0/hex"), b"old").unwrap();
+        fs::write(root.join("versions/1.0.0/opcode"), b"old").unwrap();
         fs::create_dir_all(root.join("versions/0.9.0")).unwrap();
-        fs::write(root.join("versions/0.9.0/hex"), b"older").unwrap();
+        fs::write(root.join("versions/0.9.0/opcode"), b"older").unwrap();
         symlink("versions/1.0.0", root.join("current")).unwrap();
-        let staging = root.join("hex.staging");
+        let staging = root.join("opcode.staging");
         fs::write(&staging, b"new").unwrap();
 
         let executable = activate(&root, "1.1.0", &staging).unwrap();
         assert_eq!(fs::read(executable).unwrap(), b"new");
-        assert_eq!(fs::read(root.join("versions/1.0.0/hex")).unwrap(), b"old");
+        assert_eq!(fs::read(root.join("versions/1.0.0/opcode")).unwrap(), b"old");
         assert!(!root.join("versions/0.9.0").exists());
         let _ = fs::remove_dir_all(root);
     }
 
     #[test]
     fn replacing_a_staged_update_keeps_the_running_version() {
-        let root = std::env::temp_dir().join(format!("hex-linux-restage-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("opcode-linux-restage-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         let running = root.join("versions").join(crate::VERSION);
         fs::create_dir_all(&running).unwrap();
-        fs::write(running.join("hex"), b"running").unwrap();
+        fs::write(running.join("opcode"), b"running").unwrap();
         symlink(
             Path::new("versions").join(crate::VERSION),
             root.join("current"),
         )
         .unwrap();
         for (version, bytes) in [("1.1.0", b"first"), ("1.2.0", b"newer")] {
-            let staging = root.join("hex.staging");
+            let staging = root.join("opcode.staging");
             fs::write(&staging, bytes).unwrap();
             activate(&root, version, &staging).unwrap();
         }
-        assert_eq!(fs::read(root.join("current/hex")).unwrap(), b"newer");
-        assert_eq!(fs::read(running.join("hex")).unwrap(), b"running");
+        assert_eq!(fs::read(root.join("current/opcode")).unwrap(), b"newer");
+        assert_eq!(fs::read(running.join("opcode")).unwrap(), b"running");
         let _ = fs::remove_dir_all(root);
     }
 }

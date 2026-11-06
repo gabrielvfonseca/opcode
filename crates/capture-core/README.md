@@ -186,7 +186,7 @@ any window title, and `error` is set when it did not finish cleanly. `Manifest::
 `scripts/check` runs them with everything else. For this crate alone:
 
 ```sh
-cargo nextest run -p "$(cargo pkgid)" -p capture-core --features capture -E 'not package(hex)'
+cargo nextest run -p "$(cargo pkgid)" -p capture-core --features capture -E 'not package(opcode)'
 ```
 
 The final-frame tests write their fixtures with AVAssetWriter and `ffmpeg`, and check them with

@@ -1,4 +1,4 @@
-//! The Voice Filter pane (macOS and Linux, in Labs, or while the Hex
+//! The Voice Filter pane (macOS and Linux, in Labs, or while the Opcode
 //! Microphone driver is installed): the virtual microphone (macOS's driver,
 //! or Linux's PipeWire source), the filter mode and its key sliders, comfort
 //! noise, and "Try it": record five seconds or use the example clip, then
@@ -6,8 +6,8 @@
 //! Rune shapes. Voice Filter is a dev-build Lab: a stable build shows the
 //! pane only while the macOS driver is installed, with Uninstall alone.
 //! The driver, the live filter, and the demo audio stay with the
-//! host (`PlatformState::{hex_microphone, tuning, demo}`, `PlatformRequest::
-//! {SetTuning, HexMicrophoneDemo}`).
+//! host (`PlatformState::{opcode_microphone, tuning, demo}`, `PlatformRequest::
+//! {SetTuning, OpcodeMicrophoneDemo}`).
 
 use rune::{El, LineCap, Shape, canvas, col, row, text};
 
@@ -18,8 +18,8 @@ use super::controls::{
 };
 use super::lists::{Tone, slider, small_button, tone_tag};
 use super::platform::{DemoRequest, PlatformRequest};
-use crate::audio::hex_microphone::{
-    DemoPlaybackTrack, DemoSnapshot, DemoSourceKind, DriverActionState, HexMicrophoneStatus,
+use crate::audio::opcode_microphone::{
+    DemoPlaybackTrack, DemoSnapshot, DemoSourceKind, DriverActionState, OpcodeMicrophoneStatus,
     TunedFilterConfig,
 };
 use crate::audio::voice_filter::{DictationSpan, VoiceFilterMode};
@@ -177,9 +177,9 @@ pub(super) fn set_tuning(ui: &mut Ui, change: impl FnOnce(&mut TunedFilterConfig
     if save {
         let (mode, comfort, strength) = (cfg.mode, cfg.comfort_noise, cfg.strength);
         ui.update(|settings| {
-            settings.experimental.hex_microphone_mode = mode;
-            settings.experimental.hex_microphone_comfort_noise = comfort;
-            settings.experimental.hex_microphone_strength = strength;
+            settings.experimental.opcode_microphone_mode = mode;
+            settings.experimental.opcode_microphone_comfort_noise = comfort;
+            settings.experimental.opcode_microphone_strength = strength;
         });
     }
     ui.platform.tuning = cfg.clone();
@@ -187,15 +187,15 @@ pub(super) fn set_tuning(ui: &mut Ui, change: impl FnOnce(&mut TunedFilterConfig
 }
 
 fn ask_demo(ui: &mut Ui, request: DemoRequest) {
-    ui.ask(PlatformRequest::HexMicrophoneDemo(request));
+    ui.ask(PlatformRequest::OpcodeMicrophoneDemo(request));
 }
 
 /// The driver's state in the card header.
 fn header_status(ui: &Ui, p: Paint) -> El {
-    let Some(status) = &ui.platform.hex_microphone else {
+    let Some(status) = &ui.platform.opcode_microphone else {
         return tone_tag(p, "driver-status", tr("Checking…"), Tone::Neutral);
     };
-    if !ui.platform.caps.hex_microphone {
+    if !ui.platform.caps.opcode_microphone {
         let (label, tone) = source_state(status);
         return tone_tag(p, "driver-status", label, tone);
     }
@@ -224,9 +224,9 @@ fn header_status(ui: &Ui, p: Paint) -> El {
     tone_tag(p, "driver-status", &label, tone)
 }
 
-/// Hex Microphone's state where Hex creates it rather than a driver
-/// (`Capabilities::hex_microphone` off): starting, available, or failed.
-fn source_state(status: &HexMicrophoneStatus) -> (&'static str, Tone) {
+/// Opcode Microphone's state where Opcode creates it rather than a driver
+/// (`Capabilities::opcode_microphone` off): starting, available, or failed.
+fn source_state(status: &OpcodeMicrophoneStatus) -> (&'static str, Tone) {
     match &status.action_state {
         DriverActionState::Failed(_) => (tr("Unavailable"), Tone::Danger),
         _ if status.driver_loaded => (tr("Available"), Tone::Success),
@@ -234,29 +234,29 @@ fn source_state(status: &HexMicrophoneStatus) -> (&'static str, Tone) {
     }
 }
 
-/// Hex Microphone as a virtual input Hex creates (Linux): what to do with
+/// Opcode Microphone as a virtual input Opcode creates (Linux): what to do with
 /// it, or why it could not start. The header shows its state.
 fn source_row(ui: &Ui, p: Paint) -> El {
     let title = tr("Virtual microphone");
-    let Some(status) = &ui.platform.hex_microphone else {
+    let Some(status) = &ui.platform.opcode_microphone else {
         return setting_row(
             p,
-            "hex-mic-source",
+            "opcode-mic-source",
             title,
             Some(tr("Checking…")),
             row().key("none"),
         );
     };
     let description = match &status.action_state {
-        DriverActionState::Failed(reason) => tr_fill("Could not start Hex Microphone: {}", reason),
+        DriverActionState::Failed(reason) => tr_fill("Could not start Opcode Microphone: {}", reason),
         _ if status.driver_loaded => {
-            tr("Choose Hex Microphone as your input in Slack, Zoom, or Discord").to_string()
+            tr("Choose Opcode Microphone as your input in Slack, Zoom, or Discord").to_string()
         }
-        _ => tr("Starting Hex Microphone…").to_string(),
+        _ => tr("Starting Opcode Microphone…").to_string(),
     };
     setting_row(
         p,
-        "hex-mic-source",
+        "opcode-mic-source",
         title,
         Some(&description),
         row().key("none"),
@@ -288,7 +288,7 @@ fn tunable(ui: &Ui, p: Paint, which: Tunable, label: &str) -> El {
 /// found its driver installed); in a stable build, only while the driver is
 /// installed, so it can be uninstalled.
 pub(super) fn running(ui: &Ui) -> bool {
-    (crate::labs::Feature::VoiceFilter.shipped() && ui.settings.experimental.hex_microphone)
+    (crate::labs::Feature::VoiceFilter.shipped() && ui.settings.experimental.opcode_microphone)
         || driver_installed(ui)
 }
 
@@ -298,11 +298,11 @@ fn uninstall_only() -> bool {
     !crate::labs::Feature::VoiceFilter.shipped()
 }
 
-/// The Hex Microphone driver is installed: apps may use it, so the Voice
+/// The Opcode Microphone driver is installed: apps may use it, so the Voice
 /// Filter stays on until it is uninstalled.
 pub(super) fn driver_installed(ui: &Ui) -> bool {
     ui.platform
-        .hex_microphone
+        .opcode_microphone
         .as_ref()
         .is_some_and(|status| status.driver_bundle_installed)
 }
@@ -418,7 +418,7 @@ pub(super) fn pane(ui: &Ui, p: Paint) -> El {
                 .child(tunable(ui, p, Tunable::MuffledLevel, tr("Level"))),
         );
     }
-    let microphone = if ui.platform.caps.hex_microphone {
+    let microphone = if ui.platform.caps.opcode_microphone {
         super::platform_settings::driver_row(ui, p)
     } else {
         source_row(ui, p)
@@ -441,10 +441,10 @@ pub(super) fn pane(ui: &Ui, p: Paint) -> El {
     section(ui, p, rows)
 }
 
-/// The Hex Microphone section around `rows`, in the pane's scroll body.
+/// The Opcode Microphone section around `rows`, in the pane's scroll body.
 fn section(ui: &Ui, p: Paint, rows: Vec<El>) -> El {
     let section = col()
-        .key("fun-hex-microphone")
+        .key("fun-opcode-microphone")
         .gap(METRICS.label_gap)
         .child(
             row()
@@ -453,7 +453,7 @@ fn section(ui: &Ui, p: Paint, rows: Vec<El>) -> El {
                 .gap(8.0)
                 .center_y()
                 .justify_between()
-                .child(p.section_label(tr("Hex Microphone")))
+                .child(p.section_label(tr("Opcode Microphone")))
                 .child(header_status(ui, p)),
         )
         .child(card(p, "card", rows));
@@ -465,7 +465,7 @@ fn section(ui: &Ui, p: Paint, rows: Vec<El>) -> El {
 fn uninstall_row(ui: &Ui, p: Paint) -> El {
     let uninstalling = ui
         .platform
-        .hex_microphone
+        .opcode_microphone
         .as_ref()
         .is_some_and(|status| matches!(status.action_state, DriverActionState::Uninstalling));
     let control = if uninstalling {
@@ -476,15 +476,15 @@ fn uninstall_row(ui: &Ui, p: Paint) -> El {
             "uninstall",
             tr("Uninstall"),
             ButtonKind::Secondary,
-            |ui: &mut Ui, _| ui.ask(PlatformRequest::UninstallHexMicrophone),
+            |ui: &mut Ui, _| ui.ask(PlatformRequest::UninstallOpcodeMicrophone),
         )
     };
     setting_row(
         p,
-        "hex-mic-driver",
+        "opcode-mic-driver",
         tr("Virtual microphone driver"),
         Some(tr(
-            "Voice Filter isn't in this version of Hex. Uninstall its driver to remove Hex Microphone from your inputs.",
+            "Voice Filter isn't in this version of Opcode. Uninstall its driver to remove Opcode Microphone from your inputs.",
         )),
         row().key("controls").gap(8.0).center_y().child(control),
     )

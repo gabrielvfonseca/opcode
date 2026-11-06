@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Opcode
+Comment=Local voice dictation
+Exec=@OPCODE_BIN@
+Icon=anomaly.opcode
+Terminal=false
+Categories=Utility;Accessibility;
+StartupNotify=true
+StartupWMClass=anomaly.opcode
+Actions=quit;
+
+[Desktop Action quit]
+Name=Quit Opcode
+Exec=@OPCODE_BIN@ quit

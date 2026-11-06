@@ -1,10 +1,10 @@
 # Your Own Speech Models
 
-Hex can run a GGUF speech model that isn't in its catalog: a file you add with
+Opcode can run a GGUF speech model that isn't in its catalog: a file you add with
 "Add model file…", or one another app already downloaded to the Hugging Face
 cache. Both are ordinary features on every OS (they left Labs as
-`custom-models`; `hex labs on|off custom-models` still answers and says so).
-Catalog models stay the tested path: Hex vouches for nothing in a file it
+`custom-models`; `opcode labs on|off custom-models` still answers and says so).
+Catalog models stay the tested path: Opcode vouches for nothing in a file it
 didn't pin.
 
 ## Add A Model File
@@ -16,25 +16,25 @@ Picker header -> "Add model file…" -> native dialog (GGUF, All files)   // set
 │   gigaam (any other, e.g. llama.cpp's or SenseVoice.cpp's `sensevoice-small`,
 │   says the file was made for another program and needs a transcribe.cpp
 │   conversion, or the catalog's download; #1299);
-│   stt.variant; general.languages with a code Hex knows; only F32, F16, and
+│   stt.variant; general.languages with a code Opcode knows; only F32, F16, and
 │   Q8_0 tensors (the types every build runs on Metal and Vulkan); the tensor
 │   data fits the file. Anything else -> "<file> can't be imported: <reason>"
-├── Copy -> models/custom/<16 hex>.gguf while hashing; the copy is checked again;
-│   receipt <16 hex>.gguf.verified.json (size, SHA-256, mtime, inode where
+├── Copy -> models/custom/<16 opcode>.gguf while hashing; the copy is checked again;
+│   receipt <16 opcode>.gguf.verified.json (size, SHA-256, mtime, inode where
 │   the OS reports one, never the volume's device number, which macOS can
-│   renumber at a restart; older receipts' file_id is ignored); manifest <16 hex>.json (name, general.name, family,
+│   renumber at a restart; older receipts' file_id is ignored); manifest <16 opcode>.json (name, general.name, family,
 │   variant, languages, detection, file name, licence, repo URL). The original
 │   is never touched; a failed or cancelled import removes only its partial
 │   copy; the same file again keeps the first import
-├── ID custom-<first 16 hex of the SHA-256> (TranscriptionModelId::Custom)
+├── ID custom-<first 16 opcode of the SHA-256> (TranscriptionModelId::Custom)
 ├── Card -> name from general.name (Rename edits it), languages from the file,
 │   offline only (no streaming), Parakeet without language prompt or Auto,
-│   no benchmark; Use prepares it like a catalog model (verifies Hex's copy
+│   no benchmark; Use prepares it like a catalog model (verifies Opcode's copy
 │   against its receipt instead of downloading). General's Language menu
-│   lists every language the file declares: Hex's usual list first, then the
+│   lists every language the file declares: Opcode's usual list first, then the
 │   rest of Whisper's codes by English name (Norwegian `no`, Norwegian
 │   Nynorsk `nn`, …; #1148)
-├── Remove -> Hex's copy, receipt, and manifest only; not the active model
+├── Remove -> Opcode's copy, receipt, and manifest only; not the active model
 ├── Changed (a copy replaced by a link or hard link to the same file reads as
 │   changed: its file ID and mtime moved) -> "Check again" rehashes the file:
 │   the recorded SHA-256 again -> new receipt, ready; else it stays changed.
@@ -66,25 +66,25 @@ Picker header -> "Use model file where it is…" beside "Add model file…" -> t
 ├── custom_models::add_in_place on a worker: the import's header check, one full
 │   SHA-256, receipt and manifest (with the file's path, no Hugging Face origin)
 │   in models/custom/; nothing copied, nothing written near the file
-├── The same file imported by copy before -> same ID, keeps its name; Hex's
+├── The same file imported by copy before -> same ID, keeps its name; Opcode's
 │   copy is removed
 ├── Card -> "Used where it is" · family · languages · the file's name; Use
 │   loads it from its path; later uses rehash only when size, mtime, or file ID
 │   change, and Check again accepts it when the contents still match
 ├── Another account changes or removes the file -> Changed or Missing, as above
-└── Forget -> Hex's receipt and record only; the file stays
+└── Forget -> Opcode's receipt and record only; the file stays
 ```
 
-Off, the picker has no such button and Hex copies every added file as before.
+Off, the picker has no such button and Opcode copies every added file as before.
 Shared folders and catalog models from a shared folder are not built.
 
-The local digest identifies the file Hex copied; it is not a publisher
+The local digest identifies the file Opcode copied; it is not a publisher
 checksum. The selection, recent models, and keyboard-language mappings keep an
 import while it can't run (`models::validate_saved`), and a build that doesn't
 know `custom-…` keeps its default for that field without rewriting
-`settings.json` (#744). `hex model import <path> [--name N]`, `hex model rename
-<id> <name>`, `hex model repair <id>`, and `hex model remove <id>` (also `hex
-models …`) run in the CLI process; a running Hex lists the change at once (the
+`settings.json` (#744). `opcode model import <path> [--name N]`, `opcode model rename
+<id> <name>`, `opcode model repair <id>`, and `opcode model remove <id>` (also `opcode
+models …`) run in the CLI process; a running Opcode lists the change at once (the
 registry rereads `models/custom/` when its folder changes).
 
 ## Found On This Computer
@@ -101,41 +101,41 @@ Picker opens, or onboarding starts -> one scan (found_models::scan)   // setup.f
 │   -> that catalog model counts as downloaded; its card says "Found on this
 │   computer" and offers Use, never Download
 ├── Other compatible files -> "Found on this computer" at the top of the picker:
-│   name · Not tested by Hex · Q8_0/F16/F32 · owner/name@revision · languages,
+│   name · Not tested by Opcode · Q8_0/F16/F32 · owner/name@revision · languages,
 │   "It may be too big for this computer's GPU memory." when the tensor data
 │   plus a quarter exceeds the largest GPU transcribe.cpp reports, and
 │   "Compatible doesn't mean accurate: …"
 ├── Use -> full SHA-256 once (a catalog file against its pin; another file against
-│   its blob name), then prepared like any model. Receipts live with Hex:
+│   its blob name), then prepared like any model. Receipts live with Opcode:
 │   models/found/<model>.json for a catalog file, models/custom/ for another;
 │   later uses rehash only when size, mtime, or file ID change
 ├── A failed check or load -> "Model could not be used." with the reason; the
 │   selection and any recorded audio stay as they were
-└── Delete/Remove on a found file -> Forget: Hex's record goes, the file stays.
-    Hex never writes, moves, or deletes inside the cache. A forgotten catalog
+└── Delete/Remove on a found file -> Forget: Opcode's record goes, the file stays.
+    Opcode never writes, moves, or deletes inside the cache. A forgotten catalog
     file is noted in models/found/<model>.forgotten.json, so later scans no
     longer count it as downloaded and its row offers Download (#1366)
 ```
 
-`hex model list` scans too and shows each model's source: `download`, `hex`,
+`opcode model list` scans too and shows each model's source: `download`, `opcode`,
 `imported`, or `found: owner/name@abcdef1`; a compatible file not yet used is
-listed as `custom-<first 16 hex of its blob>` with `(not tested by Hex)`, and
-`hex model use <that id>` checks it in full and uses it in place. The local
+listed as `custom-<first 16 opcode of its blob>` with `(not tested by Opcode)`, and
+`opcode model use <that id>` checks it in full and uses it in place. The local
 API's `/models` and the SDK's `ModelInfo.source` carry the same field.
 
 ## Onboarding Choice
 
 ```ts
 Onboarding opens -> scan; its own download waits until it answers  // setup.found-choice
-├── Nothing compatible found -> Setting up Hex, unchanged: the recommended
+├── Nothing compatible found -> Setting up Opcode, unchanged: the recommended
 │   model downloads by itself, and the model step never shows
-└── Something found -> the first run's model step in place of Setting up Hex:
+└── Something found -> the first run's model step in place of Setting up Opcode:
     "Choose a speech model", one card of radio rows, no buttons inside
-    ├── Hex's recommended model first, selected, [Recommended] -> "731 MB
+    ├── Opcode's recommended model first, selected, [Recommended] -> "731 MB
     │   download", or "On this computer" when its exact file (same SHA-256) is
     │   in the cache (one row, never two)
     ├── Then each found file -> its name, "On this computer" (a catalog model)
-    │   or "On this computer · not tested by Hex"; no hashes, repositories,
+    │   or "On this computer · not tested by Opcode"; no hashes, repositories,
     │   revisions, or compression
     ├── Picking a row starts it: ours downloads ("Downloading… 42%" on the row)
     │   or, already here, is checked in place; a found file is used where it
@@ -153,9 +153,9 @@ Onboarding opens -> scan; its own download waits until it answers  // setup.foun
 Observed on apollo (Linux, Radeon 8060S over Vulkan, 2026-11-01) with an
 isolated data folder and a fake hub holding Parakeet v3's pinned blob and
 Parakeet primeLine Q8_0 (`handy-computer/parakeet-primeline-gguf@cf04224`):
-`hex model list` showed v3 as `found: …@85ac09e` and primeLine as
-`custom-dbd1ec2985aea64d (not tested by Hex)`; `hex model use` loaded each in
-place, `hex model transcribe` transcribed with both, `hex model remove` forgot
+`opcode model list` showed v3 as `found: …@85ac09e` and primeLine as
+`custom-dbd1ec2985aea64d (not tested by Opcode)`; `opcode model use` loaded each in
+place, `opcode model transcribe` transcribed with both, `opcode model remove` forgot
 primeLine and the cache's files, sizes, and times were unchanged. The
 onboarding and picker scenes rendered from that real scan. Earlier, the same
 primeLine file imported by copy transcribed the FLEURS German and English

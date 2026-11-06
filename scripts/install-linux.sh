@@ -14,9 +14,9 @@ fi
 
 target_dir=${CARGO_TARGET_DIR:-"$root/target"}
 cargo build --locked --release --manifest-path "$root/Cargo.toml"
-version=$("$target_dir/release/hex" --version | awk 'NF { value=$NF } END { print value }')
+version=$("$target_dir/release/opcode" --version | awk 'NF { value=$NF } END { print value }')
 
-HEX_INSTALL_SOURCE=1 \
-HEX_INSTALL_ARTIFACT="$target_dir/release/hex" \
-HEX_INSTALL_VERSION="$version" \
+OPCODE_INSTALL_SOURCE=1 \
+OPCODE_INSTALL_ARTIFACT="$target_dir/release/opcode" \
+OPCODE_INSTALL_VERSION="$version" \
   exec "$installer"

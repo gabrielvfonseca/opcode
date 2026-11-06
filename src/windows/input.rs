@@ -172,15 +172,15 @@ impl WindowsHotkey {
     }
 
     /// The chord holds Alt or Windows, whose release Chrome reads as a menu
-    /// tap once Hex swallows the chord's key, so that release is masked.
+    /// tap once Opcode swallows the chord's key, so that release is masked.
     fn holds_menu_modifier(&self) -> bool {
         self.alt.is_some() || self.windows.is_some()
     }
 }
 
-/// `dwExtraInfo` on every event Hex injects, so its own hook skips them: a
+/// `dwExtraInfo` on every event Opcode injects, so its own hook skips them: a
 /// paste's Ctrl must never press a Ctrl-alone shortcut.
-pub(crate) const HEX_INJECTED: usize = 0x4845_5821;
+pub(crate) const OPCODE_INJECTED: usize = 0x4845_5821;
 
 /// Unassigned, so pressing it between an Alt or Windows press and release
 /// keeps the menu bar and Start closed, as AutoHotkey and PowerToys do.
@@ -257,10 +257,10 @@ struct CallbackState {
     annotate_trigger_down: bool,
     /// Escape went down to stop Annotate's drawing; its release is ours too.
     drawing_escape_down: bool,
-    /// Toggle mode's cancel shortcut, Hex's only while a recording runs.
+    /// Toggle mode's cancel shortcut, Opcode's only while a recording runs.
     cancel: Option<WindowsHotkey>,
     cancel_vk: Option<u32>,
-    /// The cancel key went down while Hex held it; its release is ours too.
+    /// The cancel key went down while Opcode held it; its release is ours too.
     cancel_down: bool,
     modifiers: ModifierState,
     side_down: SideDownTimes,
@@ -374,7 +374,7 @@ impl CaptureState {
         recording.then_some(HotkeyAction::Cancel)
     }
 
-    /// Whether Toggle's cancel shortcut is Hex's now: only while a toggled
+    /// Whether Toggle's cancel shortcut is Opcode's now: only while a toggled
     /// capture records, so the key stays with every app otherwise.
     fn wants_cancel(&self) -> bool {
         self.toggle && (self.active || self.locked)
@@ -657,7 +657,7 @@ unsafe extern "system" fn keyboard_hook(code: i32, wparam: WPARAM, lparam: LPARA
         return unsafe { CallNextHookEx(ptr::null_mut(), code, wparam, lparam) };
     }
     let event = unsafe { &*(lparam as *const KBDLLHOOKSTRUCT) };
-    if event.dwExtraInfo == HEX_INJECTED {
+    if event.dwExtraInfo == OPCODE_INJECTED {
         return unsafe { CallNextHookEx(ptr::null_mut(), code, wparam, lparam) };
     }
     let vk = track_numpad(event, is_down).unwrap_or(event.vkCode);
@@ -694,7 +694,7 @@ fn replay_masked_release(release: &KBDLLHOOKSTRUCT) -> bool {
                 wScan: scan,
                 dwFlags: flags,
                 time: 0,
-                dwExtraInfo: HEX_INJECTED,
+                dwExtraInfo: OPCODE_INJECTED,
             },
         },
     };
@@ -904,7 +904,7 @@ fn process_button(vk: u32, is_down: bool, time: u32) -> Disposition {
                 }
                 return Disposition::Suppress;
             }
-            // Toggle's cancel key discards the recording. Hex takes it only
+            // Toggle's cancel key discards the recording. Opcode takes it only
             // while a toggled capture records, and keeps its repeats and
             // release, so the app in front never acts on it.
             let cancel_event = state.cancel_vk == Some(vk)
@@ -1951,7 +1951,7 @@ mod tests {
         assert!(!state.active && !state.locked);
     }
 
-    /// Toggle's cancel key is Hex's only while a toggled capture records:
+    /// Toggle's cancel key is Opcode's only while a toggled capture records:
     /// held or locked, never idle, and never in Hold mode.
     #[test]
     fn cancel_is_wanted_only_while_a_toggled_capture_records() {

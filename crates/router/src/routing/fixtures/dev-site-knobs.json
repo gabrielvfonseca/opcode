@@ -831,9 +831,9 @@
    },
    {
     "id": "ses_000000000023Fixture0000035",
-    "title": "HEX",
-    "directory": "/Users/example/code/open-source/hex",
-    "repo": "/Users/example/code/open-source/hex",
+    "title": "OPCODE",
+    "directory": "/Users/example/code/open-source/opcode",
+    "repo": "/Users/example/code/open-source/opcode",
     "updatedMs": 1792524934029,
     "viewedMs": 1792524934058
    },

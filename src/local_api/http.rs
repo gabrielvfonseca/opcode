@@ -263,12 +263,12 @@ pub(super) fn read_request_until(
         let (name, value) = line.split_once(':').ok_or(RequestReadError::Invalid)?;
         if name.eq_ignore_ascii_case("authorization") {
             authorization = Some(value.trim().to_owned());
-        } else if name.eq_ignore_ascii_case("x-hex-dictation-token") {
+        } else if name.eq_ignore_ascii_case("x-opcode-dictation-token") {
             if dictation_token.is_some() {
                 return Err(RequestReadError::Invalid);
             }
             dictation_token = Some(value.trim().to_owned());
-        } else if name.eq_ignore_ascii_case("x-hex-stream-token") {
+        } else if name.eq_ignore_ascii_case("x-opcode-stream-token") {
             if stream_token.is_some() {
                 return Err(RequestReadError::Invalid);
             }

@@ -62,7 +62,7 @@ def write(directory, name, text):
 
 
 def run_cli(lock, pins):
-    with tempfile.TemporaryDirectory(prefix="hex-nix-pins-") as directory:
+    with tempfile.TemporaryDirectory(prefix="opcode-nix-pins-") as directory:
         return subprocess.run(
             [
                 sys.executable,
@@ -129,7 +129,7 @@ class ParseGitSourceTest(unittest.TestCase):
 
 class ParseLockTest(unittest.TestCase):
     def parse(self, text):
-        with tempfile.TemporaryDirectory(prefix="hex-nix-pins-") as directory:
+        with tempfile.TemporaryDirectory(prefix="opcode-nix-pins-") as directory:
             return check.parse_lock(write(directory, "Cargo.lock", text))
 
     def test_every_source_form_and_dot_git_grouping(self):
@@ -196,7 +196,7 @@ class ParseLockTest(unittest.TestCase):
         lock = """version = 4
 
 [[package]]
-name = "hex"
+name = "opcode"
 version = "3.3.0"
 dependencies = []
 """
@@ -206,7 +206,7 @@ dependencies = []
         lock = f"""version = 4
 
 [[package]]
-name = "hex"
+name = "opcode"
 version = "3.3.0"
 dependencies = [
  "rune",
@@ -285,7 +285,7 @@ class CompareTest(unittest.TestCase):
 
 class ParsePinsTest(unittest.TestCase):
     def parse(self, text):
-        with tempfile.TemporaryDirectory(prefix="hex-nix-pins-") as directory:
+        with tempfile.TemporaryDirectory(prefix="opcode-nix-pins-") as directory:
             return check.parse_pins(write(directory, "package.nix", text))
 
     def test_accepts_a_valid_pin(self):

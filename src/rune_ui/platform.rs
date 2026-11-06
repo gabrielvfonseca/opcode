@@ -2,15 +2,15 @@
 //! and the requests they make of it.
 //!
 //! The panes never call macOS or Windows APIs. Permissions, the login item,
-//! the meetings store, and the Hex Microphone driver reach them as plain data
+//! the meetings store, and the Opcode Microphone driver reach them as plain data
 //! in [`PlatformState`], and every action they take goes out as a
 //! [`PlatformRequest`] through [`PlatformHost`]. Linux scenes and tests feed
 //! preview data and record the requests, so macOS and Windows surfaces render
 //! and are tested on Linux; a native host fills the same data on its own OS.
 
 use super::meetings::Meeting;
-use crate::audio::hex_microphone::{
-    DemoPlaybackTrack, DemoSnapshot, DemoSourceKind, HexMicrophoneStatus, TunedFilterConfig,
+use crate::audio::opcode_microphone::{
+    DemoPlaybackTrack, DemoSnapshot, DemoSourceKind, OpcodeMicrophoneStatus, TunedFilterConfig,
 };
 use crate::calendar::{CalendarAccess, CalendarInfo, CallProvider};
 use crate::desktop::login_item::{LoginItemResult, LoginItemStatus};
@@ -46,14 +46,14 @@ pub(super) struct Capabilities {
     pub(super) terminal_paste: bool,
     /// The dictation shortcut can pass through to other apps (Windows).
     pub(super) share_shortcut: bool,
-    /// Hex Microphone is a driver to install (macOS). Elsewhere with the
-    /// Voice Filter, Hex creates it while the filter is on (a PipeWire
+    /// Opcode Microphone is a driver to install (macOS). Elsewhere with the
+    /// Voice Filter, Opcode creates it while the filter is on (a PipeWire
     /// virtual source on Linux).
-    pub(super) hex_microphone: bool,
+    pub(super) opcode_microphone: bool,
     /// The window sees dictation events, so the tour can end with a
     /// practice dictation into its own field.
     pub(super) practice_dictation: bool,
-    /// The Voice Filter pane: Hex Microphone, its tuning, and the try-it
+    /// The Voice Filter pane: Opcode Microphone, its tuning, and the try-it
     /// demo (macOS and Linux, in Labs).
     pub(super) fun: bool,
     /// Modifier-only shortcuts can require the left or right key (macOS,
@@ -75,7 +75,7 @@ impl Capabilities {
         listener_control: true,
         terminal_paste: true,
         share_shortcut: false,
-        hex_microphone: false,
+        opcode_microphone: false,
         practice_dictation: true,
         fun: true,
         modifier_sides: false,
@@ -92,7 +92,7 @@ impl Capabilities {
         listener_control: false,
         terminal_paste: false,
         share_shortcut: false,
-        hex_microphone: true,
+        opcode_microphone: true,
         practice_dictation: true,
         fun: true,
         modifier_sides: true,
@@ -109,7 +109,7 @@ impl Capabilities {
         listener_control: true,
         terminal_paste: false,
         share_shortcut: true,
-        hex_microphone: false,
+        opcode_microphone: false,
         practice_dictation: true,
         fun: false,
         modifier_sides: true,
@@ -221,17 +221,17 @@ impl NotesAvailability {
 }
 
 /// What the Scrawl pane shows (the `capture` experiment).
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(super) struct ScrawlView {
     /// Screen Recording, which a capture needs to record the screen.
     pub(super) screen_recording: bool,
-    /// Screen Recording is on in System Settings, but this Hex can't use it
+    /// Screen Recording is on in System Settings, but this Opcode can't use it
     /// until it restarts.
     pub(super) screen_needs_restart: bool,
     /// Scrawl's own app runs, so it owns the capture shortcut.
     pub(super) scrawl_running: bool,
-    /// Use Hex for annotations was pressed and Scrawl has not quit yet.
+    /// Use Opcode for annotations was pressed and Scrawl has not quit yet.
     pub(super) quitting_scrawl: bool,
     /// A captures folder that could not be revealed or chosen.
     pub(super) folder_error: Option<String>,
@@ -239,7 +239,7 @@ pub(super) struct ScrawlView {
     pub(super) enable_error: Option<String>,
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 impl ScrawlView {
     /// Screen Recording allowed and Scrawl not running.
     pub(super) fn preview() -> Self {
@@ -251,13 +251,13 @@ impl ScrawlView {
 }
 
 /// What the Scrawl pane asks the host for.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum ScrawlRequest {
     /// Read Screen Recording and Scrawl's app again now (the pane opened
     /// or the window became key), not at the next once-a-second refresh.
     Refresh,
-    /// Use Hex for annotations: ask Scrawl's own app to quit. Nothing else
+    /// Use Opcode for annotations: ask Scrawl's own app to quit. Nothing else
     /// ever quits it.
     QuitScrawl,
     RevealFolder,
@@ -279,7 +279,7 @@ pub(super) struct PlatformState {
     /// so their row offers `"Still grey? Fix it"`.
     pub(super) permissions_stale: Vec<PermissionKind>,
     /// Untrusted permissions whose row is visible right now, so the native
-    /// host clears retired Hex bundle IDs' stale TCC rows once in the
+    /// host clears retired Opcode bundle IDs' stale TCC rows once in the
     /// background.
     pub(super) permissions_shown: Vec<PermissionKind>,
     /// Screen & System Audio Recording, for meetings.
@@ -292,15 +292,15 @@ pub(super) struct PlatformState {
     /// the login item, so the switch moves at once. Memory only: macOS's
     /// answer replaces it.
     pub(super) login_item_requested: Option<bool>,
-    pub(super) hex_microphone: Option<HexMicrophoneStatus>,
+    pub(super) opcode_microphone: Option<OpcodeMicrophoneStatus>,
     pub(super) notes: NotesAvailability,
     /// A meeting folder that could not be revealed or chosen.
     pub(super) meeting_folder_error: Option<String>,
     /// The Calendar card's access, calendars, and next meetings.
     pub(super) calendar: CalendarView,
-    /// The tour's relaunch failed; the person must reopen Hex.
+    /// The tour's relaunch failed; the person must reopen Opcode.
     pub(super) relaunch_failed: bool,
-    /// The desktop's paste permission where Hex pastes through the
+    /// The desktop's paste permission where Opcode pastes through the
     /// RemoteDesktop portal (GNOME and KDE on Wayland); `None` elsewhere.
     pub(super) paste: Option<super::paste_access::PasteAccess>,
     /// A Wayland desktop without data-control (GNOME): a paste can't put
@@ -315,10 +315,10 @@ pub(super) struct PlatformState {
     /// macOS 27 lists Accessibility as "Device Control and Data Access"
     /// (`permission_guide::list_name`); the permission rows use that name.
     pub(super) accessibility_renamed: bool,
-    /// The Hex Microphone's live filter tuning
-    /// (`hex_microphone::current_tuned_config`).
+    /// The Opcode Microphone's live filter tuning
+    /// (`opcode_microphone::current_tuned_config`).
     pub(super) tuning: TunedFilterConfig,
-    /// The Voice Filter pane's try-it demo (`hex_microphone::demo_snapshot`); `None`
+    /// The Voice Filter pane's try-it demo (`opcode_microphone::demo_snapshot`); `None`
     /// until the host has one. Refresh it every frame while it records or
     /// plays (`DemoSnapshot::is_recording`, `playing`).
     pub(super) demo: Option<DemoSnapshot>,
@@ -330,7 +330,7 @@ pub(super) struct PlatformState {
     pub(super) activity_log: Option<std::path::PathBuf>,
     /// The Scrawl pane, while the `capture` experiment is on; `None` hides
     /// it.
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     pub(super) scrawl: Option<ScrawlView>,
 }
 
@@ -351,7 +351,7 @@ pub(super) struct HudLab {
     pub(super) demo: HudDemo,
 }
 
-/// The Voice Filter pane's demo controls (`hex_microphone`'s demo functions).
+/// The Voice Filter pane's demo controls (`opcode_microphone`'s demo functions).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DemoRequest {
     /// `start_demo_recording` (five seconds of the microphone).
@@ -376,7 +376,7 @@ impl PlatformState {
             login_item_checking: false,
             login_item_error: None,
             login_item_requested: None,
-            hex_microphone: None,
+            opcode_microphone: None,
             notes: NotesAvailability::Available,
             meeting_folder_error: None,
             calendar: CalendarView::default(),
@@ -390,7 +390,7 @@ impl PlatformState {
             demo: None,
             hud: HudLab::default(),
             activity_log: None,
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             scrawl: None,
         }
     }
@@ -527,8 +527,8 @@ impl PlatformState {
         if caps.fun {
             // Fixed, so the scenes' goldens don't change with the crate version.
             let version = "0.0.0".to_string();
-            let driver = caps.hex_microphone;
-            state.hex_microphone = Some(HexMicrophoneStatus {
+            let driver = caps.opcode_microphone;
+            state.opcode_microphone = Some(OpcodeMicrophoneStatus {
                 driver_bundle_installed: driver,
                 driver_loaded: true,
                 installed_version: driver.then(|| version.clone()),
@@ -540,7 +540,7 @@ impl PlatformState {
                 } else {
                     Vec::new()
                 },
-                action_state: crate::audio::hex_microphone::DriverActionState::Idle,
+                action_state: crate::audio::opcode_microphone::DriverActionState::Idle,
             });
             state.demo = Some(super::fun::preview_demo(false, None));
         }
@@ -569,17 +569,17 @@ pub(super) enum PlatformRequest {
     SystemAudio,
     SetLaunchAtLogin(bool),
     OpenLoginItemSettings,
-    InstallHexMicrophone,
-    UninstallHexMicrophone,
+    InstallOpcodeMicrophone,
+    UninstallOpcodeMicrophone,
     Meeting(MeetingRequest),
     Calendar(CalendarRequest),
-    /// Quit and reopen Hex so macOS applies new permissions.
+    /// Quit and reopen Opcode so macOS applies new permissions.
     Relaunch,
-    /// Apply this tuning to the live Hex Microphone filter
-    /// (`hex_microphone::update_tuned_config`). The pane has already saved
+    /// Apply this tuning to the live Opcode Microphone filter
+    /// (`opcode_microphone::update_tuned_config`). The pane has already saved
     /// the mode, comfort noise, and strength in `settings.json`.
     SetTuning(TunedFilterConfig),
-    HexMicrophoneDemo(DemoRequest),
+    OpcodeMicrophoneDemo(DemoRequest),
     /// Show this on the dictation indicator: `DictationIndicatorEvent::
     /// ConfigureDotScope` with the tuning, then `Reset` and the
     /// demonstrated state.
@@ -592,19 +592,19 @@ pub(super) enum PlatformRequest {
     /// Save Dot scope's tuning as `dot-scope.json`, which the HUD loads at
     /// launch.
     SaveDotScope(crate::rune_hud::dot_scope::Tuning),
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     Scrawl(ScrawlRequest),
 }
 
-/// Performs a Voice Filter request on the Hex Microphone in this process.
+/// Performs a Voice Filter request on the Opcode Microphone in this process.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(super) fn voice_filter_request(request: PlatformRequest) {
-    use crate::audio::hex_microphone as mic;
+    use crate::audio::opcode_microphone as mic;
     match request {
-        PlatformRequest::InstallHexMicrophone => mic::install_driver_async(),
-        PlatformRequest::UninstallHexMicrophone => mic::uninstall_driver_async(),
+        PlatformRequest::InstallOpcodeMicrophone => mic::install_driver_async(),
+        PlatformRequest::UninstallOpcodeMicrophone => mic::uninstall_driver_async(),
         PlatformRequest::SetTuning(tuning) => mic::update_tuned_config(|current| *current = tuning),
-        PlatformRequest::HexMicrophoneDemo(request) => match request {
+        PlatformRequest::OpcodeMicrophoneDemo(request) => match request {
             DemoRequest::Record => mic::start_demo_recording(),
             DemoRequest::StopRecording => mic::stop_demo_recording(),
             DemoRequest::SelectSource(source) => mic::select_demo_source(source),
@@ -615,15 +615,15 @@ pub(super) fn voice_filter_request(request: PlatformRequest) {
     }
 }
 
-/// The Voice Filter pane's state from the Hex Microphone in this process:
+/// The Voice Filter pane's state from the Opcode Microphone in this process:
 /// the demo every frame while it records or plays, and, when `refresh`, the
-/// tuning and Hex Microphone's status. Nothing decodes or renders while the
+/// tuning and Opcode Microphone's status. Nothing decodes or renders while the
 /// Voice Filter is off.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub(super) fn poll_voice_filter(state: &mut PlatformState, refresh: bool) -> bool {
-    use crate::audio::hex_microphone as mic;
+    use crate::audio::opcode_microphone as mic;
     let mut changed = false;
-    let on = crate::app_settings::hex_microphone_enabled();
+    let on = crate::app_settings::opcode_microphone_enabled();
     if on
         && (state.demo.is_none()
             || mic::demo_is_busy()
@@ -645,8 +645,8 @@ pub(super) fn poll_voice_filter(state: &mut PlatformState, refresh: bool) -> boo
         // A stable build has no filter, but an installed driver still needs
         // its Uninstall.
         let status = (on || mic::driver_bundle_installed()).then(mic::status);
-        if state.hex_microphone != status {
-            state.hex_microphone = status;
+        if state.opcode_microphone != status {
+            state.opcode_microphone = status;
             changed = true;
         }
     }
@@ -723,7 +723,7 @@ impl PlatformHost {
     pub(super) fn poll(&mut self, state: &mut PlatformState) -> bool {
         match self {
             Self::Native(host) => host.poll(state),
-            // Hex Microphone's status is a few atomics on Linux, so it
+            // Opcode Microphone's status is a few atomics on Linux, so it
             // refreshes every frame.
             #[cfg(target_os = "linux")]
             Self::Local(_) => scrawl_poll(state) | poll_voice_filter(state, true),
@@ -833,7 +833,7 @@ const DIFFERENCES: &[(&str, Difference)] = &[
         Difference::Pending("a macOS event tap could pass the shortcut through too"),
     ),
     (
-        "hex_microphone",
+        "opcode_microphone",
         Difference::OsPattern(
             "only macOS installs a driver; Linux creates a PipeWire source while the filter is on",
         ),
@@ -862,7 +862,7 @@ impl Capabilities {
             listener_control,
             terminal_paste,
             share_shortcut,
-            hex_microphone,
+            opcode_microphone,
             practice_dictation,
             fun,
             modifier_sides,
@@ -877,7 +877,7 @@ impl Capabilities {
             ("listener_control", listener_control),
             ("terminal_paste", terminal_paste),
             ("share_shortcut", share_shortcut),
-            ("hex_microphone", hex_microphone),
+            ("opcode_microphone", opcode_microphone),
             ("practice_dictation", practice_dictation),
             ("fun", fun),
             ("modifier_sides", modifier_sides),

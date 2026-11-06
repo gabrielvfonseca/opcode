@@ -2,14 +2,14 @@
 
 Researched 2026-10-22. Builds on `model-watch.md` (parakeet-ultra, Moonshine,
 Nemotron are not re-argued here). Scope: English, the 25 Parakeet v3 languages
-in `PARAKEET_V3_LANGUAGES`, and the two other European entries Hex lists
+in `PARAKEET_V3_LANGUAGES`, and the two other European entries Opcode lists
 (Turkish `tr`, Macedonian `mk`, which fall into the Qwen branch today).
 
 ## Verdict
 
 ```ts
 English
-├── Recommended: keep Parakeet Unified. It is the only Hex English model that streams,
+├── Recommended: keep Parakeet Unified. It is the only Opcode English model that streams,
 │   and its offline accuracy is at least on par with ultra (FLEURS en 3.99 vs 4.26)
 ├── Most accurate: Cohere's lead is real only on LibriSpeech clean (1.27 vs 1.60/1.80/1.91)
 │   and the Open ASR leaderboard (6.26 vs 6.51 v3); on FLEURS en it is the worst of the set (5.08)
@@ -49,7 +49,7 @@ available, but:
   (2026-10-05). The runs should be comparable, but I did not rerun them.
 - Greek and Maltese scores depend heavily on text normalization; Whisper's very
   high Maltese error (70.92%) probably includes script and tokenization issues,
-  but it is what Hex users would see.
+  but it is what Opcode users would see.
 - Moondream's own card claims 1.41% on LibriSpeech clean for ultra
   (Open ASR normalizer); transcribe.cpp measures 1.80% with kestrel. The
   FLEURS table is transcribe.cpp's, not vendor-only. The 1.41% is vendor-only.
@@ -65,19 +65,19 @@ Parakeet v3              CC-BY-4.0      740 MB    182x                  25 EU   
 parakeet-ultra           CC-BY-4.0      740 MB    207x                  same 25             none             no        0.4.0 (see below)
 Canary 1B v2             CC-BY-4.0      1.14 GB   105x                  same 25             --prefix only    no        0.2.4 (arch/canary present)
 Canary 1B flash          CC-BY-4.0      -         118x                  en de es fr         prefix           no        0.2.4
-Whisper large-v3-turbo   MIT            886 MB    36x                   ~100 (list below)   vocabulary+prompt no       0.2.4 (Hex ships it)
-Cohere Transcribe        Apache-2.0     2.41 GB   77x                   14 (8 are EU)       none             no        0.2.4 (Hex ships it)
-Qwen3-ASR 1.7B           Apache-2.0     ~2 GB     45x                   30                  context (unverified in Hex)  no  0.2.4 (card exists)
-Qwen3-ASR 0.6B           Apache-2.0     850 MB    75x                   30                  none in Hex       no        0.2.4
+Whisper large-v3-turbo   MIT            886 MB    36x                   ~100 (list below)   vocabulary+prompt no       0.2.4 (Opcode ships it)
+Cohere Transcribe        Apache-2.0     2.41 GB   77x                   14 (8 are EU)       none             no        0.2.4 (Opcode ships it)
+Qwen3-ASR 1.7B           Apache-2.0     ~2 GB     45x                   30                  context (unverified in Opcode)  no  0.2.4 (card exists)
+Qwen3-ASR 0.6B           Apache-2.0     850 MB    75x                   30                  none in Opcode       no        0.2.4
 Voxtral Mini 3B 2507     Apache-2.0     large     13x                   7 EU                 -                no        0.2.4 (arch/voxtral)
 Granite Speech 4.1 2B    Apache-2.0     -         76x                   en de es fr pt      keyword biasing (upstream)  no   newer than 0.2.4
 Nemotron 3.5 streaming   OpenMDW-1.1    751 MB    144x                  32                  prompt           yes       0.2.4
 ```
 
-\* jfk 11 s clip, transcribe.cpp cards. Whisper's 36x is the card's number; Hex's
-catalog says ~19x, so Hex's own measurement is more conservative.
+\* jfk 11 s clip, transcribe.cpp cards. Whisper's 36x is the card's number; Opcode's
+catalog says ~19x, so Opcode's own measurement is more conservative.
 
-- **parakeet-ultra needs a newer crate than Hex's pin.** The port landed in
+- **parakeet-ultra needs a newer crate than Opcode's pin.** The port landed in
   transcribe.cpp commit `37273409` (2026-10-05), after v0.3.1 (10-04), so
   v0.4.0 (10-12) is the first release that can contain it; 0.2.4's `parakeet`
   arch has no voice-activity segmentation. A 0.4.0+ bump is required for the
@@ -91,7 +91,7 @@ catalog says ~19x, so Hex's own measurement is more conservative.
   but is far worse than ultra (de 10.33 vs 4.58, fr 10.78 vs 4.66, English
   regressed on the leaderboard to 10.51 vs 6.89). Voxtral Realtime is 4.7 GB
   at 6-7x realtime. Multilingual dictation stays non-streaming.
-- **Canary needs an explicit language.** Hex's per-language picker supplies one;
+- **Canary needs an explicit language.** Opcode's per-language picker supplies one;
   it must not be offered under Auto.
 - **No GGUF for newer candidates.** Granite Speech 5.0 2B (leaderboard #2,
   5.06) and TurboCTC multilingual revisions are not in transcribe.cpp;
@@ -103,7 +103,7 @@ catalog says ~19x, so Hex's own measurement is more conservative.
                        FLEURS en   LS clean   Open ASR English avg (current)
 Qwen3-ASR 1.7B           3.23        -          5.75
 Voxtral Mini 3B          3.89        -          -
-Parakeet Unified EN      3.99        1.60 (Hex) -   (8-set offline 5.91 older board)
+Parakeet Unified EN      3.99        1.60 (Opcode) -   (8-set offline 5.91 older board)
 Granite 4.1 2B           4.14        -          -
 parakeet-ultra           4.26        1.80       -   (older board 5.32 vs v3 6.32, from model-watch)
 Whisper turbo            4.38        -          8.39
@@ -114,21 +114,21 @@ Cohere Transcribe        5.08        1.27       6.26
 
 Current: Recommended Parakeet Unified, Most accurate Cohere, Hints Whisper.
 Proposed: Recommended Unified (keep), Most accurate Qwen3-ASR 1.7B (medium
-confidence) or keep Cohere until Hex's own English corpus is run, Hints Whisper
+confidence) or keep Cohere until Opcode's own English corpus is run, Hints Whisper
 (keep). Fastest is already Unified/ultra territory; no separate row is needed.
 
 - Unified vs ultra: ultra is likely a bit better offline on mixed data (older
   eight-set average), but FLEURS en favors Unified and only Unified streams.
-  Hex's capture pipeline is built around streaming with a whole-clip fallback
+  Opcode's capture pipeline is built around streaming with a whole-clip fallback
   (AGENTS.md), so switching English to an offline-only model costs latency for
   no demonstrated accuracy gain. Keep Unified. Offer ultra only as an optional
   offline alternative if English users want its long-audio segmentation.
 - Canary v2 and Voxtral 3B do not beat Unified on English. Not proposed.
 - Qwen3-ASR 1.7B: the best English FLEURS and best current-leaderboard open
-  model Hex could run (Apache-2.0, 45x on M4 Max). It costs a ~2 GB download and
+  model Opcode could run (Apache-2.0, 45x on M4 Max). It costs a ~2 GB download and
   no streaming, the same trade Cohere already makes. Confidence medium: the
   FLEURS and leaderboard numbers point the same way, but no one has run it on
-  Hex's dictation audio, and Hex marks Qwen as having no recognition hints.
+  Opcode's dictation audio, and Opcode marks Qwen as having no recognition hints.
 - Cohere's "most accurate" label rests on LibriSpeech clean (read audiobooks)
   and a 0.25-point leaderboard edge over v3; its FLEURS en is the worst here.
   Medium-low confidence in keeping that label unchanged.
@@ -188,11 +188,11 @@ Reading the table:
   language requirement, no timestamps, and no vocabulary biasing.
 - **Whisper turbo** wins or ties on fi, nl, pl, sv, tr, mk and is the only
   hint-capable model, but it is the slowest (36x) and collapses on mt (70.92),
-  lv, lt, sl, et. For those languages Hex should not advertise it as a general
+  lv, lt, sl, et. For those languages Opcode should not advertise it as a general
   option; the Recognition hints row is a trade, not a recommendation.
 - **Qwen3-ASR 0.6B is poor outside the big languages** (cs 44.50, fi 46.49,
   hu 56.24); it should not be Recommended for any European language.
-- **Cohere** covers de es fr it nl pl pt el in Hex, but only wins on Greek.
+- **Cohere** covers de es fr it nl pl pt el in Opcode, but only wins on Greek.
   Its FLEURS (de 5.06, fr 5.23, es 3.97) is behind ultra.
 
 ## What to change in `choices_for_runtime`
@@ -205,7 +205,7 @@ Reading the table:
 3. Route `el` away from Parakeet: Cohere Recommended (add `el` to its branch
    before the Parakeet match), Whisper for hints.
 4. Route `tr` and `mk` to Whisper turbo as Recommended instead of Qwen 0.6B.
-5. English: keep Unified; evaluate Qwen3-ASR 1.7B against Cohere on Hex's own
+5. English: keep Unified; evaluate Qwen3-ASR 1.7B against Cohere on Opcode's own
    English clips before changing the Most accurate label.
 
 ## Not measured
@@ -216,7 +216,7 @@ Reading the table:
   `benchmark-transcription` corpus per language for the changed rows only.
 - Parakeet ultra on 0.2.4 was not tried; the 0.4.0 requirement is inferred from
   dates and the absent VAD code in the 0.2.4 sources.
-- Qwen3-ASR 1.7B Q8 size and Canary v2's behavior under Hex's language-hint
+- Qwen3-ASR 1.7B Q8 size and Canary v2's behavior under Opcode's language-hint
   plumbing need a check before adding.
 
 ## Sources
@@ -228,7 +228,7 @@ Reading the table:
   `nemotron-3.5-asr-streaming-0.6b`, `orukeet`, `parakeet-primeline`;
   releases v0.2.4 (2026-09-25), v0.3.1 (10-04), v0.4.0 (10-12), v0.4.1 (10-22);
   commit `37273409` "parakeet ultra" (2026-10-05).
-- Hex's pinned `transcribe-cpp-sys` 0.2.4 sources (`src/arch/`).
+- Opcode's pinned `transcribe-cpp-sys` 0.2.4 sources (`src/arch/`).
 - HF `hf-audio/open-asr-leaderboard-results` (`english_short_latest.csv`) and the
   `huggingface/open_asr_leaderboard` README (multilingual benchmark description).
 - `model-watch.md` for the English leaderboard rows and the ultra, Unified,

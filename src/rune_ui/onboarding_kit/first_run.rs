@@ -1,10 +1,10 @@
 //! The first-run onboarding flow (`t405`), featuring:
 //!
 //! - Flat, crisp Rune 2D UI (no embossed cards or shader starbursts).
-//! - Hex's real `Dot scope` phosphor dot-matrix HUD (`rune_hud.wgsl`) on
-//!   `"Setting up Hex"`, `"With Hex"`, and `"Your turn"`.
+//! - Opcode's real `Dot scope` phosphor dot-matrix HUD (`rune_hud.wgsl`) on
+//!   `"Setting up Opcode"`, `"With Opcode"`, and `"Your turn"`.
 //! - Live interactive `"Your turn"` in desktop windows: pauses with a focused
-//!   [`rune_kit::TextArea`] so holding `⌥` and speaking into the running Hex
+//!   [`rune_kit::TextArea`] so holding `⌥` and speaking into the running Opcode
 //!   listener pastes real dictated words right into the card.
 //! - Calm permission grants and the escaping Accessibility panel (`permissions`).
 //! - Auditionable typing key-sound candidates and `#292` `feedback` tones (`sfx`).
@@ -22,7 +22,7 @@ use super::field_text::Field;
 use super::fixture::{ANSWER_TRY, Download};
 use super::flight::{Flight, caret_x, ember_tone, flicker, flying, typeset};
 use super::flows::continue_button;
-use super::hex_meter::hex_meter;
+use super::opcode_meter::opcode_meter;
 use super::hud_stage::{flow_box, frame_slot, voice_or_idle_slot};
 use super::landing::{LEAD, arrives, keys, ready, title_font};
 use super::live::{Live, ModelStep};
@@ -127,8 +127,8 @@ fn skip(p: Paint, s: &Onboard) -> Option<El> {
     })
 }
 
-/// Hex's shortcut didn't start after setup and Hex won't relaunch itself
-/// again: one line at the top with Reopen Hex.
+/// Opcode's shortcut didn't start after setup and Opcode won't relaunch itself
+/// again: one line at the top with Reopen Opcode.
 fn reopen(p: Paint, s: &Onboard) -> Option<El> {
     s.live.as_ref().filter(|live| live.reopen).map(|_| {
         row()
@@ -139,17 +139,17 @@ fn reopen(p: Paint, s: &Onboard) -> Option<El> {
             .center()
             .transition(arrives())
             .child(
-                text(tr("Hex's shortcut didn't start."))
+                text(tr("Opcode's shortcut didn't start."))
                     .key("why")
                     .font(LEAD)
                     .color(p.muted()),
             )
             .child(
-                Button::new(tr("Reopen Hex"))
+                Button::new(tr("Reopen Opcode"))
                     .variant(ButtonVariant::Neutral)
                     .on_press(live::reopen)
                     .build_push(p.k)
-                    .key("reopen-hex"),
+                    .key("reopen-opcode"),
             )
     })
 }
@@ -182,7 +182,7 @@ fn back(p: Paint, s: &Onboard) -> Option<El> {
     })
 }
 
-/// The model step: the models found on this computer, Hex's recommended
+/// The model step: the models found on this computer, Opcode's recommended
 /// one first and selected. A pick starts at once; Continue moves on once it
 /// is under way.
 fn models_page(p: Paint, s: &Onboard, live: &Live) -> El {
@@ -202,7 +202,7 @@ fn models_page(p: Paint, s: &Onboard, live: &Live) -> El {
             s,
             "models-head",
             tr("Choose a speech model"),
-            lead(p, tr("Hex found speech models already on this computer.")),
+            lead(p, tr("Opcode found speech models already on this computer.")),
         ))
         .child(s.motion.staggered(list, 1.0, 8.0))
         .child(action(continue_model_button(p)))
@@ -293,11 +293,11 @@ fn ready_page(p: Paint, s: &Onboard) -> El {
                             .key("try-again"),
                     )
                     .child(
-                        Button::new(tr("Start using Hex"))
+                        Button::new(tr("Start using Opcode"))
                             .variant(ButtonVariant::Contrast)
                             .on_press(live::finish)
                             .build_push(p.k)
-                            .key("start-using-hex")
+                            .key("start-using-opcode")
                             .default_button(),
                     ),
             );
@@ -383,7 +383,7 @@ fn download_page(p: Paint, s: &Onboard, waiting: bool) -> El {
             s,
             "waiting-head",
             tr("Almost ready"),
-            lead(p, tr("Finishing the speech model so Hex can hear you.")),
+            lead(p, tr("Finishing the speech model so Opcode can hear you.")),
         )
     } else {
         let subtitle = row()
@@ -407,7 +407,7 @@ fn download_page(p: Paint, s: &Onboard, waiting: bool) -> El {
                     .font(LEAD)
                     .color(p.muted()),
             );
-        heading(p, s, "download-head", tr("Setting up Hex"), subtitle)
+        heading(p, s, "download-head", tr("Setting up Opcode"), subtitle)
     };
 
     let pct = (d.fraction() * 100.0).round() as u32;
@@ -432,7 +432,7 @@ fn download_page(p: Paint, s: &Onboard, waiting: bool) -> El {
         .matched(CAPSULE)
         .motion(FLY)
         .width_leads()
-        .child(hex_meter(p, "meter", 18.0, d.fraction(), s.closed))
+        .child(opcode_meter(p, "meter", 18.0, d.fraction(), s.closed))
         .child(status_inner);
     // "Almost ready" receives the capsule back from the top bar, so it
     // arrives by that flight rather than a staggered entrance.
@@ -611,7 +611,7 @@ fn try_page(p: Paint, s: &Onboard) -> El {
             p,
             s,
             "try-heard",
-            tr("That's Hex"),
+            tr("That's Opcode"),
             lead(p, tr("It types wherever your cursor is, in any app.")),
         ),
         _ => heading(
@@ -706,7 +706,7 @@ fn shortcut_capsule(p: Paint, caps: &[String], down: bool, cycles: bool) -> El {
 }
 
 /// Live interactive `"Your turn"` stage: real `Dot scope` HUD above a focused
-/// [`TextArea`] that receives real dictated pastes from the running Hex app (or
+/// [`TextArea`] that receives real dictated pastes from the running Opcode app (or
 /// direct typing).
 fn interactive_try_stage(p: Paint, s: &Onboard) -> El {
     let hud_el = if let Some(frame) = s.hud.frame() {

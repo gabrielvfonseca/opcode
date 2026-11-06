@@ -5,14 +5,14 @@ fn main() {
     check_windows_split();
     build_version();
     test_build_commit();
-    // `hex_capture`: the `capture` experiment's code, in every macOS, Linux,
+    // `opcode_capture`: the `capture` experiment's code, in every macOS, Linux,
     // and Windows build (`scrawl-capture` is their dependency).
-    println!("cargo::rustc-check-cfg=cfg(hex_capture)");
+    println!("cargo::rustc-check-cfg=cfg(opcode_capture)");
     if matches!(
         std::env::var("CARGO_CFG_TARGET_OS").as_deref(),
         Ok("macos" | "linux" | "windows")
     ) {
-        println!("cargo::rustc-cfg=hex_capture");
+        println!("cargo::rustc-cfg=opcode_capture");
     }
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("macos") {
         if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("linux") {
@@ -26,7 +26,7 @@ fn main() {
             // transcribe-cpp's Vulkan backend links the vulkan-1 import
             // library by name without its search path. The DLL itself ships
             // with the GPU driver, so it is delay-loaded: a missing or
-            // Vulkan 1.0 loader must not stop Hex at launch (#1240;
+            // Vulkan 1.0 loader must not stop Opcode at launch (#1240;
             // `windows::vulkan` keeps ggml off it then).
             println!("cargo:rerun-if-env-changed=VULKAN_SDK");
             if std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("x86_64") {
@@ -50,19 +50,19 @@ fn main() {
         .expect("xcode-select is required to link ScreenCaptureKit");
     assert!(output.status.success(), "xcode-select -p failed");
     let developer_dir = String::from_utf8(output.stdout).expect("Xcode path must be UTF-8");
-    compile_swift_bridge("apple_speech", "HEXAppleSpeechBridge", &[]);
+    compile_swift_bridge("apple_speech", "OPCODEAppleSpeechBridge", &[]);
     println!("cargo:rustc-link-lib=framework=AVFAudio");
     println!("cargo:rustc-link-lib=framework=Speech");
     // FoundationModels exists only on macOS 26 and later. Weak-link it, and
-    // drop the object's strong autolink entry, so Hex still launches on older
+    // drop the object's strong autolink entry, so Opcode still launches on older
     // systems and reports Apple Intelligence as unavailable.
     compile_swift_bridge(
         "apple_intelligence",
-        "HEXAppleIntelligenceBridge",
+        "OPCODEAppleIntelligenceBridge",
         &["FoundationModels"],
     );
     println!("cargo:rustc-link-arg=-Wl,-weak_framework,FoundationModels");
-    compile_swift_bridge("calendar", "HEXCalendarBridge", &[]);
+    compile_swift_bridge("calendar", "OPCODECalendarBridge", &[]);
     println!("cargo:rustc-link-lib=framework=EventKit");
     compile_permission_guide();
     println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift");
@@ -75,7 +75,7 @@ fn main() {
     }
 }
 
-/// The version Hex reports (`HEX_BUILD_VERSION`): the crate version, which
+/// The version Opcode reports (`OPCODE_BUILD_VERSION`): the crate version, which
 /// the Release workflow stamps (scripts/set-crate-version.sh), else, for any
 /// other build of the unstamped `0.0.0`, `0.0.0-dev-local-<commit>` with
 /// `-dirty` for uncommitted changes (`0.0.0-dev-local` without git, as in Nix).
@@ -112,19 +112,19 @@ fn check_windows_split() {
 }
 
 fn build_version() {
-    println!("cargo:rerun-if-env-changed=HEX_VERSION");
+    println!("cargo:rerun-if-env-changed=OPCODE_VERSION");
     let version = std::env::var("CARGO_PKG_VERSION").unwrap();
-    // CI builds name their version in HEX_VERSION and check `hex --version`
+    // CI builds name their version in OPCODE_VERSION and check `opcode --version`
     // against it, test builds included (they name the crate version).
-    if let Some(named) = std::env::var("HEX_VERSION")
+    if let Some(named) = std::env::var("OPCODE_VERSION")
         .ok()
         .filter(|named| !named.is_empty())
     {
-        println!("cargo:rustc-env=HEX_BUILD_VERSION={named}");
+        println!("cargo:rustc-env=OPCODE_BUILD_VERSION={named}");
         return;
     }
     if version != "0.0.0" {
-        println!("cargo:rustc-env=HEX_BUILD_VERSION={version}");
+        println!("cargo:rustc-env=OPCODE_BUILD_VERSION={version}");
         return;
     }
     let git = |args: &[&str]| {
@@ -157,17 +157,17 @@ fn build_version() {
             }
         }
     }
-    println!("cargo:rustc-env=HEX_BUILD_VERSION={version}");
+    println!("cargo:rustc-env=OPCODE_BUILD_VERSION={version}");
 }
 
-/// A test or local build carries its commit (`HEX_COMMIT`), which the sidebar shows
+/// A test or local build carries its commit (`OPCODE_COMMIT`), which the sidebar shows
 /// beside the version.
 fn test_build_commit() {
-    println!("cargo:rerun-if-env-changed=HEX_BUILD_CHANNEL");
-    println!("cargo:rerun-if-env-changed=HEX_TEST_BUILD");
-    println!("cargo:rerun-if-env-changed=HEX_LOCAL_BUILD");
-    if std::env::var("HEX_TEST_BUILD").as_deref() != Ok("1")
-        && std::env::var("HEX_LOCAL_BUILD").as_deref() != Ok("1")
+    println!("cargo:rerun-if-env-changed=OPCODE_BUILD_CHANNEL");
+    println!("cargo:rerun-if-env-changed=OPCODE_TEST_BUILD");
+    println!("cargo:rerun-if-env-changed=OPCODE_LOCAL_BUILD");
+    if std::env::var("OPCODE_TEST_BUILD").as_deref() != Ok("1")
+        && std::env::var("OPCODE_LOCAL_BUILD").as_deref() != Ok("1")
     {
         return;
     }
@@ -183,7 +183,7 @@ fn test_build_commit() {
     let Some(commit) = git(&["rev-parse", "--short=7", "HEAD"]) else {
         return;
     };
-    println!("cargo:rustc-env=HEX_COMMIT={commit}");
+    println!("cargo:rustc-env=OPCODE_COMMIT={commit}");
     let reference = git(&["symbolic-ref", "-q", "HEAD"]);
     for name in ["HEAD", "packed-refs"]
         .into_iter()
@@ -197,13 +197,13 @@ fn test_build_commit() {
     }
 }
 
-/// Gives the executable its icon and the "Hex" name Explorer and Task
+/// Gives the executable its icon and the "Opcode" name Explorer and Task
 /// Manager show, whatever the file is called.
 #[cfg(windows)]
 fn embed_windows_resources() {
     let manifest_dir = PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap());
     let output_dir = PathBuf::from(std::env::var_os("OUT_DIR").unwrap());
-    let icon = manifest_dir.join("resources/windows/hex.ico");
+    let icon = manifest_dir.join("resources/windows/opcode.ico");
     println!("cargo:rerun-if-changed={}", icon.display());
     let version = std::env::var("CARGO_PKG_VERSION").unwrap();
     let numeric = version
@@ -227,12 +227,12 @@ BEGIN
   BEGIN
     BLOCK "040904B0"
     BEGIN
-      VALUE "FileDescription", "Hex"
-      VALUE "ProductName", "Hex"
+      VALUE "FileDescription", "Opcode"
+      VALUE "ProductName", "Opcode"
       VALUE "FileVersion", "{version}"
       VALUE "ProductVersion", "{version}"
-      VALUE "OriginalFilename", "hex.exe"
-      VALUE "InternalName", "hex"
+      VALUE "OriginalFilename", "opcode.exe"
+      VALUE "InternalName", "opcode"
     END
   END
   BLOCK "VarFileInfo"
@@ -243,7 +243,7 @@ END
 "#,
         icon = icon.display().to_string().replace('\\', "/"),
     );
-    let resource = output_dir.join("hex.rc");
+    let resource = output_dir.join("opcode.rc");
     std::fs::write(&resource, script).expect("write the Windows resource script");
     embed_resource::compile(&resource, embed_resource::NONE)
         .manifest_optional()
@@ -263,7 +263,7 @@ fn compile_permission_guide() {
     cc::Build::new()
         .file("native/permission_guide.m")
         .flag("-fobjc-arc")
-        .compile("hex_permission_guide");
+        .compile("opcode_permission_guide");
 }
 
 fn compile_swift_bridge(name: &str, module: &str, without_autolink: &[&str]) {

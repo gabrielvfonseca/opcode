@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  The final appcast for Macs still running Hex 2.3.1 or earlier
-  (com.kitlangton.hex2, Sparkle), served at https://anoma.ly/hex/files/appcast.xml,
-  where Kit's old hosts redirect. anomaly.hex is effectively a new app, so
+  The final appcast for Macs still running Opcode 2.3.1 or earlier
+  (com.kitlangton.opcode2, Sparkle), served at https://anoma.ly/opcode/files/appcast.xml,
+  where Kit's old hosts redirect. anomaly.opcode is effectively a new app, so
   those installs get one informational update: Sparkle shows these notes and
-  a button to https://anoma.ly/hex, and never downloads or installs anything.
+  a button to https://anoma.ly/opcode, and never downloads or installs anything.
   The item has no enclosure and 2.3.1 does not set SURequireSignedFeed, so no
-  Sparkle EdDSA key is needed. The version is the anomaly.hex release
+  Sparkle EdDSA key is needed. The version is the anomaly.opcode release
   current when it was published (3.3.0); sparkle:version is CFBundleVersion
   (major*10000 + minor*100 + patch) and must exceed 2.3.1's 20301.
 -->
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
-    <title>Hex</title>
-    <link>https://anoma.ly/hex</link>
-    <description>Hex has moved to Anomaly.</description>
+    <title>Opcode</title>
+    <link>https://anoma.ly/opcode</link>
+    <description>Opcode has moved to Anomaly.</description>
     <language>en</language>
     <item>
-      <title>Hex 3.3.0</title>
+      <title>Opcode 3.3.0</title>
       <pubDate>Mon, 02 Nov 2026 17:00:00 +0000</pubDate>
       <sparkle:version>30300</sparkle:version>
       <sparkle:shortVersionString>3.3.0</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
       <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
       <sparkle:informationalUpdate></sparkle:informationalUpdate>
-      <link>https://anoma.ly/hex</link>
+      <link>https://anoma.ly/opcode</link>
       <description><![CDATA[
-        <h2>The new Hex is here</h2>
-        <p>Install it fresh from <a href="https://anoma.ly/hex">anoma.ly/hex</a>.</p>
+        <h2>The new Opcode is here</h2>
+        <p>Install it fresh from <a href="https://anoma.ly/opcode">anoma.ly/opcode</a>.</p>
         <p>It's a new app, so you'll set it up again: allow Microphone and
         Accessibility, then pick a speech model and your shortcut. Quit this
         one first.</p>

@@ -21,16 +21,16 @@ pub(super) fn permission_lines(need: CaptureNeed, grant: Grant) -> Done {
         Grant::Off => Done {
             why: Some(why.into()),
             ask: Some(tr("Allow").into()),
-            ..Done::plain(Lead::Warning, tr_fill("Hex needs {}", name))
+            ..Done::plain(Lead::Warning, tr_fill("Opcode needs {}", name))
         },
         Grant::Asked => Done {
-            why: Some(tr("turn Hex on in System Settings").into()),
+            why: Some(tr("turn Opcode on in System Settings").into()),
             ask: Some(tr("Allow").into()),
-            ..Done::plain(Lead::Warning, tr_fill("Hex needs {}", name))
+            ..Done::plain(Lead::Warning, tr_fill("Opcode needs {}", name))
         },
         Grant::Restart => Done {
-            why: Some(tr("turns on when Hex restarts").into()),
-            ask: Some(tr("Restart Hex").into()),
+            why: Some(tr("turns on when Opcode restarts").into()),
+            ask: Some(tr("Restart Opcode").into()),
             ..Done::plain(Lead::Warning, tr_fill("{} is on", name))
         },
         Grant::Ready => Done {
@@ -122,7 +122,7 @@ pub(super) fn hold_until(phase: &Phase) -> Option<f64> {
 }
 
 /// Backspace in the search: deletes the selection, else the character
-/// before the caret. Keys come through Hex's tap, not Rune's key events.
+/// before the caret. Keys come through Opcode's tap, not Rune's key events.
 pub(super) fn backspace(edit: &mut TextEdit) {
     let (start, end) = edit.range();
     let back = edit.text[..start].chars().last().map_or(0, char::len_utf8);

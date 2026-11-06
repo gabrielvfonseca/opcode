@@ -10,16 +10,16 @@ use color_eyre::eyre::{Result, eyre};
 const READINESS_CACHE_TTL: Duration = Duration::from_secs(5);
 
 unsafe extern "C" {
-    fn hex_apple_speech_ready(locale: *const c_char) -> c_int;
-    fn hex_apple_speech_prepare(locale: *const c_char, error: *mut *mut c_char) -> *mut c_void;
-    fn hex_apple_speech_transcribe(
+    fn opcode_apple_speech_ready(locale: *const c_char) -> c_int;
+    fn opcode_apple_speech_prepare(locale: *const c_char, error: *mut *mut c_char) -> *mut c_void;
+    fn opcode_apple_speech_transcribe(
         session: *mut c_void,
         samples: *const c_float,
         count: usize,
         error: *mut *mut c_char,
     ) -> *mut c_char;
-    fn hex_apple_speech_release(session: *mut c_void);
-    fn hex_apple_speech_free_string(string: *mut c_char);
+    fn opcode_apple_speech_release(session: *mut c_void);
+    fn opcode_apple_speech_free_string(string: *mut c_char);
 }
 
 pub struct AppleSpeech {
@@ -58,7 +58,7 @@ impl AppleSpeech {
             }
         }
         let ready =
-            with_locale(language, |locale| unsafe { hex_apple_speech_ready(locale) }).unwrap_or(-1);
+            with_locale(language, |locale| unsafe { opcode_apple_speech_ready(locale) }).unwrap_or(-1);
         let status = (ready >= 0).then_some(ready != 0);
         readiness()
             .cached
@@ -73,7 +73,7 @@ impl AppleSpeech {
     pub fn load(selection: &crate::transcription::models::TranscriptionSelection) -> Result<Self> {
         let mut error = ptr::null_mut();
         let session = with_locale(&selection.language, |locale| unsafe {
-            hex_apple_speech_prepare(locale, &mut error)
+            opcode_apple_speech_prepare(locale, &mut error)
         })?;
         if session.is_null() {
             return Err(take_error(error));
@@ -98,21 +98,21 @@ impl AppleSpeech {
     pub fn transcribe(&mut self, samples: &[f32]) -> Result<Transcript> {
         let mut error = ptr::null_mut();
         let json = unsafe {
-            hex_apple_speech_transcribe(self.session, samples.as_ptr(), samples.len(), &mut error)
+            opcode_apple_speech_transcribe(self.session, samples.as_ptr(), samples.len(), &mut error)
         };
         if json.is_null() {
             return Err(take_error(error));
         }
         let bytes = unsafe { CStr::from_ptr(json) }.to_bytes();
         let decoded = serde_json::from_slice::<Transcript>(bytes).map_err(Into::into);
-        unsafe { hex_apple_speech_free_string(json) };
+        unsafe { opcode_apple_speech_free_string(json) };
         decoded
     }
 }
 
 impl Drop for AppleSpeech {
     fn drop(&mut self) {
-        unsafe { hex_apple_speech_release(self.session) };
+        unsafe { opcode_apple_speech_release(self.session) };
         let mut state = readiness();
         if let Some(references) = state.active.get_mut(&self.selection.language) {
             if *references > 1 {
@@ -136,6 +136,6 @@ fn take_error(error: *mut c_char) -> color_eyre::Report {
     let message = unsafe { CStr::from_ptr(error) }
         .to_string_lossy()
         .into_owned();
-    unsafe { hex_apple_speech_free_string(error) };
+    unsafe { opcode_apple_speech_free_string(error) };
     eyre!(message)
 }

@@ -32,7 +32,7 @@ struct Job {
     audio_ms: u64,
     /// The clip, kept for History while Labs › Keep recordings is on.
     recording: Option<crate::history::Recording>,
-    /// `hex dictation stop --print`: the text goes here, never pasted.
+    /// `opcode dictation stop --print`: the text goes here, never pasted.
     print: Option<PrintReply>,
     /// Dictate without processing: paste the transcript as heard.
     raw: bool,
@@ -47,7 +47,7 @@ enum OutputJob {
 #[derive(Clone, Copy, PartialEq)]
 enum OutputKind {
     Dictation,
-    /// A dictation printed by `hex dictation stop --print`.
+    /// A dictation printed by `opcode dictation stop --print`.
     Printed,
     PasteLast,
 }
@@ -472,7 +472,7 @@ pub(crate) fn run(
     })?;
     emit_state(&mut events, VoiceState::Listening, &device_label)?;
     println!(
-        "Hex dictation is ready on {device_label}. Hold {hotkey_label} to dictate; Ctrl-C stops."
+        "Opcode dictation is ready on {device_label}. Hold {hotkey_label} to dictate; Ctrl-C stops."
     );
 
     while !shutdown.load(Ordering::Relaxed) {
@@ -594,7 +594,7 @@ pub(crate) fn run(
                         Some(host) => host.control(action, &timeline),
                         None => crate::control::ControlReply::error(
                             "feature-off",
-                            "Annotate is off; turn it on with `hex settings set capture.enabled on`",
+                            "Annotate is off; turn it on with `opcode settings set capture.enabled on`",
                         ),
                     };
                     let _ = answer.send(report);
@@ -746,7 +746,7 @@ pub(crate) fn run(
                 action => (action, None),
             };
             match action {
-                // A client's dictation records: the shortcut and `hex
+                // A client's dictation records: the shortcut and `opcode
                 // dictation` neither start nor end anything.
                 HotkeyEvent::Start { .. } | HotkeyEvent::Finish | HotkeyEvent::Cancel
                     if service.is_active() =>
@@ -1188,7 +1188,7 @@ mod tests {
 
     fn event_log() -> (EventLog, std::path::PathBuf) {
         let path = std::env::temp_dir().join(format!(
-            "hex-linux-dictation-{}-{}.ndjson",
+            "opcode-linux-dictation-{}-{}.ndjson",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -1276,7 +1276,7 @@ mod tests {
                 owner.control(
                     DictationControl::Start {
                         source: "test".into(),
-                        owner_token: "hex_a".into(),
+                        owner_token: "opcode_a".into(),
                         levels,
                         reply,
                     },

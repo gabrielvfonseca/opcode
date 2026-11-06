@@ -31,12 +31,12 @@ use windows::Win32::System::Com::{
 use windows::Win32::System::Threading::{CreateEventW, WaitForSingleObject};
 use windows::core::{HRESULT, HSTRING, IUnknown, Interface, PCWSTR, Ref, implement};
 
-use super::hex_microphone::{CaptureFeed, CaptureFeedSwitch, capture_feed};
+use super::opcode_microphone::{CaptureFeed, CaptureFeedSwitch, capture_feed};
 use super::input_format::{InputStream, StartedStream};
 use super::mix_format::{MixFormat, float_format_bytes};
 use super::{CaptureInstant, duration_for_frames};
 
-/// How long opening, across every path, may take before Hex gives up.
+/// How long opening, across every path, may take before Opcode gives up.
 const OPEN_TIMEOUT: Duration = Duration::from_secs(15);
 /// How long one `ActivateAudioInterfaceAsync` may take to complete.
 const ACTIVATION_TIMEOUT: Duration = Duration::from_secs(3);
@@ -174,7 +174,7 @@ pub(super) fn start(device: &Device, device_name: &str) -> Result<StartedStream>
             run(&id, &name, &worker_stop, &ready_sender, &streams);
         })
         .map_err(|error| eyre!("could not start the microphone thread: {error}"))?;
-    let (sample_rate, hex_microphone) = match ready.recv_timeout(OPEN_TIMEOUT) {
+    let (sample_rate, opcode_microphone) = match ready.recv_timeout(OPEN_TIMEOUT) {
         Ok(Ok(opened)) => opened,
         Ok(Err(error)) => {
             let _ = worker.join();
@@ -195,7 +195,7 @@ pub(super) fn start(device: &Device, device_name: &str) -> Result<StartedStream>
         },
         chunks,
         stream_errors,
-        hex_microphone,
+        opcode_microphone,
         sample_rate,
     })
 }
@@ -367,7 +367,7 @@ pub(super) fn apartment() -> String {
     }
 }
 
-fn hex_bytes(bytes: &[u8]) -> String {
+fn opcode_bytes(bytes: &[u8]) -> String {
     bytes
         .iter()
         .map(|byte| format!("{byte:02x}"))
@@ -403,7 +403,7 @@ fn open_with(
         unsafe { client.GetMixFormat() }.map_err(|error| fail(None, "GetMixFormat", error))?,
     );
     if let Some(bytes) = mix.bytes() {
-        attempt.mix_bytes = hex_bytes(bytes);
+        attempt.mix_bytes = opcode_bytes(bytes);
     }
     let mix_format = mix.read().ok_or_else(|| Failure {
         mix: None,
@@ -425,7 +425,7 @@ fn open_with(
         None => (mix.0.cast_const(), mix_format),
     };
     attempt.format_bytes = match &converted {
-        Some(bytes) => hex_bytes(bytes),
+        Some(bytes) => opcode_bytes(bytes),
         None => attempt.mix_bytes.clone(),
     };
     attempt.is_format_supported = is_format_supported(&client, format_ptr);
@@ -439,7 +439,7 @@ fn open_with(
     if !format.is_decodable() {
         return Err(Failure {
             mix: Some(mix_format),
-            error: format!("Hex cannot decode this format ({format})"),
+            error: format!("Opcode cannot decode this format ({format})"),
         });
     }
     if path == Path::SharedAudioStream {

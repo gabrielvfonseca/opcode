@@ -356,7 +356,7 @@ private func authorization() async -> SFSpeechRecognizerAuthorizationStatus {
     }
 }
 
-@_cdecl("hex_apple_speech_ready")
+@_cdecl("opcode_apple_speech_ready")
 public func hexAppleSpeechReady(_ identifier: UnsafePointer<CChar>?) -> Int32 {
     guard #available(macOS 26.0, *),
           SpeechTranscriber.isAvailable,
@@ -377,7 +377,7 @@ public func hexAppleSpeechReady(_ identifier: UnsafePointer<CChar>?) -> Int32 {
     }
 }
 
-@_cdecl("hex_apple_speech_prepare")
+@_cdecl("opcode_apple_speech_prepare")
 public func hexAppleSpeechPrepare(
     _ identifier: UnsafePointer<CChar>?,
     _ error: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
@@ -413,7 +413,7 @@ public func hexAppleSpeechPrepare(
     }
 }
 
-@_cdecl("hex_apple_speech_transcribe")
+@_cdecl("opcode_apple_speech_transcribe")
 public func hexAppleSpeechTranscribe(
     _ opaque: UnsafeMutableRawPointer?,
     _ samples: UnsafePointer<Float>?,
@@ -447,7 +447,7 @@ public func hexAppleSpeechTranscribe(
     }
 }
 
-@_cdecl("hex_apple_speech_release")
+@_cdecl("opcode_apple_speech_release")
 public func hexAppleSpeechRelease(_ opaque: UnsafeMutableRawPointer?) {
     guard #available(macOS 26.0, *), let opaque else { return }
     let session = Unmanaged<AppleSpeechSession>.fromOpaque(opaque).takeUnretainedValue()
@@ -457,7 +457,7 @@ public func hexAppleSpeechRelease(_ opaque: UnsafeMutableRawPointer?) {
     Unmanaged<AppleSpeechSession>.fromOpaque(opaque).release()
 }
 
-@_cdecl("hex_apple_speech_free_string")
+@_cdecl("opcode_apple_speech_free_string")
 public func hexAppleSpeechFreeString(_ string: UnsafeMutablePointer<CChar>?) {
     free(string)
 }

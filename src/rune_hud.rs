@@ -354,7 +354,7 @@ const EXIT_FADE: Duration = Duration::from_millis(120);
 /// about 150 MB and the GPU driver's threads waking some 65 times a second.
 /// Windows gives it back, window included, once the HUD's exit fade ends: a hidden
 /// topmost window that presented with DXGI let NVIDIA's Instant Replay take
-/// Hex for the running game (#1308). The device itself waits five minutes for
+/// Opcode for the running game (#1308). The device itself waits five minutes for
 /// the next show either way, so dictations reuse one device (#1268).
 #[cfg(not(target_os = "windows"))]
 const GPU_IDLE: Duration = Duration::from_secs(5 * 60);
@@ -409,7 +409,7 @@ pub(crate) fn install<S: 'static>(app: &mut rune::App<S>) -> HudSender {
     let model = IndicatorModel::new(dot_scope::lab(), now);
     let overlay = app.overlay(
         OverlaySpec {
-            name: "hex-hud",
+            name: "opcode-hud",
             size: WINDOW,
             edge: ScreenEdge::Top,
             margin: 0.0,
@@ -430,7 +430,7 @@ pub(crate) fn install<S: 'static>(app: &mut rune::App<S>) -> HudSender {
         // The shaders write display (sRGB-encoded) values.
         .srgb_blend(true)
         // On Linux a burst of dictations keeps the GPU surface, so each HUD
-        // shows at once; a Hex at rest gives the GPU device back.
+        // shows at once; a Opcode at rest gives the GPU device back.
         .release_gpu_after(GPU_IDLE)
         .compositor(HudCompositor {
             gpu: None,
@@ -702,7 +702,7 @@ impl Compositor<Hud> for HudCompositor {
         self.animating.load(Ordering::Acquire)
     }
 
-    /// The view is empty, so Rune's UI pass is skipped: Hex's own pass
+    /// The view is empty, so Rune's UI pass is skipped: Opcode's own pass
     /// clears the target.
     fn render(&mut self, f: &mut Frame<'_, Hud>) {
         let reduce = f.rt.reduced_motion;
@@ -782,7 +782,7 @@ impl Painter {
             source.to_owned()
         };
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("hex hud"),
+            label: Some("opcode hud"),
             source: wgpu::ShaderSource::Wgsl(source.into()),
         });
         let buffer = |label, size: u64| {
@@ -794,8 +794,8 @@ impl Painter {
             })
         };
         let dot_uniforms =
-            (!immediates).then(|| buffer("hex hud dot uniforms", u64::from(DOT_UNIFORM_BYTES)));
-        let dots = buffer("hex hud dots", DOT_BYTES);
+            (!immediates).then(|| buffer("opcode hud dot uniforms", u64::from(DOT_UNIFORM_BYTES)));
+        let dots = buffer("opcode hud dots", DOT_BYTES);
         let entry = |binding| wgpu::BindGroupLayoutEntry {
             binding,
             visibility: wgpu::ShaderStages::FRAGMENT,
@@ -819,16 +819,16 @@ impl Painter {
             });
         }
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("hex hud"),
+            label: Some("opcode hud"),
             entries: &entries,
         });
         let bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("hex hud"),
+            label: Some("opcode hud"),
             layout: &layout,
             entries: &bindings,
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("hex hud"),
+            label: Some("opcode hud"),
             bind_group_layouts: &[Some(&layout)],
             immediate_size: if immediates { DOT_UNIFORM_BYTES } else { 0 },
         });
@@ -917,7 +917,7 @@ impl Painter {
         uniforms: &DotUniforms,
     ) {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("hex hud preview"),
+            label: Some("opcode hud preview"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view,
                 depth_slice: None,
@@ -957,7 +957,7 @@ fn clear_pass<'a>(
     view: &wgpu::TextureView,
 ) -> wgpu::RenderPass<'a> {
     encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-        label: Some("hex hud"),
+        label: Some("opcode hud"),
         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
             view,
             depth_slice: None,

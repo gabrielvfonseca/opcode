@@ -1,7 +1,7 @@
 //! The macOS window's host: the runtime thread `macos_rune` starts in this
 //! process, which owns model preparation and publishes the listener, model,
 //! update, and settings state, plus the OS-only work the panes ask for
-//! (permissions, the login item, Hex Microphone, meetings).
+//! (permissions, the login item, Opcode Microphone, meetings).
 //!
 //! Shortcut capture stays in the window: an AppKit local event
 //! monitor records the chord, because a modifier-only binding such as Option
@@ -48,7 +48,7 @@ pub(super) use crate::macos_rune::{Request, ShortcutTarget};
 pub(super) const HOST_SAVES_SHORTCUTS: bool = false;
 pub(super) const RECORDS_KEY_EVENTS: bool = false;
 pub(super) const TERMINAL_PASTE: bool = false;
-/// Quit Hex lives in the menu bar and the app menu (⌘Q).
+/// Quit Opcode lives in the menu bar and the app menu (⌘Q).
 pub(super) const QUIT_IN_WINDOW: bool = false;
 
 /// How often the native host re-reads permissions and driver state.
@@ -104,7 +104,7 @@ impl Backend {
             ) => crate::macos_rune::update_action(&action),
             request => match &self.runtime {
                 Some(runtime) => runtime.send(request),
-                None => Err(eyre!("Hex's runtime is not running")),
+                None => Err(eyre!("Opcode's runtime is not running")),
             },
         }
     }
@@ -130,7 +130,7 @@ impl Backend {
     pub(super) fn error(&self) -> Option<String> {
         self.runtime
             .is_none()
-            .then(|| "Hex's runtime is not running".into())
+            .then(|| "Opcode's runtime is not running".into())
     }
 
     pub(super) fn state(&self) -> Option<HostState> {
@@ -477,7 +477,7 @@ pub(super) fn validate_hotkey(
     {
         return Err(tr("Add a key"));
     }
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     if matches!(
         target,
         ShortcutTarget::Capture | ShortcutTarget::CaptureReplay
@@ -549,7 +549,7 @@ struct MacHost {
     resetting: [bool; 3],
     reset_tx: mpsc::Sender<PermissionKind>,
     reset_rx: Receiver<PermissionKind>,
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     scrawl: ScrawlHost,
 }
 
@@ -574,7 +574,7 @@ impl MacHost {
             resetting: [false; 3],
             reset_tx,
             reset_rx,
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             scrawl: ScrawlHost::default(),
         };
         let _ = host.request_login(LoginItemRequest::Status);
@@ -610,7 +610,7 @@ impl MacHost {
                 }
             }
             PermissionKind::ScreenRecording => {
-                #[cfg(hex_capture)]
+                #[cfg(opcode_capture)]
                 crate::capture_host::invalidate_screen_access();
                 if !crate::meeting::screen_recording_permitted() {
                     let _ = crate::meeting::request_screen_recording();
@@ -635,7 +635,7 @@ impl MacHost {
     }
 
     fn runtime(&self) -> Result<RuntimeHandle, String> {
-        crate::macos_rune::runtime().ok_or_else(|| "Hex's runtime is not running".into())
+        crate::macos_rune::runtime().ok_or_else(|| "Opcode's runtime is not running".into())
     }
 
     fn meeting(&mut self, request: MeetingRequest) -> Result<(), String> {
@@ -714,7 +714,7 @@ impl NativeHost for MacHost {
             }
             PlatformRequest::Permission(PermissionAction::Restart) => {
                 if !crate::desktop::onboarding::spawn_relaunch() {
-                    return Err("could not restart Hex".into());
+                    return Err("could not restart Opcode".into());
                 }
                 crate::macos_rune::quit();
             }
@@ -735,10 +735,10 @@ impl NativeHost for MacHost {
             PlatformRequest::OpenLoginItemSettings => {
                 let _ = self.request_login(LoginItemRequest::OpenSettings);
             }
-            PlatformRequest::InstallHexMicrophone
-            | PlatformRequest::UninstallHexMicrophone
+            PlatformRequest::InstallOpcodeMicrophone
+            | PlatformRequest::UninstallOpcodeMicrophone
             | PlatformRequest::SetTuning(_)
-            | PlatformRequest::HexMicrophoneDemo(_) => voice_filter_request(request),
+            | PlatformRequest::OpcodeMicrophoneDemo(_) => voice_filter_request(request),
             PlatformRequest::Meeting(request) => self.meeting(request)?,
             PlatformRequest::Calendar(CalendarRequest::Connect) => self.calendar.connect(),
             PlatformRequest::Calendar(CalendarRequest::OpenPrivacySettings) => {
@@ -752,7 +752,7 @@ impl NativeHost for MacHost {
                     tracing::warn!(%error, "could not record the onboarding relaunch");
                 }
                 if !crate::desktop::onboarding::spawn_relaunch() {
-                    return Err("could not relaunch Hex".into());
+                    return Err("could not relaunch Opcode".into());
                 }
                 crate::macos_rune::quit();
             }
@@ -764,7 +764,7 @@ impl NativeHost for MacHost {
             PlatformRequest::SaveDotScope(tuning) => {
                 tuning.save().map_err(|error| format!("{error:#}"))?;
             }
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             PlatformRequest::Scrawl(request) => self.scrawl.send(request),
         }
         // Show the result of an action at once, not on the next refresh.
@@ -821,7 +821,7 @@ impl NativeHost for MacHost {
         }
         let refresh = Instant::now() >= self.refresh_at;
         changed |= poll_voice_filter(state, refresh);
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         {
             changed |= self.scrawl.poll(state, Instant::now() >= self.refresh_at);
         }
@@ -889,11 +889,11 @@ impl NativeHost for MacHost {
             ),
             (PermissionKind::SystemAudio, !system_audio),
             (PermissionKind::ScreenRecording, {
-                #[cfg(hex_capture)]
+                #[cfg(opcode_capture)]
                 {
                     crate::capture_host::screen_access() == crate::capture_host::ScreenAccess::Off
                 }
-                #[cfg(not(hex_capture))]
+                #[cfg(not(opcode_capture))]
                 {
                     false
                 }
@@ -952,12 +952,12 @@ struct CalendarFeed {
     reader: Option<CalendarReader>,
     connect_error: Option<String>,
     /// macOS's last answer in this process. EventKit's status can keep
-    /// saying "not determined" after it until Hex relaunches; once the reader
+    /// saying "not determined" after it until Opcode relaunches; once the reader
     /// sees a decision, that is current and this is forgotten.
     answered: Option<CalendarAccess>,
-    /// The person asked Hex to connect (Connect, or Open settings from the
+    /// The person asked Opcode to connect (Connect, or Open settings from the
     /// blocked card) and it is not saved yet, so full access granted in System
-    /// Settings afterwards connects. A grant Hex did not start never does.
+    /// Settings afterwards connects. A grant Opcode did not start never does.
     asked: bool,
 }
 
@@ -1033,7 +1033,7 @@ impl CalendarFeed {
         self.asked = true;
         let (sender, receiver) = mpsc::sync_channel(1);
         let spawned = std::thread::Builder::new()
-            .name("hex-calendar-connect".into())
+            .name("opcode-calendar-connect".into())
             .spawn(move || {
                 let _ = sender.send(crate::calendar::request_access());
             });
@@ -1049,7 +1049,7 @@ impl CalendarFeed {
         }
     }
 
-    /// Open settings on the blocked card: switching Hex on there connects.
+    /// Open settings on the blocked card: switching Opcode on there connects.
     fn opening_privacy_settings(&mut self) {
         tracing::info!("calendar: opening Privacy & Security › Calendars");
         self.asked = true;
@@ -1097,7 +1097,7 @@ impl CalendarFeed {
 
     /// Takes a reader snapshot: forgets the answer once EventKit reports a
     /// decision, and connects when full access arrives after the person asked
-    /// Hex to connect (refused the prompt, then switched Hex on in System
+    /// Opcode to connect (refused the prompt, then switched Opcode on in System
     /// Settings).
     fn read(
         &mut self,
@@ -1151,7 +1151,7 @@ impl CalendarFeed {
             let (sender, snapshots) = mpsc::sync_channel(1);
             let (stop, stopped) = mpsc::sync_channel(1);
             let spawned = std::thread::Builder::new()
-                .name("hex-calendar-read".into())
+                .name("opcode-calendar-read".into())
                 .spawn(move || calendar_reader(sender, stopped));
             match spawned {
                 Ok(_) => {
@@ -1230,14 +1230,14 @@ fn choose_folder() -> crate::desktop::file_dialog::Pending {
 
 /// The Scrawl pane's OS work: Scrawl's own app and the captures folder.
 /// Its Screen Recording Allow opens the permission guide.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 #[derive(Default)]
 struct ScrawlHost {
     folder_choice: Option<crate::desktop::file_dialog::Pending>,
     folder_error: Option<String>,
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 impl ScrawlHost {
     fn send(&mut self, request: super::platform::ScrawlRequest) {
         use super::platform::ScrawlRequest;
@@ -1310,7 +1310,7 @@ impl ScrawlHost {
 
 /// Saves one change to the settings; the runtime publishes it to the
 /// window.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 fn save_settings(change: impl FnOnce(&mut crate::app_settings::AppSettings)) -> Result<(), String> {
     let mut settings =
         crate::app_settings::AppSettings::load().map_err(|error| format!("{error:#}"))?;
@@ -1786,7 +1786,7 @@ mod tests {
     }
 
     #[test]
-    fn a_grant_hex_did_not_ask_for_never_connects() {
+    fn a_grant_opcode_did_not_ask_for_never_connects() {
         let mut feed = CalendarFeed::default();
         let shown = feed.read(full_access(), false, &CalendarView::default(), 0, || {
             panic!("connecting needs the person's click")

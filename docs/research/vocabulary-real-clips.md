@@ -1,7 +1,7 @@
 # Vocabulary on Kit's real dictation clips
 
 **Status:** Research, 2026-10-23. No product change. Follows
-[`parakeet-boost-spike.md`](https://github.com/anomalyco/hex/blob/spike/parakeet-boost/docs/research/parakeet-boost-spike.md)
+[`parakeet-boost-spike.md`](https://github.com/anomalyco/opcode/blob/spike/parakeet-boost/docs/research/parakeet-boost-spike.md)
 (branch `spike/parakeet-boost`), [`custom-vocabulary.md`](custom-vocabulary.md)
 and [`../plans/transcription-quality.md`](../plans/transcription-quality.md).
 
@@ -9,11 +9,11 @@ and [`../plans/transcription-quality.md`](../plans/transcription-quality.md).
 recognition hints fix the vocabulary that Parakeet Unified misses, and at what
 cost?
 
-**Answer:** Partly. Hints raise term recall from 7/13 (what Hex pasted) to
+**Answer:** Partly. Hints raise term recall from 7/13 (what Opcode pasted) to
 10/13, but most of that gain does not come from hints. Two of the six misses
 were `Rune` heard as "Ruin" and "Roon". Parakeet's own whole-clip decode
 already gets both right, so they are streaming errors. Plain Qwen already hears
-"grill". The hint list itself fixes only casing (`Hex` once, `HiveMind`) and
+"grill". The hint list itself fixes only casing (`Opcode` once, `HiveMind`) and
 `dotfiles`, and `dotfiles` only after it was added to the list from these
 clips. Qwen doubles or triples overall WER and takes about 5× Unified's offline
 compute. The longer hint list made Qwen return **empty text on 4 of 49 short
@@ -29,7 +29,7 @@ clips**. Don't switch dictation to Qwen for vocabulary on this evidence.
 - **References.** Each started from the history text (raw = final, since Kit
   has no replacements, transformations or post-processing configured). Before
   any model ran, I made contextual fixes: grow→grill (the grilling skill),
-  defiles→dotfiles, Ruin/Roon→Rune, hex→Hex. I also flagged 12 clips with
+  defiles→dotfiles, Ruin/Roon→Rune, opcode→Opcode. I also flagged 12 clips with
   unclear wording. After inference I made two more edits where models agreed
   and context supported them, and flagged both: "only worth"→"probably worth"
   (Unified offline and every Qwen arm agree) and "macro gear change"→"MacBook
@@ -37,10 +37,10 @@ clips**. Don't switch dictation to Qwen for vocabulary on this evidence.
   That second edit favours Qwen, so `MacBook Air` is left out of the recall
   column below. No audio was played, so these are judged proxies, not a human
   audit.
-- **Terms.** 13 pre-registered occurrences in 10 clips: Dax ×3, Rune ×4, Hex ×2,
+- **Terms.** 13 pre-registered occurrences in 10 clips: Dax ×3, Rune ×4, Opcode ×2,
   HiveMind, dotfiles, grill, Adam. Names are matched case-sensitively, so
-  "hex" counts as a miss. Every arm gets Hex if casing is ignored.
-- **Hints.** `hints17` is the boost spike's frozen list (Hex, Cappuccino,
+  "opcode" counts as a miss. Every arm gets Opcode if casing is ignored.
+- **Hints.** `hints17` is the boost spike's frozen list (Opcode, Cappuccino,
   OpenCode, Rune, Scrawl, Effect, Anomaly, Dax, Aiden, Kit, Parakeet, Moonshine,
   GPUI, Sparkle, Argon, Astra, HiveMind). It was fixed before these clips
   existed. `hints27` adds Psychopomp, dotfiles, Qwen, Claude, Opus, Sonnet,
@@ -83,7 +83,7 @@ clips**. Don't switch dictation to Qwen for vocabulary on this evidence.
 **No hint term was ever inserted where it wasn't said.** The arms fail in
 other ways. Short clips under hints27 came back empty (2.0–2.6 s). Unhinted
 Qwen turned the one silent, unscored clip into Chinese ("玩呢啊。"), which
-Hex would have pasted. Qwen also rephrases.
+Opcode would have pasted. Qwen also rephrases.
 
 ## The five most telling clips
 

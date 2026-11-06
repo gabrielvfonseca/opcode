@@ -1,4 +1,4 @@
-// A home seed holding a full History: 10,000 dictations, Hex's cap, one a
+// A home seed holding a full History: 10,000 dictations, Opcode's cap, one a
 // minute back from when the seed was written, oldest first as the store
 // keeps them. Written once; strobe copies it into each private home, so base
 // and head read the same file. History is kept forever in strobe.json's
@@ -24,9 +24,9 @@ function sentence(seed: number): string {
 
 export function historySeed(): string {
   const folder = join(import.meta.dir, ".generated", "history")
-  const file = join(folder, "hex-data", "history.json")
+  const file = join(folder, "opcode-data", "history.json")
   if (existsSync(file)) return folder
-  mkdirSync(join(folder, "hex-data"), { recursive: true })
+  mkdirSync(join(folder, "opcode-data"), { recursive: true })
   const now = Date.now()
   const entries = Array.from({ length: HISTORY_ENTRIES }, (_, index) => {
     const id = index + 1

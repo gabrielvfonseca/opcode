@@ -1,4 +1,4 @@
-# Hex Feature Map
+# Opcode Feature Map
 
 What can the user do, how do they reach it, and what would prove it works?
 This maps existing behavior. [ROADMAP.md](../../ROADMAP.md) owns future work;
@@ -13,7 +13,7 @@ locators unless an executed result is explicitly recorded, as in the
 ## Product Map
 
 ```ts
-Hex                                      // macOS release
+Opcode                                      // macOS release
 ├── Get ready                            // install, permissions, local model
 ├── Dictate                              // hold OR double-tap lock
 ├── Use the result                       // paste, paste-last, History
@@ -39,7 +39,7 @@ models toggle (off by default) adds a sort and a saved-language filter to the
 Local transcription picker (#645); its Benchmark details toggle (off by
 default) shows each model's raw WER or CER with its language, dataset, source,
 and conditions (#647).
-General › Advanced › Interface language offers Português (Brasil), and Hex
+General › Advanced › Interface language offers Português (Brasil), and Opcode
 uses it for any Portuguese system language (#867); it also offers Français,
 used for any French system language (#892), and Русский, used for any
 Russian system language (#1317). None of these has had a native speaker's
@@ -58,35 +58,35 @@ The other capabilities stay here until they need their own verification recipe.
 
 ## Get Ready
 
-Install the signed macOS app with `brew install --cask anomalyco/tap/hex` or the
+Install the signed macOS app with `brew install --cask anomalyco/tap/opcode` or the
 [manual DMG](../../README.md#downloads). The cask uses a versioned, checksum-pinned
-DMG, requires Apple silicon/macOS 15+, and leaves updates to Hex's own updater. It does
+DMG, requires Apple silicon/macOS 15+, and leaves updates to Opcode's own updater. It does
 not require OpenCode, launch the app automatically, migrate the legacy
 Swift app's data, or forcibly replace an existing app destination. Homebrew uninstall
 leaves runtime settings, models, and retained data intact.
 
 ```ts
-Download Hex                              // setup.download-recovery
-├── anoma.ly/hex names the visitor's platform  // setup.download-button
+Download Opcode                              // setup.download-recovery
+├── anoma.ly/opcode names the visitor's platform  // setup.download-button
 │   ├── Mac -> DMG | Intel Mac -> disabled, "needs Apple silicon"
-│   ├── Windows x64 / ARM64 (UA-CH) -> hex-setup-<version>-windows-<arch>.exe + SmartScreen note
+│   ├── Windows x64 / ARM64 (UA-CH) -> opcode-setup-<version>-windows-<arch>.exe + SmartScreen note
 │   ├── Linux -> copyable `curl … install-linux.sh | sh` + Arch/glibc requirement
 │   ├── Phone -> Send yourself the link
 │   └── Other platforms -> every build, Homebrew, the GitHub release
-├── Website, README, installers, apps, feeds, appcast -> anoma.ly/hex/files -> R2 bytes (Worker hex-production-site)
-├── Releases up to 2.3.1 -> downloads.hex.kitlangton.dev (Kit's frozen bucket) -> the same bytes
+├── Website, README, installers, apps, feeds, appcast -> anoma.ly/opcode/files -> R2 bytes (Worker opcode-production-site)
+├── Releases up to 2.3.1 -> downloads.opcode.kitlangton.dev (Kit's frozen bucket) -> the same bytes
 ├── GitHub v<version> (app-v through 2.3.1) -> identical DMG, Setup.exe, and Linux bytes
 └── Older app cannot reach its update feed -> manually install the DMG
 
 Install on Windows                        // setup.windows-installer
-├── Setup.exe, per user, no admin -> managed versions\<version>\hex.exe
+├── Setup.exe, per user, no admin -> managed versions\<version>\opcode.exe
 │   ├── x64 without a Vulkan 1.2 driver -> installs; speech on the CPU + Settings note (#1240)
 │   ├── another version installed (e.g. self-updated) -> install this one over it
-│   └── finish -> Open Hex -> the first run downloads a model
+│   └── finish -> Open Opcode -> the first run downloads a model
 └── Settings › Apps -> uninstall every version, shortcut, Launch at login; keep data
 
 Install on Linux                          // setup.linux-installer
-└── curl … | sh -> signed feed -> verified artifact -> launcher + hex.service
+└── curl … | sh -> signed feed -> verified artifact -> launcher + opcode.service
     └── cannot start -> name the glibc floor or the missing Arch packages
 
 Prepare local models                      // separate network dependency
@@ -117,7 +117,7 @@ interactive install, SmartScreen prompt, or first launch on a real PC has been
 observed. The Linux library diagnosis has no automated check. The site's
 platform states were captured once in headless Chromium with `?platform=`.
 
-Sources: [website](../../site/src/Download.tsx), [installer](../../packaging/windows/hex.iss),
+Sources: [website](../../site/src/Download.tsx), [installer](../../packaging/windows/opcode.iss),
 [release publisher](../../.github/release/release-service.sh),
 [mirror publisher](../../scripts/publish-app-mirror.sh),
 [macOS release publisher](../../scripts/release-app.sh),
@@ -132,18 +132,18 @@ Executed hosting checks and deployment details are recorded in
 with 2.1.17; the initial 2.1.16 mirror preserves that release's original bytes.
 
 ```ts
-Launch Hex, setup incomplete              // setup.tour; every build and OS, full window
+Launch Opcode, setup incomplete              // setup.tour; every build and OS, full window
 ├── One onboarding: the first-run story (rune_ui/onboarding_kit/live.rs) over
 │   the tour state machine (desktop::onboarding::Flow); no flag, no other tour
 ├── Skip (quiet, top-right, only on the demo and the practice)    // setup.skip
 │   ├── Passes over that part to the next step setup still needs: permissions,
-│   │   then Almost ready while the model downloads, else Hex is ready
+│   │   then Almost ready while the model downloads, else Opcode is ready
 │   ├── Never closes onboarding or records it done
 │   └── No Skip on permissions, the model step or download, or the paste
 │       permission. Check: `onboarding_skip` (scripts/check-onboarding.sh)
 ├── GNOME/KDE Wayland (pastes through the RemoteDesktop portal, no wtype)
-│   and no saved grant -> before Your turn, "Let Hex paste for you"     // setup.paste-access
-│   ├── Says why: Hex only sends the paste keystroke, never sees the screen;
+│   and no saved grant -> before Your turn, "Let Opcode paste for you"     // setup.paste-access
+│   ├── Says why: Opcode only sends the paste keystroke, never sees the screen;
 │   │   the desktop asks once and may call it remote desktop (#932)
 │   ├── Allow -> opens the desktop's dialog; the grant's restore token is saved,
 │   │   so the first paste needs no dialog
@@ -152,7 +152,7 @@ Launch Hex, setup incomplete              // setup.tour; every build and OS, ful
 │   └── Skipped or refused -> Settings › General shows it under "Permissions
 │       needed" until allowed. Check: golden `onboarding-paste`; the real
 │       portal dialog is not exercised
-├── 2.3.1 or Swift Hex -> Sparkle offers the new Hex -> Install Update   // setup.legacy-update; macOS
+├── 2.3.1 or Swift Opcode -> Sparkle offers the new Opcode -> Install Update   // setup.legacy-update; macOS
 │   ├── Replaces the old app in place (its file name kept) and opens the new one
 │   ├── Accepted only because app/Info.plist keeps the old SUPublicEDKey;
 │   │   scripts/validate-app.sh requires it. Feed items: docs/plans/swift-app-handoff.md
@@ -161,27 +161,27 @@ Launch Hex, setup incomplete              // setup.tour; every build and OS, ful
 │   ├── It lands in <data>/voice-control/versions/<version>; its first app or
 │   │   `service` launch from there moves it into the managed layout, then
 │   │   relaunches from it (Linux: exec, so the old unit keeps its process)
-│   ├── Linux -> 2.3.1's marked unit, ~/.local/bin/hex link, and hex.desktop
+│   ├── Linux -> 2.3.1's marked unit, ~/.local/bin/opcode link, and opcode.desktop
 │   │   entries move aside -> the built-in .github/release/install-linux.sh
 │   │   installs this executable -> session.env copied; failure puts them back
-│   ├── Windows -> %APPDATA%\hex\versions, receipt, Hex.lnk recreated,
+│   ├── Windows -> %APPDATA%\opcode\versions, receipt, Opcode.lnk recreated,
 │   │   Launch at login repointed, 2.3.1's Apps & Features entry removed
 │   ├── Failure -> logged, runs in place; the next launch tries again
 │   ├── Settings, history, and models in voice-control are not carried over
 │   └── Check: `a_legacy_linux_install_moves_into_the_installers_layout`,
 │       `a_failed_move_puts_the_legacy_files_back`; Windows and a real 2.3.1
 │       feed update are unverified
-├── Upgrading from 2.3.1 or earlier (same `hex` folder)     // setup.upgrade; macOS
-│   ├── `anomaly.hex` is a new identity: macOS kept none of the old grants
-│   ├── Settings without `anomaly-hex-identity` in `migrations` -> checked once at launch
+├── Upgrading from 2.3.1 or earlier (same `opcode` folder)     // setup.upgrade; macOS
+│   ├── `anomaly.opcode` is a new identity: macOS kept none of the old grants
+│   ├── Settings without `anomaly-opcode-identity` in `migrations` -> checked once at launch
 │   │   ├── Permissions or the selected model not ready -> the old completion
 │   │   │   no longer counts -> onboarding opens from the start
 │   │   └── Everything ready -> no onboarding; nothing but the ID changes
 │   ├── Saved settings are kept; the ID is recorded either way
-│   └── Setup ready, listener starting -> a running 2.3.1 or Swift Hex   // setup.quit-legacy
+│   └── Setup ready, listener starting -> a running 2.3.1 or Swift Opcode   // setup.quit-legacy
 │       (retired bundle IDs) is asked to quit, so both never answer Option;
-│       it stays installed. No check; `macos_rune::quit_legacy_hex`
-├── Setting up Hex -> speech model download starts at once  // setup.background-download
+│       it stays installed. No check; `macos_rune::quit_legacy_opcode`
+├── Setting up Opcode -> speech model download starts at once  // setup.background-download
 │   ├── Model -> the selection recommended for the system's first preferred
 │   │            language (English -> Parakeet Unified English; e.g. French ->
 │   │            Parakeet v3, Japanese -> Qwen3-ASR); the language capsule
@@ -205,47 +205,47 @@ Launch Hex, setup incomplete              // setup.tour; every build and OS, ful
 │   │       error), + Download + Add model file…. Check: golden
 │   │       `onboarding-no-model`, `onboarding_continue_without_model`
 │   └── Change or delete the model later in Settings      // setup.delete-model
-├── The demo: Without Hex (typed, with typos) -> With Hex (spoken) -> Continue
+├── The demo: Without Opcode (typed, with typos) -> With Opcode (spoken) -> Continue
 ├── Quit part-way -> next launch resumes at the saved step  // setup.resume
 │   └── Permissions are read again at launch: a setup they now finish (macOS's
 │       Quit & Reopen after a grant) is passed; past setup, it waits until they do
 ├── Permissions                           // setup.checklist; skipped when granted
-│   ├── macOS: "Let Hex hear you and type for you", Microphone and Accessibility
+│   ├── macOS: "Let Opcode hear you and type for you", Microphone and Accessibility
 │   │   ├── No Input Monitoring row: Accessibility also lets the shortcut taps listen
 │   │   ├── Microphone -> macOS prompt; refused -> "Open System Settings" + guide
 │   │   ├── Accessibility -> Privacy pane + drag guide
-│   │   │   ├── Retired Hex bundle IDs (`com.kitlangton.hex2`, `com.kitlangton.Hex`,
-│   │   │   │   `com.kitlangton.Hex.debug`) cleared once in the background (`tccutil reset`,
+│   │   │   ├── Retired Opcode bundle IDs (`com.kitlangton.opcode2`, `com.kitlangton.Opcode`,
+│   │   │   │   `com.kitlangton.Opcode.debug`) cleared once in the background (`tccutil reset`,
 │   │   │   │   ignoring `OSStatus -10814` when no bundle is on disk)
 │   │   │   ├── Returned from System Settings still untrusted (2 s, or 6 s side-by-side) ->
-│   │   │   │   "An older Hex entry can keep this off" + "Still grey? Fix it"
+│   │   │   │   "An older Opcode entry can keep this off" + "Still grey? Fix it"
 │   │   │   │   -> resets the running bundle ID + retired IDs, prompts, and reopens the guide
 │   │   │   └── macOS 27 names the list "Device Control and Data Access"; the row follows
 │   │   ├── On in System Settings, unusable until relaunch -> "Needs a restart"
-│   │   │   └── Every permission on -> "Restart Hex" -> relaunch at setup  // setup.restart
+│   │   │   └── Every permission on -> "Restart Opcode" -> relaunch at setup  // setup.restart
 │   │   └── Last grant -> 0.7 s beat -> the story moves on
-│   ├── Windows: only while the microphone privacy switch is off: "Let Hex hear
+│   ├── Windows: only while the microphone privacy switch is off: "Let Opcode hear
 │   │   you", one Microphone row -> Open Settings (ms-settings:privacy-microphone)
 │   └── Linux: no page
 ├── Almost ready: the model still downloads -> waits, then Your turn
 ├── Your turn: the practice game          // setup.practice; every OS
 │   ├── "Clear your messages": hold the saved shortcut and answer the lit card;
-│   │   Hex's own dictation (macOS listener, Linux and Windows event log) holds
+│   │   Opcode's own dictation (macOS listener, Linux and Windows event log) holds
 │   │   the keys, flies the live words, and lightning burns the answered card
 │   ├── A short, silent, or failed try -> a hint under the field
-│   └── Done at any time -> Hex is ready  // practice is never required
+│   └── Done at any time -> Opcode is ready  // practice is never required
 ├── Listener cannot start after setup     // setup.relaunch; event tap refused
-│   ├── First time -> Hex records a marker, reopens itself, resumes at the practice
-│   └── Within 2 min of that relaunch -> "Hex's shortcut didn't start." + Reopen Hex
-└── Hex is ready -> where Hex lives (menu bar, system tray, or app launcher)
+│   ├── First time -> Opcode records a marker, reopens itself, resumes at the practice
+│   └── Within 2 min of that relaunch -> "Opcode's shortcut didn't start." + Reopen Opcode
+└── Opcode is ready -> where Opcode lives (menu bar, system tray, or app launcher)
     ├── Try again -> back to the practice game
-    └── Start using Hex -> records completion once setup is ready; closes onboarding
-Run setup again (Labs) or `hex onboarding reset` -> the same story from the start,
+    └── Start using Opcode -> records completion once setup is ready; closes onboarding
+Run setup again (Labs) or `opcode onboarding reset` -> the same story from the start,
 on every build; settings, models, and permissions stay, so their pages pass
 ```
 
 General > Speech model, selected model not downloaded     // settings.model-missing (#676)
-├── Muted "Hex can't listen until the speech model has downloaded"
+├── Muted "Opcode can't listen until the speech model has downloaded"
 ├── Downloading -> progress bar beside the model
 └── No download running -> Download (the same ChooseModel); a failure shows its error
 
@@ -257,14 +257,14 @@ General > Speech model or Language
 Permissions revoked later
   -> General > Permissions needed: Allow rows like onboarding's
      ├── Returned from System Settings still untrusted -> "Still grey? Fix it"
-     └── On, waiting for a relaunch -> "Restart Hex"
+     └── On, waiting for a relaunch -> "Restart Opcode"
 ```
 
 Observed on macOS 26.6.2 and macOS 27.0 VMs (2026-10-31, SIP enabled): unprivileged
-`/usr/bin/tccutil reset` from inside `anomaly.hex` clears `Accessibility`,
-`ScreenCapture`, and `AudioCapture` entries for retired Hex bundles on disk with
+`/usr/bin/tccutil reset` from inside `anomaly.opcode` clears `Accessibility`,
+`ScreenCapture`, and `AudioCapture` entries for retired Opcode bundles on disk with
 no password prompt (`rc=64` / `OSStatus -10814` when absent from disk), and
-resetting `anomaly.hex` followed by `AXIsProcessTrustedWithOptions` /
+resetting `anomaly.opcode` followed by `AXIsProcessTrustedWithOptions` /
 `CGRequestScreenCaptureAccess` replaces a stale `CDHash` entry that stayed grey
 or untrusted in System Settings. Checks:
 `tccutil_exit_codes_distinguish_cleared_absent_and_failed_bundles`,
@@ -325,13 +325,13 @@ Choose a supported language              // setup.language-conditioning; macOS +
 ├── Russian -> GigaAM v3 (Russian only, no language input); Parakeet v3 and
 │   Whisper turbo also offer it
 ├── Norwegian -> NB-Whisper Medium, always with the `no` hint (Bokmål is all
-│   Hex measured); stock Whisper turbo also offers it (#1150)
+│   Opcode measured); stock Whisper turbo also offers it (#1150)
 └── Bangla -> Whisper only, with the `bn` hint; Auto lets Whisper guess per clip
 ```
 
 Whisper and Qwen3-ASR (including QwenCleo) read the shared
 [Vocabulary](vocabulary.md) as their context prompt; recognition hints, a
-separate per-model box, merged into it ([#129](https://github.com/anomalyco/hex/issues/129)).
+separate per-model box, merged into it ([#129](https://github.com/anomalyco/opcode/issues/129)).
 Observed on apollo (Vulkan, 2026-10-31, LibriSpeech test-clean), when they were
 still hints: with Qwen3-ASR 0.6B, "Kaffar, Rodolfo, Bragelonne, …" fixed Caffer,
 Rudolpho, Redolfo, Rudolph, and Bragolon in 10 clips without changing the others
@@ -382,13 +382,13 @@ Settings picker > Every model row          // fixed height; scrolls
 │   speed qualified; "Most accurate" only between comparable records (labs.md)
 ├── Labs > Parakeet Ultra (off) -> its row with a Labs tag and Details: languages,  // setup.parakeet-ultra
 │   measured memory, the CC BY 4.0 credit, notice, Source/License links, folded
-│   published benchmarks "not measured in Hex" (labs.md)
+│   published benchmarks "not measured in Opcode" (labs.md)
 ├── "Add model file…" in the header -> imported cards after the catalog:  // setup.custom-models
 │   Imported · family · languages · Not benchmarked · file · licence · SHA-256
 │   prefix; Rename, Remove (not the active
 │   model); missing or changed -> warning line and no Use (own-models.md)
 └── Found on this computer -> a scan of the Hugging Face cache when the picker  // setup.found-models
-    opens: other compatible files at the top (Not tested by Hex, Use); a catalog
+    opens: other compatible files at the top (Not tested by Opcode, Use); a catalog
     model already downloaded there says so and offers Use; a found file's
     Delete is Forget (own-models.md)
 ```
@@ -398,19 +398,19 @@ are the models marked `streams`
 (`only_the_streaming_parakeet_artifacts_are_marked_streaming`). The mark describes
 the artifact; dictation still streams only after the load probe succeeds on a GPU
 device ([Streaming Finish](dictation.md#streaming-finish)). The menu bar lists
-names only and shows no tags. Scenes: `hex app -- --snap OUT --scene picker`
+names only and shows no tags. Scenes: `opcode app -- --snap OUT --scene picker`
 (also `picker-downloading`, `picker-japanese`, `picker-japanese-all`,
 `picker-custom-models`, `picker-found`).
 
 Nemotron 3.5 ASR (#834; NVIDIA's `nemotron-3.5-asr-streaming-0.6b`, OpenMDW-1.1)
-streams in 27 of Hex's languages and detects the language with Auto: Hex sends
+streams in 27 of Opcode's languages and detects the language with Auto: Opcode sends
 its language as the locale its prompt takes (`de` -> `de-DE`,
 `runtime_language`), and Auto sends none. It is not anyone's recommendation:
-Hex's own runs of transcribe.cpp's WER harness on apollo (Vulkan, 7045d1c) put
+Opcode's own runs of transcribe.cpp's WER harness on apollo (Vulkan, 7045d1c) put
 it behind Parakeet v3 on every set measured: LibriSpeech test-clean 3.05%
 against 1.95%, FLEURS English 7.91% against 4.88%, and FLEURS German 10.39%
 against 5.17% (8.77% and 10.46% with Auto). It is there to stream with the
-language set, or across English and German in one model. Hex converted the
+language set, or across English and German in one model. Opcode converted the
 pinned `.nemo` itself; the shipped file is handy-computer's, whose 653 tensors
 match that conversion byte for byte (`NEMOTRON_3_5_ASR_ARTIFACT`). Checks:
 `nemotron_takes_its_languages_as_locales_and_detects_with_auto`. Not observed:
@@ -434,7 +434,7 @@ The regression was observed failing with the old metadata and passing after the
 correction. The picker's layout is checked by Rune goldens (`rune-picker-*`), not on a
 Mac screen.
 
-**Unreproduced recognition report:** [#68](https://github.com/anomalyco/hex/issues/68)
+**Unreproduced recognition report:** [#68](https://github.com/anomalyco/opcode/issues/68)
 reports Portuguese speech misrecognized as English. Source and pinned-model
 metadata inspection establish the prompting limitation, not the cause or repair
 of those transcripts. No v3 audio reproduction or transcription-quality fix has
@@ -482,13 +482,13 @@ the saved step (`the_tour_step_is_saved_for_the_next_launch`), and the upgrade
 check (`a_fresh_install_onboards_without_the_identity_check`,
 `an_upgrader_without_permissions_gets_the_tour_once`,
 `an_upgrader_whose_setup_is_ready_skips_the_tour`; a real 2.3.1 to
-`anomaly.hex` upgrade on a Mac is not yet observed). Rune tests drive the
+`anomaly.opcode` upgrade on a Mac is not yet observed). Rune tests drive the
 first run (`a_new_install_opens_the_first_run`,
 `the_mac_first_run_asks_each_permission_then_practices`,
-`the_practice_game_follows_hex_s_own_dictation_on_every_os`,
+`the_practice_game_follows_opcode_s_own_dictation_on_every_os`,
 `a_listener_that_will_not_start_relaunches_once_then_asks_to_reopen`,
 `a_refused_microphone_points_to_system_settings`,
-`a_grant_waiting_for_a_restart_makes_setup_restart_hex`,
+`a_grant_waiting_for_a_restart_makes_setup_restart_opcode`,
 `onboarding_downloads_the_model_through_the_service`,
 `a_found_model_moves_on_without_a_download_and_back_returns_to_it`), and every
 page is a scene whose goldens `scripts/check-onboarding.sh` checks (its
@@ -498,7 +498,7 @@ The default model comes from `desktop::i18n::preferred_language` (macOS:
 `NSLocale.preferredLanguages`) through `recommended_selection`; existing
 settings keep their saved model.
 Observed on Linux (apollo, 2026-11-01): a clean first run in a nested
-session, from Setting up Hex through the real download to Hex is ready. Not
+session, from Setting up Opcode through the real download to Opcode is ready. Not
 yet observed: a clean-account Mac run with real grants, a real practice
 answer on macOS or Windows, or a real self-relaunch after an event-tap
 refusal. The story's demo cards and the game's messages stay in English in
@@ -573,11 +573,11 @@ keyboard layout handles, X11 XKB layouts such as `de(neo)`), not inferred speech
 physical keyboard keys, and store a model with a language it supports. Only
 downloaded models from the picker are offered (Apple Speech is never mapped);
 downloads stay in the picker. A mapped model that is no longer downloaded is
-labeled Not installed and can be cleared; a mapping to a model or language Hex no
+labeled Not installed and can be cleared; a mapping to a model or language Opcode no
 longer offers is dropped when settings load. Removing a source hides its row
 without erasing its saved mapping.
 
-Hex reads input sources only while the setting is on: the Windows runtime's poll
+Opcode reads input sources only while the setting is on: the Windows runtime's poll
 of the foreground window's layout and the Linux host's XKB connection (polled
 every 250 ms) exist only then, and the macOS main-thread TIS
 distributed-notification observer, which always runs to rebuild the keyboard
@@ -608,7 +608,7 @@ observer. No check delivers native input-source notifications or switches
 sources through the Input menu or a shortcut.
 
 **Observed October 30, 2026, X11 observer:** on a headless Xvnc with
-`setxkbmap -layout us,ru,de -variant ,,neo`, Hex listed English (US), Russian,
+`setxkbmap -layout us,ru,de -variant ,,neo`, Opcode listed English (US), Russian,
 and German (Neo 2) as `us`, `ru`, `de(neo)` with languages en, ru, de, and
 reported `us`, then `ru` after an XKB group lock. The Windows observer and both
 new runtime paths compile (x64 clippy) but were not run on Windows or a live X11
@@ -624,7 +624,7 @@ Settings picker > Every model > Downloaded row   // setup.delete-model; macOS
 ├── Selected dictation model (any language) -> No Delete
 ├── Preparing or Apple Speech model -> No Delete
 ├── Model choice or closing the picker -> Confirmation cleared
-└── Labs > Downloaded models only (off) -> "Downloaded models take <size>" (Hex's own   // labs.picker-downloaded
+└── Labs > Downloaded models only (off) -> "Downloaded models take <size>" (Opcode's own   // labs.picker-downloaded
     files) + "Only downloaded models", which leaves just the downloaded rows, each
     with its Delete; reset when the picker opens (labs.md, #1018)
 ```
@@ -672,7 +672,7 @@ Labs > Unload model when idle (off; 5/15/30/60 min, default 15)   // labs.md; tr
 
 The [detailed map](dictation.md) covers timing, successive captures, output
 commitment, named checks, and native-proof gaps.
-The macOS CLI entry is `hex listen`, with an optional authoritative `--device`.
+The macOS CLI entry is `opcode listen`, with an optional authoritative `--device`.
 Do not start it beside an existing listener.
 
 ## Use The Result
@@ -734,7 +734,7 @@ latency measurement.
 Sidebar                                  // settings.nav
 ├── General, Output, History, then each feature that is on: Meetings and
 │   Voice Filter (Labs toggles), Annotate, Playground (Labs, an item)
-└── Labs -> a store of unfinished features, each off by default: search, categories, cards with their own settings inline; hex://labs/<feature> opens its group (labs.md)
+└── Labs -> a store of unfinished features, each off by default: search, categories, cards with their own settings inline; opcode://labs/<feature> opens its group (labs.md)
     // Command-1…9 follow the panes' order (labs::order)
 
 General                                  // settings
@@ -745,7 +745,7 @@ General                                  // settings
 │       -> Folds under a clip as the rows below slide over it; no fade in place
 ├── Microphone -> Value names the input in use, with live level bars // settings.microphone
 │   ├── "System default · Kit Pods", or a saved device
-│   ├── Level bars -> peak of the audio Hex receives, ~30 fps while General shows them above rest // input_level
+│   ├── Level bars -> peak of the audio Opcode receives, ~30 fps while General shows them above rest // input_level
 │   │   ├── Read from one atomic the audio owner stores per chunk; never opens or blocks the mic
 │   │   ├── Quiet room (bars at rest) -> no 30 fps frames; the window's 250 ms tick notices a rise.
 │   │   │   An open General window with a warm mic woke 34.5 times a second in a quiet room before
@@ -756,17 +756,17 @@ General                                  // settings
 │   ├── Re-listed on a device or default change while General shows (Windows: also every 3 s)
 │   ├── System default -> The OS default input, followed live
 │   │   ├── Default changes -> Switch once capture is idle; new stream opens before the old drops
-│   │   ├── Default is Hex Microphone -> Built-in mic, else first real input; row says so
+│   │   ├── Default is Opcode Microphone -> Built-in mic, else first real input; row says so
 │   │   ├── Stand-ins never include virtual or aggregate inputs (macOS: e.g. Microsoft Teams Audio)
 │   │   │   ├── Nothing real left -> "lid is closed" / "no microphone" error, not silence
 │   │   │   └── A virtual default, saved device, or `--device` is still used as named
 │   │   └── Default is Bluetooth (Advanced switch on) -> Built-in mic, else first wired/USB input
-│   │       ├── Row says "KIT PODS is Bluetooth, so Hex listens to MacBook Pro Microphone"
+│   │       ├── Row says "KIT PODS is Bluetooth, so Opcode listens to MacBook Pro Microphone"
 │   │       ├── Windows: WASAPI `BTHENUM`, or a headset/handset endpoint of unknown bus (`BTHHFENUM`)
-│   │       ├── Linux: a `bluez5` default source; Hex opens ALSA's default, then moves its own
+│   │       ├── Linux: a `bluez5` default source; Opcode opens ALSA's default, then moves its own
 │   │       │   stream to the PCI input, else the first other hardware source (pactl, PipeWire);
 │   │       │   the stream is marked so WirePlumber never remembers the move. A Bluetooth
-│   │       │   default chosen while Hex's stream is open is followed until the next open
+│   │       │   default chosen while Opcode's stream is open is followed until the next open
 │   │       ├── No other usable input (or lid closed, Bluetooth only) -> the Bluetooth default
 │   │       ├── A saved Bluetooth mic or `--device` is always used as named
 │   │       └── Dictation only: meeting recording keeps the Bluetooth default, which
@@ -776,7 +776,7 @@ General                                  // settings
 │   │   ├── Row says "SHURE MV7 isn't connected; using your Mac's input"
 │   │   ├── Menu keeps "SHURE MV7" checked with a faint "not connected"
 │   │   └── Device returns -> Switch back once idle; the setting never changes
-│   ├── Menu lists real inputs only                                // never Hex Microphone
+│   ├── Menu lists real inputs only                                // never Opcode Microphone
 │   └── Open menu covers the controls beneath it; click elsewhere dismisses
 ├── Advanced ▸ -> one fold per pane, closed by default, even while a setting in it is in use
 │   ├── Collapse -> drops a pending release confirmation
@@ -818,7 +818,7 @@ General                                  // settings
 │       └── Dictation -> browser_media sequence below
 ├── Sound volume -> immediate feedback; zero suppresses tones
 │   └── Default output changes or disappears (macOS) -> next tone reopens on the current default
-├── Sounds -> Sheet: hear each set on Hex's real HUD, pick one
+├── Sounds -> Sheet: hear each set on Opcode's real HUD, pick one
 └── Linux / Windows -> listener card and desktop commands below the basics
 
 Pause media + Also pause the browser     // browser_media
@@ -828,9 +828,9 @@ Pause media + Also pause the browser     // browser_media
 │   └── Any window at or below -60 dBFS, or no level -> leave it alone
 ├── Send the system pause command (MediaRemote 1; never the toggle)
 ├── Poll 5 windows of 100 ms
-│   ├── 2 windows in a row below -90 dBFS -> Hex paused it
+│   ├── 2 windows in a row below -90 dBFS -> Opcode paused it
 │   └── Otherwise (another tab, a sound that ended later, or the pause went elsewhere) -> no play later
-└── Dictation ends and Hex paused it -> first, before the players: listen 300 ms to every browser process
+└── Dictation ends and Opcode paused it -> first, before the players: listen 300 ms to every browser process
     ├── Above -60 dBFS (you started it again) -> no play
     ├── No level, a browser runs and every one has closed its output -> still paused: play
     │   (a pause longer than about 10 s closes the output; a tap on it delivers nothing)
@@ -847,7 +847,7 @@ Intentional recording                    // recording.environment, idle_sleep
 ├── Prevent idle sleep
 │   ├── macOS -> IOKit no-idle-sleep assertion
 │   ├── Linux -> logind `idle:sleep` inhibitor; `idle` only where polkit refuses a
-│   │   process outside the seat session (Hex's user service) to block sleep
+│   │   process outside the seat session (Opcode's user service) to block sleep
 │   ├── Windows -> system-required power request (from the press, as its While dictating does)
 │   └── Failure -> Warn and continue recording
 └── Finish/cancel -> Release it
@@ -857,14 +857,14 @@ Intentional recording                    // recording.environment, idle_sleep
 Feedback tones keep their output open for five idle minutes (macOS, Windows).
 On Linux, where an open output stays listed in the desktop's sound controls,
 it closes about a second after the last tone ends
-([#720](https://github.com/anomalyco/hex/issues/720)); the existing
+([#720](https://github.com/anomalyco/opcode/issues/720)); the existing
 `output_opens_for_a_tone_and_releases_after_the_idle_grace` check covers the
 grace logic, not a real PipeWire stream list. On macOS the
 CoreAudio listeners on the default output, the device list, and an audio service
 restart advance an output route generation; the next tone drops an output opened
 under an older one and opens the current default at once, so unplugging a USB
-or Bluetooth output no longer silences tones until Hex restarts
-([#428](https://github.com/anomalyco/hex/issues/428)). Check:
+or Bluetooth output no longer silences tones until Opcode restarts
+([#428](https://github.com/anomalyco/opcode/issues/428)). Check:
 `a_route_change_reopens_the_output_on_the_current_default` in
 [feedback.rs](../../src/feedback.rs), with injected opens; a real unplug has not
 been observed by a test.
@@ -879,12 +879,12 @@ waits for restoration. A manually changed volume after settling is left alone;
 a newly selected output device is not lowered. Fixed-volume devices and outputs
 whose channel balance cannot be safely restored are left unchanged. Meetings do
 not acquire this dictation environment. Linux lowers the default sink's
-channels through `pactl` (one volume through `wpctl` without it), so Hex's own
+channels through `pactl` (one volume through `wpctl` without it), so Opcode's own
 tones are lowered too and the stop tone waits, as on macOS. Windows lowers
-every other app's audio session instead, leaving Hex's tones at full volume;
+every other app's audio session instead, leaving Opcode's tones at full volume;
 sessions that start while recording are left alone.
 
-HEX snapshots the volumes and applies a smooth ramp in
+OPCODE snapshots the volumes and applies a smooth ramp in
 [audio/output_ducking.rs](../../src/audio/output_ducking.rs) over the CoreAudio adapter in
 [ducking.rs](../../src/audio/recording_environment/ducking.rs), the sink adapter in
 [linux/audio_control.rs](../../src/linux/audio_control.rs), and the session
@@ -897,12 +897,12 @@ cover defaults, bounds, persistence, conditional visibility and platform gating.
 On 2026-10-25, the macOS logic/settings checks and strict Clippy passed.
 The seven reference images were regenerated on Ubuntu 24.04 ARM64 with Mesa
 lavapipe, using the unmodified Linux-only Rune test module and
-`HEX_UPDATE_GOLDENS=1 scripts/check ducking`. A subsequent
+`OPCODE_UPDATE_GOLDENS=1 scripts/check ducking`. A subsequent
 `scripts/check rune_ui --nocapture` without the update flag passed all 113 tests,
 including the unchanged control goldens; no golden skipped for lack of a GPU
 adapter. The five existing images differ from the base branch above the existing
 12-level channel tolerance only within the While dictating control; the sidebar,
-Quit Hex, and shortcut layouts remain unchanged. Dark and light ducking previews
+Quit Opcode, and shortcut layouts remain unchanged. Dark and light ducking previews
 were visually inspected. The earlier macOS-generated references were replaced
 because these fixtures retain build-OS-dependent layout and defaults. This
 verifies headless Linux rendering, not audible playback, physical devices,
@@ -943,8 +943,8 @@ or VLC through Automation.
 The browser pause runs after the AppleScript players and only when System Audio
 Recording is reported granted (an unknown answer skips it, because the tap would
 open the macOS dialog mid-dictation). macOS 15.4 and later no longer tell other apps
-what is playing, so Hex hears the browsers through a private process tap
-(aggregate `anomaly.hex.browser-tap.<pid>`, apart from the meeting tap) and sends
+what is playing, so Opcode hears the browsers through a private process tap
+(aggregate `anomaly.opcode.browser-tap.<pid>`, apart from the meeting tap) and sends
 play only after it saw the browser go silent right after its own pause. The
 sequence checks in [audio/browser_media.rs](../../src/audio/browser_media.rs) run on fakes:
 `a_confirmed_pause_is_resumed`, `two_sounding_tabs_never_get_play`,
@@ -960,9 +960,9 @@ assertion smoke exercises IOKit without starting microphone capture.
 **Changed after 2.3.1:** Automatic was a compiled preference list (Universal
 Audio Thunderbolt, Studio Display Microphone), then the macOS default with a
 Bluetooth default swapped for the built-in microphone (the 2.1.22 fix for
-[#106](https://github.com/anomalyco/hex/issues/106) and
-[#88](https://github.com/anomalyco/hex/issues/88)). That skipped a user's
-AirPods default, and Hex Microphone then passed the wrong microphone on to
+[#106](https://github.com/anomalyco/opcode/issues/106) and
+[#88](https://github.com/anomalyco/opcode/issues/88)). That skipped a user's
+AirPods default, and Opcode Microphone then passed the wrong microphone on to
 calls. Automatic is now System default: the OS default input, followed live.
 A Bluetooth default (CoreAudio transport Bluetooth or Bluetooth LE) is passed
 over for the built-in microphone, else the first other real input, so AirPods
@@ -970,13 +970,13 @@ keep their music out of call quality while you dictate; it is kept when nothing
 else is usable. Only System default is affected: a saved Bluetooth microphone
 and `--device` are honoured, and General › Advanced › "Use the Mac's microphone
 instead of Bluetooth" (`avoid_bluetooth_microphone`, default on) turns it off.
-Hex Microphone carries whichever input Hex records from. Linux and Windows
+Opcode Microphone carries whichever input Opcode records from. Linux and Windows
 don't detect Bluetooth inputs yet and follow the default. Checks in
 [audio.rs](../../src/audio.rs):
 `system_default_passes_over_a_bluetooth_default`,
 `a_bluetooth_default_is_kept_when_nothing_else_is_usable`,
 `a_virtual_input_never_stands_in` (CoreAudio transport Virtual, Aggregate, or
-AutoAggregate; [#429](https://github.com/anomalyco/hex/issues/429)),
+AutoAggregate; [#429](https://github.com/anomalyco/opcode/issues/429)),
 `inputs_resolve_to_the_selection_then_the_system_default`,
 `device_override_wins_and_never_falls_back`,
 `a_default_change_switches_only_while_capture_is_idle`, and
@@ -987,7 +987,7 @@ read against real AirPods, or Windows' default-change report on a real PC.
 
 **Fixed after 2.1.20:** through 2.1.20 the microphone menu was painted without
 occluding the panel, so hovering or clicking a device also reached the setting
-under the pointer ([#94](https://github.com/anomalyco/hex/issues/94)), and it
+under the pointer ([#94](https://github.com/anomalyco/opcode/issues/94)), and it
 only closed by choosing or reopening. The menu is now anchored to its button,
 occludes the controls beneath it, and closes on any outside mouse-down. In the
 Rune window the menu is a rune-kit `Menu` in the overlay layer (scene `menus`);
@@ -1025,22 +1025,22 @@ Gaps: the bar and touch are not verified on a real Windows PC or touchscreen.
 ```ts
 Output (main sidebar, replaces the Modes editor) // rune_ui/output.rs; scenes output*
 ├── Trust prompt -> Allow a config that uses fetch or programs (only when one asks)
-├── Edit with agent -> Copy a prompt naming the steps' keys (the AI rewrite too), `hex settings`,
-│   `hex vocabulary` for names, and the transforms docs
+├── Edit with agent -> Copy a prompt naming the steps' keys (the AI rewrite too), `opcode settings`,
+│   `opcode vocabulary` for names, and the transforms docs
 ├── Open file -> settings.json in the default editor
 ├── Every dictation -> Global's steps, numbered, read-only
 ├── Try -> Global's corrections and built-ins on a typed sentence
 │   ├── Scripts and rewriting run only when dictating
 │   └── Labs > Fix results in Output (off, #989) -> Vocabulary (the shared sheet) and,
 │       with a sentence typed, Fix this: copies Edit with agent's prompt ending
-│       `When I say "<sentence>", Hex pastes "<result>". It should paste: ` (labs.md)
+│       `When I say "<sentence>", Opcode pastes "<result>". It should paste: ` (labs.md)
 └── In some apps -> Each mode's apps and its steps (Only: …), opens to list them
     // the old Modes editor stays in the code for its scenes, unreachable
 
 Foreground context -> Select processing
 ├── Matching website                     // macOS: scriptable browsers, then AXWebArea; Windows: UIA; Linux: AT-SPI
 ├── Otherwise matching application
-├── Hex itself in front                  // application only: Hex never reads its own AX tree (#1402)
+├── Opcode itself in front                  // application only: Opcode never reads its own AX tree (#1402)
 └── Otherwise Global
 
 Selected mode                            // replaces Global's rewrite and transformations
@@ -1065,7 +1065,7 @@ Check: `numbers_only_transcripts_skip_the_rewrite` in
 were not run against a live model.
 
 Built-in text transformations run natively. Custom transformations come from
-`~/.config/hex/hex.config.ts` and run in Hex's embedded script engine, each
+`~/.config/opcode/opcode.config.ts` and run in Opcode's embedded script engine, each
 under its own `timeout` (1 s by default, 30 s when the config uses host APIs,
 60 s cap). OpenCode rewriting sends documented
 context to the configured provider; speech transcription stays local.
@@ -1083,7 +1083,7 @@ Timeout or settle -> requests abandoned, process group / job object killed
 ```
 
 The API is documented for agents at
-[anoma.ly/hex/docs/transforms](../../site/public/docs/transforms.md), linked
+[anoma.ly/opcode/docs/transforms](../../site/public/docs/transforms.md), linked
 from `llms.txt`, the managed `AGENTS.md`, and Edit with agent's prompt. Checks:
 [tests/host_apis.rs](../../src/personal_commands/tests/host_apis.rs) runs
 `fetch` against a local server (approval, re-ask on edit, abort, network
@@ -1131,17 +1131,17 @@ to an AT-SPI window by title and process and reads its showing web
 document's `DocURL` (Firefox) or `URI` (Chromium, only with
 `--force-renderer-accessibility`). `linux_context_reads_the_focused_window`
 (ignored, manual) printed `google-chrome-stable` with `https://example.com/path`
-under headless Sway and `chrome` with the page under its XWayland, and `hex`
+under headless Sway and `chrome` with the page under its XWayland, and `opcode`
 on niri (Oct 30); the macOS adapters are compiled on CI only and not run.
-With Hex's own window frontmost, its application name still matches but no
+With Opcode's own window frontmost, its application name still matches but no
 Accessibility tree of its own process is read, so its main thread owns that
-tree alone (#1402); `hex_never_reads_its_own_accessibility_tree` in
+tree alone (#1402); `opcode_never_reads_its_own_accessibility_tree` in
 [accessibility.rs](../../src/accessibility.rs) covers the skip (macOS only),
 though the race it prevents is not reproduced in a test.
 
 OpenCode transformation talks only to an already running OpenCode service,
 found through its registration file ([desktop/opencode_service.rs](../../src/desktop/opencode_service.rs));
-Hex runs no OpenCode executable and starts nothing. The catalog loads only while
+Opcode runs no OpenCode executable and starts nothing. The catalog loads only while
 the Modes pane shows. Without a service, "OpenCode isn't running" shows beside
 the switch and the setup/retry notice below;
 `unavailable_opencode_is_explained_beside_each_switch` covers it headlessly, and
@@ -1171,7 +1171,7 @@ rewrites already persisted activations on load, checked by
 **Fixed in 2.1.14:** through 2.1.13, a mode saved with that Finder
 preference enabled never activates and every dictation falls back to Global.
 Update to repair saved selections automatically. For older builds, the workaround
-is to quit Hex, remove the `.app` suffix from
+is to quit Opcode, remove the `.app` suffix from
 `dictation_processing.modes[].applications` in `settings.json`, then relaunch.
 
 ## Record Meetings
@@ -1181,40 +1181,40 @@ Meetings › Settings), call detection and the
 focus-free offer, menu-bar recording state, rolling transcription, echo
 suppression, and the Markdown copy in the user's transcript folder.
 
-## Experimental: Hex Microphone And Voice Filter
+## Experimental: Opcode Microphone And Voice Filter
 
 ```ts
-Labs › Voice Filter (experimental.hex_microphone = true), HEX_EXPERIMENTAL_MIC=1,
-or the driver installed; off, the pane is hidden  // fun.hex-microphone; macOS, Linux
+Labs › Voice Filter (experimental.opcode_microphone = true), OPCODE_EXPERIMENTAL_MIC=1,
+or the driver installed; off, the pane is hidden  // fun.opcode-microphone; macOS, Linux
 ├── Sidebar > Voice Filter  // the only home of these controls
-├── Hex Microphone card
-│   ├── Linux -> no driver: a PipeWire virtual source (Audio/Source "Hex Microphone",
-│   │   node hex_microphone) that Hex plays into through `pw-cat` while the Voice Filter is on
-│   │   ├── Status -> Starting… / Available ("Choose Hex Microphone as your input…") / Unavailable + reason
+├── Opcode Microphone card
+│   ├── Linux -> no driver: a PipeWire virtual source (Audio/Source "Opcode Microphone",
+│   │   node opcode_microphone) that Opcode plays into through `pw-cat` while the Voice Filter is on
+│   │   ├── Status -> Starting… / Available ("Choose Opcode Microphone as your input…") / Unavailable + reason
 │   │   ├── pw-cat missing or exits -> Unavailable with its last error line; retries every 2 s
-│   │   ├── Off or Hex quits -> the source disappears (pw-cat ends with its input); no root, nothing installed
-│   │   └── Session priority 1 -> WirePlumber never picks it as the default input Hex records
+│   │   ├── Off or Opcode quits -> the source disappears (pw-cat ends with its input); no root, nothing installed
+│   │   └── Session priority 1 -> WirePlumber never picks it as the default input Opcode records
 │   ├── macOS driver status -> Installed v<ver> / In use by <app> + Uninstall
 │   │   ├── Version mismatch -> v<old> installed + Update + Uninstall
 │   │   ├── Pre-Anomaly com.kitlangton driver at the same path -> Update replaces it in place
-│   │   ├── Not installed -> Install -> macOS admin prompt -> copies bundled HexMicrophone.driver + restarts coreaudiod
+│   │   ├── Not installed -> Install -> macOS admin prompt -> copies bundled OpcodeMicrophone.driver + restarts coreaudiod
 │   │   └── Inline state -> Installing… / Uninstalling… / Cancelled / Failed with reason
 │   ├── Mode while dictating -> Muffled (default), Muted, Quiet, Normal, Chipmunk, Robot, Walkie, Underwater, Far
 │   ├── Key sliders -> Live mode tuning + Effect strength + Reset
 │   └── Try it -> Example clip OR Record 5s (in-memory only)
 │       ├── Dual waveform -> You vs Call hears with highlighted dictation span
 │       └── Explicit playback -> Play what call hears | Play your voice
-├── Live microphone capture -> Raw audio to Hex transcription (unmodified)
-│   ├── Source -> Hex's dictation microphone (System default follows the OS default, never Hex Microphone itself), never a meeting's second stream
+├── Live microphone capture -> Raw audio to Opcode transcription (unmodified)
+│   ├── Source -> Opcode's dictation microphone (System default follows the OS default, never Opcode Microphone itself), never a meeting's second stream
 │   ├── Lock-free ring -> 48 kHz virtual sink (macOS IOProc; Linux 11 ms blocks into a one-page pipe) -> Raised-cosine fade on intentional hold
 │   │   └── Not dictating -> bit-exact pass-through; non-48 kHz inputs resample continuously
 │   └── Ring underflows/overflows -> process.log each minute while an app reads it, and on sink stop
-└── Offline CLI -> hex dev voice-filter render <in.wav> --mode <m> --dictation <start>-<end> -o <out.wav>
+└── Offline CLI -> opcode dev voice-filter render <in.wav> --mode <m> --dictation <start>-<end> -o <out.wav>
 ```
 
 Sources: [audio/voice_filter.rs](../../src/audio/voice_filter.rs),
-[audio/hex_microphone.rs](../../src/audio/hex_microphone.rs),
-[HexMicrophoneDriver.c](../../macos/HexMicrophoneDriver/HexMicrophoneDriver.c),
+[audio/opcode_microphone.rs](../../src/audio/opcode_microphone.rs),
+[OpcodeMicrophoneDriver.c](../../macos/OpcodeMicrophoneDriver/OpcodeMicrophoneDriver.c),
 [build-app.sh](../../scripts/build-app.sh),
 and [rune_ui/fun.rs](../../src/rune_ui/fun.rs). Checks:
 `default_mode_is_muffled`,
@@ -1224,19 +1224,19 @@ and [rune_ui/fun.rs](../../src/rune_ui/fun.rs). Checks:
 `a_meeting_stream_on_the_same_microphone_does_not_double_the_feed`,
 `a_callback_larger_than_the_latency_cap_passes_through_whole`,
 `resampling_is_continuous_across_callbacks`,
-`only_the_listeners_current_input_feeds_hex_microphone`,
+`only_the_listeners_current_input_feeds_opcode_microphone`,
 `driver_plugin_loopback_streams_at_48khz_under_20ms_latency`,
 `driver_plist_version_and_status_mismatch_are_detected`,
 `osascript_failure_classifies_user_cancel_and_errors`,
 `audio_service_restart_interrupts_stream_and_recovers`,
 `voice_filter_saves_the_mode_and_applies_the_tuning_live`,
 `try_it_records_and_plays_through_the_host`, and
-`voice_filter_needs_labs_or_hex_microphone`.
+`voice_filter_needs_labs_or_opcode_microphone`.
 Scenes: `mac-voice-filter`, `mac-voice-filter-muted`,
 `mac-voice-filter-driver-missing`, `voice-filter`, `voice-filter-unavailable`
 (Linux).
 Linux observed (apollo, PipeWire 1.6): the source lists in `pactl list sources`
-and `pw-record --target hex_microphone` records the fed audio at 48 kHz; no
+and `pw-record --target opcode_microphone` records the fed audio at 48 kHz; no
 automated check covers it, and no call app was tried.
 Proof limit: in-process `dlopen` loopback proves the compiled driver's 48 kHz
 `WriteMix`/`ReadInput` path at 5.33 ms (256 frames), not an interactive macOS
@@ -1259,26 +1259,26 @@ Menu bar and Settings                    // maintenance
 │   │   the Meetings pane), Stop & Transcribe, Copy Section ▸; idle: Record Meeting
 │   ├── Paste Last Dictation ⌥⇧V (saved binding), Copy Recent Dictation ▸ (Labs),
 │   │   Copy Last Meeting Transcript (Meetings on), Speech Model ▸
-│   ├── Settings… ⌘, · Check for Updates… · Quit Hex ⌘Q
-│   ├── No Meetings… (Settings… opens the same window) and no Show Hex in
+│   ├── Settings… ⌘, · Check for Updates… · Quit Opcode ⌘Q
+│   ├── No Meetings… (Settings… opens the same window) and no Show Opcode in
 │   │   Screen Recordings (Annotate's pane has it)
 │   └── check: the_menu_reads_meeting_then_actions_then_the_app,
 │       paste_last_shows_the_saved_binding_or_nothing (status_item.rs; the
 │       row order and key equivalents only, no native menu is drawn)
-├── Icon -> 18 pt monochrome Hex mark template (recording variant + elapsed time)
+├── Icon -> 18 pt monochrome Opcode mark template (recording variant + elapsed time)
 │   └── Labs > Hide menu bar icon (off, #1064) -> hidden unless a meeting is under
 │       way; shortcuts keep working; Finder or Spotlight reopen -> Settings (labs.md)
 ├── Settings / Paste Last -> Reachable with Dock icon hidden
 ├── Launch at Login -> macOS owns registration state
 ├── Check for Updates -> The updater (maintain.updates); opens the window, whose
-│   footer then says "Checking for updates…", "Hex is up to date", or
+│   footer then says "Checking for updates…", "Opcode is up to date", or
 │   "Couldn't check for updates" (#1120)
 └── Quit -> Orderly shutdown
 ```
 
 ```ts
-Launch Hex                               // maintain.startup
-├── `hex app --hidden` + usable menu-bar item -> No startup window, even before setup
+Launch Opcode                               // maintain.startup
+├── `opcode app --hidden` + usable menu-bar item -> No startup window, even before setup
 │   └── check: login_item_launch_starts_without_the_window (the decision only); not run on a Mac
 ├── Setup incomplete / permissions or model missing -> Open setup or Settings
 ├── Show Dock icon on -> Open Settings
@@ -1294,14 +1294,14 @@ Launch Hex                               // maintain.startup
 Menu-bar installation fails -> Show Dock icon and open the window // recovery access
 
 Show Dock icon off                       // maintain.dock-policy
-├── Settings window open -> Dock icon stays // hiding it would deactivate Hex
+├── Settings window open -> Dock icon stays // hiding it would deactivate Opcode
 └── Settings window closes -> Menu-bar only
 
-⌘Tab to Hex while it's in the Dock and its window is closed   // maintain.app-switcher (#1298)
+⌘Tab to Opcode while it's in the Dock and its window is closed   // maintain.app-switcher (#1298)
 └── Opens the window in front, on the pane it last showed, as the Dock icon does
-    ├── No reopen Apple event comes with ⌘Tab; Hex watches its own activation
+    ├── No reopen Apple event comes with ⌘Tab; Opcode watches its own activation
     └── Menu-bar only, an overlay that took the keyboard, or the window already open -> nothing
-    // check: switching_to_hex_opens_its_closed_window (the decision only); not run on a Mac
+    // check: switching_to_opcode_opens_its_closed_window (the decision only); not run on a Mac
 ```
 
 ```ts
@@ -1353,9 +1353,9 @@ not an input-to-frame latency measurement or a signed-release smoke test.
 
 Closing Settings left the app process alive with zero `login-item` threads;
 reopening produced one new worker. An earlier apparent surviving worker came
-from computer-use observation reopening the window. Cmd+Q and Quit Hex each
-terminated the process. Local profiles are `/tmp/hex-login-worker-current.sample.txt`
-and `/tmp/hex-login-cycle-{before,closed-no-observe,reobserved}.sample.txt`.
+from computer-use observation reopening the window. Cmd+Q and Quit Opcode each
+terminated the process. Local profiles are `/tmp/opcode-login-worker-current.sample.txt`
+and `/tmp/opcode-login-cycle-{before,closed-no-observe,reobserved}.sample.txt`.
 The tested temporary executable's SHA-256 is
 `d1a3be1e219e7371726273937eeef6c7e16434637e4297ae183f9bdaf4d28b04`.
 No Developer ID signing identity was available for a new distribution build.
@@ -1365,7 +1365,7 @@ additional launch-window setting. This applies to normal and login launches,
 does not change login registration, and does not hide an already open window
 when the preference changes. Any open Settings window keeps the Dock icon: macOS
 deactivates an app asynchronously when it becomes menu-bar only, which dropped
-the window behind other applications ([#103](https://github.com/anomalyco/hex/issues/103)).
+the window behind other applications ([#103](https://github.com/anomalyco/opcode/issues/103)).
 Turning the preference off therefore takes effect when Settings closes.
 
 Closing the window only orders it out, and AppKit keeps an ordered-out window
@@ -1381,7 +1381,7 @@ Checks in [meeting/watcher.rs](../../src/meeting/watcher.rs):
 Dock/Finder reopen Apple event and the status item's `OpenSettings` bypass it.
 These checks do not establish signed-app login behavior or native Finder/Spotlight
 reopening; those still need an installed-app smoke test. This addresses the
-menu-bar-only case in [#64](https://github.com/anomalyco/hex/issues/64), not an
+menu-bar-only case in [#64](https://github.com/anomalyco/opcode/issues/64), not an
 independent window preference for users keeping the Dock icon visible.
 
 **Executed September 3, 2026:** 441 Rust tests passed (nine opt-in tests ignored),
@@ -1390,13 +1390,13 @@ The release Settings preview built and launched, but window screenshot capture
 failed; no visual or installed-app startup verification is claimed.
 
 ```ts
-Hex checks the release service            // maintain.updates
-├── 10 s after launch, hourly (Dev channel: every 10 min and on window focus), and Check for updates -> anoma.ly/release/hex/desktop/<channel>.json
-│   ├── User-Agent: hex/<build channel>/<version> (hex/dev/0.0.0-dev-171, hex/stable/2.3.1); nothing else about the install
+Opcode checks the release service            // maintain.updates
+├── 10 s after launch, hourly (Dev channel: every 10 min and on window focus), and Check for updates -> anoma.ly/release/opcode/desktop/<channel>.json
+│   ├── User-Agent: opcode/<build channel>/<version> (opcode/dev/0.0.0-dev-171, opcode/stable/2.3.1); nothing else about the install
 │   ├── Failed check -> backs off, never past hourly
 │   └── <channel> -> updates.channel (General › Application › Update channel: Stable | Dev,
-│       or `hex settings set updates.channel`), else the channel the build was published on
-│       (HEX_BUILD_CHANNEL; older builds: dev for a dev version, else the receipt's);
+│       or `opcode settings set updates.channel`), else the channel the build was published on
+│       (OPCODE_BUILD_CHANNEL; older builds: dev for a dev version, else the receipt's);
 │       package managers always stable
 │       └── Choosing a channel -> checks now; a staged update stays staged
 ├── Versions never compared: channel's current release != running build -> take it
@@ -1406,14 +1406,14 @@ Hex checks the release service            // maintain.updates
 │   ├── required -> install without waiting for the rollout
 │   └── Rollout -> device-local bucket in <support>/update-bucket, never sent
 ├── Direct install -> download (resumable) -> size + SHA-256 -> code signature -> stage
-│   ├── macOS -> unpack beside Hex.app -> Developer ID 5NZ4Q7NXJ4, anomaly.hex, notarized
+│   ├── macOS -> unpack beside Opcode.app -> Developer ID 5NZ4Q7NXJ4, anomaly.opcode, notarized
 │   ├── Windows -> Authenticode valid, signer AUTHENTICODE_SIGNER -> new version directory
 │   ├── Linux -> SHA-256 only -> new version directory, `current` switched
 │   ├── Staged -> checks continue; Restart to update stays offered meanwhile
 │   │   ├── Another release this install takes (update, required) -> download -> replaces the staged one
 │   │   └── Same release, rollout deferred, unconfirmed switch, rollback, failure -> keep the staged one
 │   └── Sidebar Update, menu bar / tray: Restart to update; a dev build lists its
-│       first changes and What's new (https://anoma.ly/hex/dev) under it (updater/notes.rs)
+│       first changes and What's new (https://anoma.ly/opcode/dev) under it (updater/notes.rs)
 │       ├── One more check first (manifest within 15 s) -> Checking / Downloading -> newest staged
 │       │   └── A release published after the relaunch -> the next launch's check
 │       └── macOS -> renamex_np swap (also at quit) -> relaunch -> old bundle removed at launch
@@ -1424,7 +1424,7 @@ Hex checks the release service            // maintain.updates
 
 Check for updates pressed (footer, menu bar, app menu)   // maintain.update-feedback (#1120)
 ├── The menu bar's and app menu's open the window at General
-└── Footer -> "Checking for updates…" -> "Hex is up to date" | "Couldn't check for updates"
+└── Footer -> "Checking for updates…" -> "Opcode is up to date" | "Couldn't check for updates"
     // the hourly check alone keeps "Check for updates"; check:
     // an_asked_update_check_says_how_it_went (fixture; not run on a Mac)
 
@@ -1434,14 +1434,14 @@ DisableUpdates at launch                 // maintain.managed-updates
 └── macOS menu bar -> Disabled "Updates Managed by Your Organization"
 ```
 
-Administrators set `DisableUpdates` on macOS as a Boolean in the `anomaly.hex`
+Administrators set `DisableUpdates` on macOS as a Boolean in the `anomaly.opcode`
 defaults domain, normally through a configuration profile
-([#100](https://github.com/anomalyco/hex/issues/100)), and on Windows as a
-non-zero DWORD under `SOFTWARE\Policies\Anomaly\Hex` in HKLM or HKCU. Hex
+([#100](https://github.com/anomalyco/opcode/issues/100)), and on Windows as a
+non-zero DWORD under `SOFTWARE\Policies\Anomaly\Opcode` in HKLM or HKCU. Opcode
 reads it once at launch, so a forced value wins and a change applies after
 relaunch. Speech-model downloads are unaffected. Releases through 2.3.1 read
-`com.kitlangton.hex2`; there is no fallback to it, so profiles must name
-`anomaly.hex`.
+`com.kitlangton.opcode2`; there is no fallback to it, so profiles must name
+`anomaly.opcode`.
 
 [updater.rs](../../src/updater.rs) owns the worker and the shared status the
 window, menu bar, and tray show; `updater/protocol.rs` passes the release
@@ -1492,17 +1492,17 @@ update from an older supported build.
 ### Managed feature locks (macOS)
 
 ```ts
-Configuration profile forces a key in anomaly.hex     // maintain.managed-locks
+Configuration profile forces a key in anomaly.opcode     // maintain.managed-locks
 ├── DisableMeetings -> no detection, recording, transcription, or notes;
-│   hex meetings and hex mcp still read existing meetings
+│   opcode meetings and opcode mcp still read existing meetings
 ├── DisableAnnotate -> Annotate off
 ├── DisableOpenCodeProcessing -> no mode rewrites, meeting notes, or capture sends
-├── DisableTransforms -> no transforms; the hex.config.ts host never starts
+├── DisableTransforms -> no transforms; the opcode.config.ts host never starts
 ├── RestrictTransformsToLoopback -> transforms on; fetch reaches loopback only
 │   (resolved addresses, every redirect, no proxy); exec/execFile refused
 ├── DisableLabs -> every Labs feature off
 └── Window: setting off, disabled, "Managed by your organization";
-    hex settings set / hex labs on / local API refuse with code "managed"
+    opcode settings set / opcode labs on / local API refuse with code "managed"
 ```
 
 Only values a profile forces count (`CFPreferencesAppValueIsForced`), read once
@@ -1515,7 +1515,7 @@ starts: `Profile::configured` (rewrites, transformations), OpenCode generation
 in `dictation/processor.rs`, `capture_host/routing.rs` sends,
 `PersonalCommands::start`, and `personal_commands/script.rs` with
 `net::loopback_agent`. Admin docs: `site/public/docs/admin.md`
-(https://anoma.ly/hex/docs/admin).
+(https://anoma.ly/opcode/docs/admin).
 
 Checks: `policy::tests`, `a_managed_lock_reads_off_and_never_rewrites_the_saved_switch`,
 `a_managed_setting_is_refused`, `managed_locks_drop_the_rewrite_and_transformations`,
@@ -1529,7 +1529,7 @@ or the managed rows in the window.
 
 ```ts
 Linux beta                               // not macOS feature parity
-├── hex start -> One per-user Hex -> Alt-Space capture -> Stream (Vulkan GPU) -> Paste
+├── opcode start -> One per-user Opcode -> Alt-Space capture -> Stream (Vulkan GPU) -> Paste
 ├── Speech engine (General › Advanced › Dictation; transcription_device) -> Auto | GPU | CPU (#856)
 │   ├── Auto -> best GPU unless gpu-failures.json lists it under its current driver
 │   │   (kernel + Vulkan driver libraries), then another GPU, then the CPU;
@@ -1541,13 +1541,13 @@ Linux beta                               // not macOS feature parity
 │   │   the CPU too and keeps the faster; a slower GPU is recorded (slow), so
 │   │   later loads go straight to the CPU (#484: UHD 620, Iris Plus 655)
 │   ├── GPU -> tries the GPU anyway; working, it clears that GPU's record
-│   └── CPU -> CPU only; launched on CPU, Hex loads no GPU driver for speech
-│       and switching to Auto or GPU says it turns on when Hex restarts (#1253)
+│   └── CPU -> CPU only; launched on CPU, Opcode loads no GPU driver for speech
+│       and switching to Auto or GPU says it turns on when Opcode restarts (#1253)
 │   // checked on apollo with a planted record (RADV); a real i915 hang not reproduced
 │   └── CPU or a model that cannot stream -> Transcribe the whole clip after release
-├── hex / hex app -> Window in the same process; closing it leaves Hex running
-│   └── Ctrl+Q in the window or Quit Hex in the sidebar -> quits Hex (#808)
-│       // check: ctrl_q_quits_hex (fixture; not run on a GNOME session)
+├── opcode / opcode app -> Window in the same process; closing it leaves Opcode running
+│   └── Ctrl+Q in the window or Quit Opcode in the sidebar -> quits Opcode (#808)
+│       // check: ctrl_q_quits_opcode (fixture; not run on a GNOME session)
 ├── Recording sounds -> Shortcut press / capture stop
 ├── Shortcuts -> One state machine, three sources        // linux.shortcuts
 │   ├── X11 -> Root-window key grabs; General records the chord
@@ -1563,7 +1563,7 @@ Linux beta                               // not macOS feature parity
 │   │   │   an empty trigger (KDE's for one it keeps unbound) counts as refused
 │   │   │   └── Hyprland (XDG_CURRENT_DESKTOP) -> its portal names no trigger, since
 │   │   │       its config binds them: muted "Your desktop assigns this key itself,
-│   │   │       so Hex can't confirm it", no refusal note, info log (#635)
+│   │   │       so Opcode can't confirm it", no refusal note, info log (#635)
 │   │   │       // check: a_missing_trigger_is_unconfirmed_where_the_desktop_assigns_keys
 │   │   │       // (the row's data only); not run on a Hyprland session
 │   │   ├── Portal version 2 -> Desktop shortcuts > Open -> ConfigureShortcuts,
@@ -1589,35 +1589,35 @@ Linux beta                               // not macOS feature parity
 │   │       (Enable, a settings change) tries once more
 │   │       // check: only_backend_failures_count_as_a_missing_portal (the
 │   │       // classification only); not run on niri
-│   ├── Wayland without the portal -> Bind `hex` commands in the desktop
+│   ├── Wayland without the portal -> Bind `opcode` commands in the desktop
 │   │   ├── General hides shortcut rows and lists the commands
 │   │   └── GNOME: Add GNOME keyboard shortcuts -> custom shortcuts running
-│   │       `hex dictation toggle` (#781); written only while the listener has no
+│   │       `opcode dictation toggle` (#781); written only while the listener has no
 │   │       portal, and removed once the portal (or X11) binds the shortcuts, so a
 │   │       press never both starts a portal hold and toggles it off (#931)
 │   │       // check: entries_exist_only_without_the_portal (the rule only)
-│   └── Listener starting or stopped -> `hex status` reports Unregistered,
+│   └── Listener starting or stopped -> `opcode status` reports Unregistered,
 │       never the X11 mode
-├── hex dictation start|stop|toggle, hex paste-last
+├── opcode dictation start|stop|toggle, opcode paste-last
 │   -> Same events as a shortcut                     // linux.commands
 │   ├── start|toggle --raw -> Dictate without processing's events
 │   ├── Idempotent: start while recording / stop while idle -> Nothing
-│   └── Hex missing or not listening -> One-line error, non-zero exit
-│       // as for hex quit|restart|status
-├── hex dictation cancel -> Discards whatever records, any mode
+│   └── Opcode missing or not listening -> One-line error, non-zero exit
+│       // as for opcode quit|restart|status
+├── opcode dictation cancel -> Discards whatever records, any mode
 ├── Toggle's cancel shortcut (Escape by default), only while recording
 │   ├── X11 -> Grabbed only for the recording, and Escape while Annotate draws
-│   └── Portal -> Never bound: bind `hex dictation cancel` in the desktop
-│       └── KDE startup -> before the bind, the pre-#579 `hex` set (with the
-│           pre-#492 `cancel` on Escape), and every action under `anomaly.hex`
+│   └── Portal -> Never bound: bind `opcode dictation cancel` in the desktop
+│       └── KDE startup -> before the bind, the pre-#579 `opcode` set (with the
+│           pre-#492 `cancel` on Escape), and every action under `anomaly.opcode`
 │           this bind doesn't ask for (`cancel`, `cancel-dictation`, and the ids
 │           of shortcuts changed since, which kept their keys so the new id could
 │           never take them, #898) are removed from kglobalaccel (`unregister`);
 │           other apps untouched
 │           // check: only_requested_shortcuts_are_shown (a stale grant stays
-│           // out), kde_actions_hex_no_longer_binds_are_removed (the list only);
+│           // out), kde_actions_opcode_no_longer_binds_are_removed (the list only);
 │           // the KDE removal is not run on a Plasma session
-│       └── KDE's approval dialog -> Hex waits for it up to 30 min, not 60 s:
+│       └── KDE's approval dialog -> Opcode waits for it up to 30 min, not 60 s:
 │           giving up closed the session, and KDE then kept every shortcut
 │           with no key and never asked again (#898). A bind left unapproved
 │           (dismissed, canceled, abandoned) is noted in
@@ -1625,9 +1625,9 @@ Linux beta                               // not macOS feature parity
 │           they still have no key, so the dialog asks again; a key set in
 │           System Settings since stays
 │           // checked in a headless KWin 6.8 session (xdg-desktop-portal-kde
-│           // 6.8.2): the dialog stays up with Hex "Enabling…"; with the note,
+│           // 6.8.2): the dialog stays up with Opcode "Enabling…"; with the note,
 │           // keyless ids are removed and the dialog returns; without it they
-│           // stay; Hex is listed under Applications in System Settings ›
+│           // stay; Opcode is listed under Applications in System Settings ›
 │           // Shortcuts. Approving with OK was not exercised (no input there)
 ├── Recording HUD -> Dot scope, as on macOS, on the
 │   │   top or bottom edge, recording with the voice's level, then transcribing
@@ -1638,13 +1638,13 @@ Linux beta                               // not macOS feature parity
 │   │   ├── Layer-shell (niri, Sway, Hyprland) -> no output pinned: the
 │   │   │   compositor's focused output
 │   │   └── GNOME, KDE (XDG_CURRENT_DESKTOP) -> the primary display
-│   └── Rune overlay in Hex's process (rune_hud, rune_hud.wgsl on the GPU)
+│   └── Rune overlay in Opcode's process (rune_hud, rune_hud.wgsl on the GPU)
 │       ├── Wayland -> layer-shell overlay layer, no keyboard, empty input region
 │       ├── X11 -> override-redirect window, empty input shape
 │       ├── Wayland without layer-shell (zwlr_layer_shell_v1; GNOME) and XWayland
 │       │   (`DISPLAY`) -> only the HUD opens on XWayland: override-redirect ARGB
 │       │   window, notification type, empty input shape, primary monitor's edge,
-│       │   scale from Xft.dpi; the rest of Hex (window, portal shortcuts) stays
+│       │   scale from Xft.dpi; the rest of Opcode (window, portal shortcuts) stays
 │       │   on Wayland (#465)
 │       │   // seen in headless mutter 51 + Xwayland on apollo: HUD at the top
 │       │   // centre, animating, focus unchanged, the pointer over it hits the
@@ -1659,24 +1659,24 @@ Linux beta                               // not macOS feature parity
 │       │       wgpu's reason (Live text or the HUD); the window and other overlays
 │       │       keep running; the next show tries again
 │       │       // checked with a noop-backend Rune test; not on NVIDIA hardware
-│       ├── Window's Rune app panics anyway -> `hex window show` errors and
-│       │   `hex status` reports the window and HUD stopped, with the reason (#979)
+│       ├── Window's Rune app panics anyway -> `opcode window show` errors and
+│       │   `opcode status` reports the window and HUD stopped, with the reason (#979)
 │       ├── Neither (Rune refused it, or no layer-shell and no XWayland)
-│       │   -> process.log warns once; `hex status` reports `hud_limitation`
+│       │   -> process.log warns once; `opcode status` reports `hud_limitation`
 │       │   and the listener warning
-│       └── No window loop (no GPU or display, `hex dictate`) -> no HUD
+│       └── No window loop (no GPU or display, `opcode dictate`) -> no HUD
 ├── Tray host (StatusNotifierWatcher) -> Tray icon: click opens the window; menu as Windows' (tray_menu, linux/tray, rune::Tray)
 │   └── No tray host -> No icon; status and sounds remain available
 ├── Microphone -> System default or a saved device; `--device` overrides
 │   └── System default -> ALSA's default, resolved at each stream open // no live follow
-├── General > Launch at login -> writes or removes ~/.config/autostart/anomaly.hex.desktop (X-Hex-Managed; linux/login_item)
-│   ├── Background portal (GNOME, KDE; xdg-desktop-portal 1.20+) -> the portal writes it (X-XDP-Autostart=anomaly.hex; linux/background)
-│   ├── Installed by mise or asdf -> starts the version manager's shim, if it runs Hex from home
-│   ├── An entry without the mark -> error beside the row; Hex never replaces it
-│   └── A user target wants hex.service (~/.config/systemd/user/*.wants/hex.service:
-│       Home Manager's programs.hex.autostart, `systemctl --user enable`) -> on;
+├── General > Launch at login -> writes or removes ~/.config/autostart/anomaly.opcode.desktop (X-Opcode-Managed; linux/login_item)
+│   ├── Background portal (GNOME, KDE; xdg-desktop-portal 1.20+) -> the portal writes it (X-XDP-Autostart=anomaly.opcode; linux/background)
+│   ├── Installed by mise or asdf -> starts the version manager's shim, if it runs Opcode from home
+│   ├── An entry without the mark -> error beside the row; Opcode never replaces it
+│   └── A user target wants opcode.service (~/.config/systemd/user/*.wants/opcode.service:
+│       Home Manager's programs.opcode.autostart, `systemctl --user enable`) -> on;
 │       turning it off errors, naming where to disable it; no entry is written (#1164)
-│       // check: an_enabled_systemd_unit_starts_hex_at_login (the link scan only)
+│       // check: an_enabled_systemd_unit_starts_opcode_at_login (the link scan only)
 ├── Microphone failure -> Same recovery as macOS (RecoveringAudioInput)
 │   ├── Stream fails -> Cancel an unfinished capture, "reopening" failure, retry with backoff
 │   ├── Startup open fails -> Retry with backoff; the listener keeps running
@@ -1696,7 +1696,7 @@ Linux beta                               // not macOS feature parity
 │           // not run on GNOME
 │   └── Wayland: wl-copy, then the shortcut, chosen at the first paste  // linux.wayland-paste
 │       ├── Asked by a modifier shortcut -> wait for its portal release + 250 ms
-│       │   (2 s cap without a release); after a hex command -> 250 ms
+│       │   (2 s cap without a release); after a opcode command -> 250 ms
 │       │   // Hyprland merges held physical modifiers into virtual-keyboard keys (#353)
 │       ├── Compositor offers zwp_virtual_keyboard_manager_v1 and wtype is installed -> wtype
 │       │   └── V sent on evdev KEY_V (placeholder releases first), so Hyprland's
@@ -1713,22 +1713,22 @@ Linux beta                               // not macOS feature parity
 │       │       // fixed delay, no acknowledgement; not observed on a real GNOME session
 │       └── Neither works -> Failed: "Copied to the clipboard; press Ctrl+V…" naming
 │           the RemoteDesktop portal; the clipboard keeps the transcript
-└── Portal identity -> Register as `anomaly.hex` (reverse-DNS: GNOME 49/50's
-    shortcuts provider refused the bare `hex`, so binding failed, #579)
-    ├── Installs ship anomaly.hex.desktop (StartupWMClass=anomaly.hex); windows
-    │   report app_id / WM_CLASS anomaly.hex -> one launcher entry
-    ├── Icon=anomaly.hex -> packages install hicolor 16–512 px PNGs (deb/rpm refresh
-    │   the icon cache); otherwise Hex writes them to ~/.local/share/icons/hicolor
+└── Portal identity -> Register as `anomaly.opcode` (reverse-DNS: GNOME 49/50's
+    shortcuts provider refused the bare `opcode`, so binding failed, #579)
+    ├── Installs ship anomaly.opcode.desktop (StartupWMClass=anomaly.opcode); windows
+    │   report app_id / WM_CLASS anomaly.opcode -> one launcher entry
+    ├── Icon=anomaly.opcode -> packages install hicolor 16–512 px PNGs (deb/rpm refresh
+    │   the icon cache); otherwise Opcode writes them to ~/.local/share/icons/hicolor
     │   at startup and fixes Icon= in managed entries it wrote (#652)
-    ├── Startup -> Hex's own managed hex.desktop (launcher, autostart) renamed
-    │   to anomaly.hex.desktop; the installer does the same; unmanaged ones kept
-    └── No anomaly.hex.desktop in XDG data dirs -> Hex writes
-        ~/.local/share/applications/anomaly.hex.desktop (X-Hex-Managed),
-        NoDisplay when an older package's hex.desktop already shows Hex,
-        removed once a package ships anomaly.hex.desktop; never rewritten while
-        its program is there; pointed at this Hex (or a version manager's
+    ├── Startup -> Opcode's own managed opcode.desktop (launcher, autostart) renamed
+    │   to anomaly.opcode.desktop; the installer does the same; unmanaged ones kept
+    └── No anomaly.opcode.desktop in XDG data dirs -> Opcode writes
+        ~/.local/share/applications/anomaly.opcode.desktop (X-Opcode-Managed),
+        NoDisplay when an older package's opcode.desktop already shows Opcode,
+        removed once a package ships anomaly.opcode.desktop; never rewritten while
+        its program is there; pointed at this Opcode (or a version manager's
         shim) once its program is gone or superseded by that shim (#810)
-        // KDE bindings and RemoteDesktop grants stored under `hex` are asked again once
+        // KDE bindings and RemoteDesktop grants stored under `opcode` are asked again once
         // checked by unit tests only, not on a GNOME 49 session
 GNOME portal shortcuts (#723)            // linux.gnome-shortcuts
 ├── New GNOME or KDE Plasma setup -> dictation default Ctrl+Alt+Space (GNOME's
@@ -1736,16 +1736,16 @@ GNOME portal shortcuts (#723)            // linux.gnome-shortcuts
 │   // checked in a headless KWin 6.8 session: the portal's dialog flags Alt+Space
 ├── Granted key GNOME keeps (Alt+Space, Super+Space, Alt+Tab, Print, …) -> red note under the row
 ├── Keys changed in GNOME Settings -> ShortcutsChanged -> pressing them dictates at once;
-│   the row note, the Status hint and `hex status --json` listener.shortcuts show them
+│   the row note, the Status hint and `opcode status --json` listener.shortcuts show them
 └── Annotate's shortcut -> its own row under dictation's in General
     // observed on apollo: gnome-control-center 51.1 provider, portal-gnome 50, stand-in Shell
 Enable / Disable (General, tray)         // linux.listener-persist
-├── Saves enable_on_launch -> a disabled Hex stays disabled after a restart (#575)
+├── Saves enable_on_launch -> a disabled Opcode stays disabled after a restart (#575)
 └── GNOME (XDG_CURRENT_DESKTOP) Disable -> after the listener's session closes, a
     fresh session binds no shortcuts: GNOME Settings stores that empty set, so
-    Hex's entries leave its list; Enable shows GNOME's approval dialog again
+    Opcode's entries leave its list; Enable shows GNOME's approval dialog again
     // never on KDE: an empty bind drops the user's keys (#482)
-GNOME startup -> pre-#579 `hex` set listed in GNOME Settings -> removed through
+GNOME startup -> pre-#579 `opcode` set listed in GNOME Settings -> removed through
     gsettings (reset its shortcuts, drop it from `applications`); other apps untouched
     // observed on apollo with gnome-control-center 51.1's provider, portal-gnome 50,
     // a stand-in org.gnome.Shell, not a full GNOME session
@@ -1771,15 +1771,15 @@ it is not yet observed on Hyprland, and a modifier held past the wait still
 changes the paste. wtype numbers its keymap from evdev code 1 in order of first
 use, and Hyprland matches binds through its configured layout, so a bare
 `-k v` read as Escape and a Ctrl+Shift+Escape bind swallowed Terminal paste
-([#444](https://github.com/anomalyco/hex/issues/444)). Hex now releases 46
+([#444](https://github.com/anomalyco/opcode/issues/444)). Opcode now releases 46
 never-pressed placeholder keysyms first so V lands on `KEY_V`;
 `wtype_sends_v_on_the_v_key` checks the numbering against wtype's rule, not a
 real Hyprland session.
 
 ```ts
 Windows beta                             // x64 (Vulkan GPU) and ARM64 (CPU)
-├── Install -> Setup.exe or install-windows.ps1 -> hex.exe + install.json receipt
-├── Launch -> DLLs load from System32 and Hex's folder only, never PATH (#587)
+├── Install -> Setup.exe or install-windows.ps1 -> opcode.exe + install.json receipt
+├── Launch -> DLLs load from System32 and Opcode's folder only, never PATH (#587)
 │   └── DX12 compiles shaders with FXC (System32), never a dxcompiler.dll on PATH
 ├── GPU -> Rune draws with DX12 only (Vulkan only without a DX12 adapter) on
 │   the lowest-power adapter that drives a display (an unused integrated GPU
@@ -1800,7 +1800,7 @@ Windows beta                             // x64 (Vulkan GPU) and ARM64 (CPU)
 │       starts the launch's first GPU device, left in the data folder, same
 │       version; cleared by the first frame on any surface or a clean quit; a
 │       tray launch that never draws writes none) -> high-performance GPU
-│       (WGPU_POWER_PREF=high), warned in process.log, until Hex updates or
+│       (WGPU_POWER_PREF=high), warned in process.log, until Opcode updates or
 │       the file is deleted
 ├── Present cadence -> after any change the window presents every refresh for
 │   1 s, then rests: windowed G-SYNC/FreeSync sees one rate change per
@@ -1810,19 +1810,19 @@ Windows beta                             // x64 (Vulkan GPU) and ARM64 (CPU)
 │   Speech engine work as on Linux (#856)
 │   └── A launch that crashed starting the GPU (gpu-start.pending left in the
 │       data folder, same version) -> CPU only, warned in process.log, until
-│       Hex updates or the file is deleted (#662; not run on Windows)
-├── Hex app -> General, tray, HUD; Enabled = shortcut works in every app
+│       Opcode updates or the file is deleted (#662; not run on Windows)
+├── Opcode app -> General, tray, HUD; Enabled = shortcut works in every app
 ├── HUD display -> the monitor under the pointer (GetCursorPos) at each capture
 │   start, inside that monitor's work area, at its own DPI (#486); while
 │   shown, checked every 250 ms; moves once two checks agree (#807)
 ├── Launch again -> Running app shows its window; hidden (login) launch -> no-op
-├── Tray icon -> White Hex mark; light taskbar (SystemUsesLightTheme) -> black mark
+├── Tray icon -> White Opcode mark; light taskbar (SystemUsesLightTheme) -> black mark
 │   └── Theme read when the tray is created; a later switch applies at the next launch
 ├── Tray menu (tray_menu, shared with Linux)    // maintain.tray
 │   ├── Recording / Transcribing… status line and tooltip while the listener works
-│   ├── Show Hex · Paste last dictation (refocuses the app the menu covered)
+│   ├── Show Opcode · Paste last dictation (refocuses the app the menu covered)
 │   ├── Speech model: downloaded models, ✓ on the selected one; none while one prepares
-│   └── Update item · Enable / Disable Hex · Quit Hex
+│   └── Update item · Enable / Disable Opcode · Quit Opcode
 ├── Single-modifier shortcut -> Left / Either / Right side picker, as macOS
 ├── Recordable keys -> letters, digits, F1–F24, named keys, mouse buttons (#794)
 │   ├── Punctuation -> saved by virtual key (`oem 1`…`oem 102`), so a layout
@@ -1859,14 +1859,14 @@ Windows updates follow `maintain.updates` ([updater.rs](../../src/updater.rs),
 ([windows/rune.rs](../../src/windows/rune.rs)) follow the published update
 state. They pass the cross-compiled Clippy check, but no one has clicked them
 on a real Windows PC. The white tray mark vanished on a light taskbar
-([#460](https://github.com/anomalyco/hex/issues/460)); a light taskbar now gets
+([#460](https://github.com/anomalyco/opcode/issues/460)); a light taskbar now gets
 the same mark in black (`light_taskbar_gets_a_dark_mark_with_the_same_shape`
 checks the pixels, not a real taskbar). Releases are Authenticode-signed once Azure Artifact
 Signing is configured ([windows-signing.md](../windows-signing.md)).
 
-**Known defect, outside Hex:** Discord's game detection matches the running
-`hex.exe` to *HEX: Shards of Fate*
-([#445](https://github.com/anomalyco/hex/issues/445)). The executable name stays
+**Known defect, outside Opcode:** Discord's game detection matches the running
+`opcode.exe` to *OPCODE: Shards of Fate*
+([#445](https://github.com/anomalyco/opcode/issues/445)). The executable name stays
 as it is because the managed install layout, updater, shortcut, and login entry
 use it. The workaround is to hide the entry in Discord's Registered Games
 ([Windows guide](../windows.md#known-issues)). No check covers it.
@@ -1881,8 +1881,8 @@ smoke tests on Windows 10 and on ARM64 hardware have not been run.
 Linux updates                            // maintain.linux-updates
 ├── Direct install (versions/ + install.json receipt) -> release service -> staged -> sidebar footer: Restart to update
 ├── Source install (source-build marker) -> Sidebar footer: Updated from your source checkout
-├── Local build (HEX_LOCAL_BUILD=1) -> Sidebar footer: Local build · updates off; Version 2.3.1 (local <commit>); no checks, no channel row
-├── pacman (AUR hex-bin: /usr/bin, root-owned) or Nix store -> Sidebar footer: Updated by your package manager
+├── Local build (OPCODE_LOCAL_BUILD=1) -> Sidebar footer: Local build · updates off; Version 2.3.1 (local <commit>); no checks, no channel row
+├── pacman (AUR opcode-bin: /usr/bin, root-owned) or Nix store -> Sidebar footer: Updated by your package manager
 └── Anything else (a downloaded executable) -> Sidebar footer: Download update
 ```
 
@@ -1891,10 +1891,10 @@ observation (a staged update and the sidebar button) predates the release
 service and is not evidence for it.
 
 No Linux meetings. Wayland shortcuts need either the desktop's GlobalShortcuts portal
-or the user's own keybindings for the `hex` commands; Hex reads no input
+or the user's own keybindings for the `opcode` commands; Opcode reads no input
 devices. Click-through and a physical portal or keybinding press still need
 native evidence. Its [smoke](../../scripts/test-wayland-paste.sh) explicitly
-isolates `HEX_APPLICATION_SUPPORT_DIR`, pastes while another keyboard holds
+isolates `OPCODE_APPLICATION_SUPPORT_DIR`, pastes while another keyboard holds
 Ctrl and Alt, opens the window through a second launch, and checks that
 closing it leaves the same process answering.
 
@@ -1906,7 +1906,7 @@ plus X11 auto-repeat filtering and a portal release that never arrives
 [dictation.md](dictation.md)). The X11 grab tests run on an isolated display in
 CI; `commands_and_grabs_share_the_x11_listener` drives grabs and commands
 through one listener. [scripts/test-linux-service.py](../../scripts/test-linux-service.py)
-checks that commands fail without a listening Hex.
+checks that commands fail without a listening Opcode.
 On 2026-10-22 the portal path was observed on niri with xdg-desktop-portal-gnome
 using synthetic uinput keys against an isolated service: granted triggers,
 hold and Escape while held (Escape no longer cancels since #786), double-tap lock, Paste Last, and commands. A
@@ -1916,16 +1916,16 @@ physical keyboard press has not been recorded.
 listener's generation slot (an old listener cannot hide a restarted HUD) and
 turns its reports into [rune_hud.rs](../../src/rune_hud.rs)'s events;
 reports before the window's app exists are dropped. The shaders render
-offscreen with `cargo test --bin hex rune_hud_frames -- --ignored`
+offscreen with `cargo test --bin opcode rune_hud_frames -- --ignored`
 (2026-10-28 on apollo: Dot scope frames match the Metal look; 2026-10-29 on
 apollo: recording, processing, and done after Dot scope became the default).
 The GTK HUD it replaced is deleted. The text pill was observed on
 2026-10-22 in a headless sway on apollo (isolated data root, real microphone,
-`hex service`): `hex dictation start` showed the pill at the top edge and it
-was gone after `hex dictation stop` and transcription. The Rune overlay itself
+`opcode service`): `opcode dictation start` showed the pill at the top edge and it
+was gone after `opcode dictation stop` and transcription. The Rune overlay itself
 was also observed passing a virtual-pointer click through to the window below
 and leaving keyboard focus where it was (Rune `examples/background`). Not
-observed: X11 with Hex, niri, KWin, Mutter.
+observed: X11 with Opcode, niri, KWin, Mutter.
 
 See the [Linux guide](../linux.md), [linux/app.rs](../../src/linux/app.rs),
 [linux/portal.rs](../../src/linux/portal.rs), and
@@ -1933,31 +1933,31 @@ See the [Linux guide](../linux.md), [linux/app.rs](../../src/linux/app.rs),
 The [direct installer/updater](../../src/updater/linux.rs) and
 [installer tests](../../scripts/test-install-linux-release.sh) do not establish
 a published, supported-host-validated signed release. [Nix](../nix.md) owns its
-package updates; Hex updates only managed direct installs. Its Home Manager
-module merges `programs.hex.settings` into Hex on every activation through
-`hex settings apply` ([control-cli.md](control-cli.md)); `nix/checks.nix`
+package updates; Opcode updates only managed direct installs. Its Home Manager
+module merges `programs.opcode.settings` into Opcode on every activation through
+`opcode settings apply` ([control-cli.md](control-cli.md)); `nix/checks.nix`
 evaluates the module, not a live activation.
 
 ```ts
 Linux process                            // maintain.linux-service
-├── hex / hex app -> Hex running? -> Activate{activation token} over the socket -> exit 0
-│   ├── No Hex, hex.service loaded -> session.env -> systemctl start (Type=notify) -> Activate
-│   ├── No Hex, no unit or custom data dir -> This process becomes Hex
+├── opcode / opcode app -> Opcode running? -> Activate{activation token} over the socket -> exit 0
+│   ├── No Opcode, opcode.service loaded -> session.env -> systemctl start (Type=notify) -> Activate
+│   ├── No Opcode, no unit or custom data dir -> This process becomes Opcode
 │   │   └── Custom data dir -> Keep the supplied desktop environment; no user-manager query
-│   │       or Wayland socket discovery (unless HEX_SYSTEMD_UNIT explicitly opts in)
-│   └── Two racing launches -> One Hex; the other forwards and exits 0
-├── hex start / desktop autostart / hex service -> Same, without the window
-├── hex dictation|paste-last -> Socket worker -> Listener queue (never the UI thread)
-├── hex status -> Published status; hex quit / Quit Hex / launcher action -> Drain, exit 0
+│   │       or Wayland socket discovery (unless OPCODE_SYSTEMD_UNIT explicitly opts in)
+│   └── Two racing launches -> One Opcode; the other forwards and exits 0
+├── opcode start / desktop autostart / opcode service -> Same, without the window
+├── opcode dictation|paste-last -> Socket worker -> Listener queue (never the UI thread)
+├── opcode status -> Published status; opcode quit / Quit Opcode / launcher action -> Drain, exit 0
 ├── Open the window -> Maps at 980×760 (min = max), tiling WMs float it -> Resizable from 860×560
 ├── Close the window -> Keep microphone, accepted jobs, model preparation, and HUD
 │   └── Uncommitted shortcut capture -> Cancel and restore the prior listening state
-├── Crash -> systemd Restart=on-failure -> Hex without a window
-├── Update -> Restart the unit -> Hex reopens the window
-├── hex restart without a display (SSH) -> Keep the saved session.env
+├── Crash -> systemd Restart=on-failure -> Opcode without a window
+├── Update -> Restart the unit -> Opcode reopens the window
+├── opcode restart without a display (SSH) -> Keep the saved session.env
 ├── Saved XAUTHORITY file gone (a reboot: Xwayland's cookie is new each login)
 │   -> Take the user manager's current XAUTHORITY, else drop it (#465)
-├── Window fails (no display, no GPU) -> Logged; Hex keeps running
+├── Window fails (no display, no GPU) -> Logged; Opcode keeps running
 └── Startup -> transcribe.cpp's Vulkan instance first, on the main thread
     └── then the model load and the window's wgpu instance never create one at once
 ```
@@ -1966,10 +1966,10 @@ Sources: the process, host, and window seam in [linux/app.rs](../../src/linux/ap
 the single-instance socket and systemd lifecycle in
 [linux/service.rs](../../src/linux/service.rs), the CLI in
 [linux.rs](../../src/linux.rs), and the managed installer/Nix user units.
-`hex status` queries the running Hex; `--lines` explicitly reads historical
-observations. `hex app --hidden` and `hex start` start Hex without the window;
-`hex stop` equals `hex quit`. Closing the window does not mean Disable; the
-General's listener card Enable/Disable controls the listener, Quit Hex the process. No
+`opcode status` queries the running Opcode; `--lines` explicitly reads historical
+observations. `opcode app --hidden` and `opcode start` start Opcode without the window;
+`opcode stop` equals `opcode quit`. Closing the window does not mean Disable; the
+General's listener card Enable/Disable controls the listener, Quit Opcode the process. No
 root daemon or new input grants. The window runs on Rune's app lifetime: it
 opens or focuses with the forwarded activation token and keeps its state
 across close and reopen. Observed in a headless sway on apollo on 2026-10-22
@@ -1979,13 +1979,13 @@ reopen, quit); not rerun since GPUI was removed. On niri
 (apollo, 2026-10-22, isolated data directory, listener off) launches spawned
 through `niri msg action spawn` opened the window in the instance's process,
 `close-window` left the same process answering, a relaunch opened a new
-window in it, and `hex quit` exited; the window never took focus although niri
+window in it, and `opcode quit` exited; the window never took focus although niri
 passed `XDG_ACTIVATION_TOKEN` (an IPC spawn's token, without user input, so
 this does not show whether a launcher's token focuses it). Not yet on KWin,
 Mutter, or i3.
 
 Listener starts consume the host's settings snapshot; the foreground
-`hex dictate` command loads its own snapshot once. Invalid startup settings leave
+`opcode dictate` command loads its own snapshot once. Invalid startup settings leave
 defaults available only for editing and block capture until a successful settings
 commit or a restart with valid settings. Dismissing the load error does
 not authorize recording with defaults. Feedback is initialized at these entry
@@ -2003,9 +2003,9 @@ runtime workers. The virtual-microphone and Wayland scripts open the window
 through a second launch; the Wayland script passed on apollo (headless sway,
 `WLR_RENDERER=gles2`, before GPUI was removed), the X11 virtual-microphone script
 has not run since the single-process change. A throwaway `Type=notify` user unit
-on apollo (`HEX_SYSTEMD_UNIT`) started ready through `hex start`, restarted
+on apollo (`OPCODE_SYSTEMD_UNIT`) started ready through `opcode start`, restarted
 after SIGABRT and SIGKILL without a window, stopped cleanly on
-`systemctl stop` and `hex quit`, and an older `Type=simple` unit still started.
+`systemctl stop` and `opcode quit`, and an older `Type=simple` unit still started.
 Before the Vulkan ordering fix, a launch with an installed model and
 `enable_on_launch` SIGSEGVed in the Vulkan loader 3/3 in a headless sway on
 apollo (the model load raced the window's wgpu instance); with it, 6/6 ran.
@@ -2037,7 +2037,7 @@ Linux General > Sound volume              // dictate.feedback.linux; X11 + Wayla
 Linux General > Sounds                    // dictate.sound-theme
 └── Signature / Classic -> Save and apply live; preview the start sound
 
-Capture                                  // hex app and hex dictate
+Capture                                  // opcode app and opcode dictate
 ├── Shortcut starts capture -> Queue start sound immediately, before audio arrives
 ├── Hold passes 300 ms -> While dictating mute/pause begins, never at the press
 ├── Finish retained recording -> Stop sound at the release, while the 200 ms
@@ -2048,7 +2048,7 @@ Capture                                  // hex app and hex dictate
 └── Dictation pasted -> Done sound; failures play the error sound
 ```
 
-The shared [feedback player](../../src/feedback.rs) uses Hex's bundled sounds
+The shared [feedback player](../../src/feedback.rs) uses Opcode's bundled sounds
 ([Feedback](dictation.md#feedback)) on every platform; only macOS wake/sleep
 use `afplay`.
 Decoding happens before the Linux capture loop; the output device opens for
@@ -2084,7 +2084,7 @@ layout evidence.
 ```ts
 TypeScript SDK + local service             // macOS, Linux, Windows
 ├── Caller records audio -> Explicit helper -> Raw transcription
-│   └── Linux, Windows -> No packaged helper; command: hex service --embedded
+│   └── Linux, Windows -> No packaged helper; command: opcode service --embedded
 ├── Caller streams audio -> Running app's /streams -> Partials, segments, final
 │   └── Dictation first; uses the loaded model only (docs/streams.md)
 ├── Running app's /transcriptions -> Listener's engine when it holds the model
@@ -2093,11 +2093,11 @@ TypeScript SDK + local service             // macOS, Linux, Windows
 │   ├── No silence gate                  // model output, unlike hotkey dictation;
 │   │                                     // only recognition-hint echoes are dropped
 │   ├── Linux -> The listener records it (dictation::service owner)
-│   │   ├── Shortcut or `hex dictation` records -> 409 dictation-busy
+│   │   ├── Shortcut or `opcode dictation` records -> 409 dictation-busy
 │   │   ├── Client's dictation records -> shortcut starts and ends nothing
 │   │   ├── Lapsed lease or owner's cancel -> only that dictation is dropped
 │   │   └── Microphone lost -> finish answers microphone-lost (no kept clip)
-│   └── Windows, hex service -> serviceCapture false, 404 service-capture-unavailable
+│   └── Windows, opcode service -> serviceCapture false, 404 service-capture-unavailable
 └── Distribution
     ├── SDK 0.3.0 -> Published
     └── Turnkey signed helper -> Unfinished
@@ -2105,7 +2105,7 @@ TypeScript SDK + local service             // macOS, Linux, Windows
 
 Linux and Windows serve the same local API from the running app
 ([linux/app.rs](../../src/linux/app.rs), [windows/rune.rs](../../src/windows/rune.rs))
-and from `hex service [--embedded]`; a failed start only logs, and Hex runs on
+and from `opcode service [--embedded]`; a failed start only logs, and Opcode runs on
 without it. On Linux, the embedded service answered `/health`,
 `/capabilities`, `/models`, and transcribed a WAV with Parakeet Unified
 English on the Vulkan iGPU (October 30). The running app's shared-engine path,
@@ -2152,11 +2152,11 @@ microphone behavior.
 ```ts
 macOS debug runtime                      // not release navigation
 ├── Meetings -> Always available; release builds need the Meetings opt-in (its pane's card or Meetings › Settings)
-├── Activity / HUD Lab / hex dev -> Observation and developer controls
+├── Activity / HUD Lab / opcode dev -> Observation and developer controls
 └── HUD Lab in release -> Only in the playground (Labs › Playground)
 
-`hex app -- --snap OUT --scene NAME` -> Rendered fixtures    // not proof capture/download/update happened
-Linux `hex` -> the Linux window on Rune, in the Hex process // dev.rune-ui
+`opcode app -- --snap OUT --scene NAME` -> Rendered fixtures    // not proof capture/download/update happened
+Linux `opcode` -> the Linux window on Rune, in the Opcode process // dev.rune-ui
 ├── Calls the host directly: saves settings through it; woken on host changes
 ├── Sidebar: General, Modes, History
 ├── Transcription picker -> ChooseModel / CancelModel; progress from the snapshot
@@ -2170,13 +2170,13 @@ Linux `hex` -> the Linux window on Rune, in the Hex process // dev.rune-ui
     Meetings (Recordings | Settings, opt-in card), Voice Filter,
     HUD Lab, Activity, permission rows, Launch at login, Dock icon, shortcut
     sides, the permissions page
-macOS `hex app` -> one menu-bar process, Rune window // dev.rune-ui-macos
+macOS `opcode app` -> one menu-bar process, Rune window // dev.rune-ui-macos
 ├── rune::App on the main thread: accessory, windowless unless setup/onboarding/Dock icon open it
-├── Same AppKit loop: status item, updater, Hex/File/Window menu, Dock reopen event, the HUD pump (16 ms timer; the HUD itself is a Rune overlay)
+├── Same AppKit loop: status item, updater, Opcode/File/Window menu, Dock reopen event, the HUD pump (16 ms timer; the HUD itself is a Rune overlay)
 ├── Runtime thread: model preparation (menu bar: installed only), starts the listener once setup is ready
 ├── Listener, meeting controller, local API: their own threads
 ├── macos_host: AppKit event monitor records chords (Option, Fn); NativeHost does permissions,
-│   login item, Hex Microphone, meeting start/stop/rename/trash/reveal, relaunch
+│   login item, Opcode Microphone, meeting start/stop/rename/trash/reveal, relaunch
 ├── Meetings pane lists the store through meeting::query (1 s rescan, sent only when changed);
 │   a controller failure shows in the pane; rune::FileDialogs (file_dialog) chooses the
 │   meetings folder and Modes' "Choose a file…" .app
@@ -2188,7 +2188,7 @@ macOS `hex app` -> one menu-bar process, Rune window // dev.rune-ui-macos
 │   with Copy new (N) / Copy all of the in-call transcript; compact until hovered,
 │   dragged to any corner)
 └── Modes app icons: Finder's icon (NSWorkspace) in the picker, chips, and mode rows
-Windows `hex app` -> one tray process, Rune window // dev.rune-ui-windows
+Windows `opcode app` -> one tray process, Rune window // dev.rune-ui-windows
 ├── Runtime thread owns WindowsDesktopHost (listener, model preparation, OpenCode, transformations, updater)
 ├── Named event: a second launch shows the window; tray Show / Enable-Disable / Quit
 ├── rune::App: --hidden starts windowless, close hides (keep_running); Quit or no tray ends it
@@ -2210,7 +2210,7 @@ best-effort deletion is not guaranteed deletion.
 
 `dev.rune-ui` lives in [rune_ui.rs](../../src/rune_ui.rs) and its pane modules;
 its tests drive the Rune runtime headlessly (navigation; General rows per
-shortcut source, fitting the default window with Advanced collapsed, Shortcut mode's modal, saves through the host, Quit Hex, microphone-release
+shortcut source, fitting the default window with Advanced collapsed, Shortcut mode's modal, saves through the host, Quit Opcode, microphone-release
 confirmation, shortcut recording and Escape, conflicts; History select, delete, two-step
 clear, copy; Modes add/delete, corrections, transformations (drag reorder saves once
 on release), application conflicts, a chosen file joining the mode, arrow
@@ -2235,9 +2235,9 @@ service saved a new mode and a correction. See
 [rune_ui/macos_host.rs](../../src/rune_ui/macos_host.rs). On hailmary
 (macOS 26.2, Command Line Tools only) it compiles, passes clippy
 `-D warnings` and the macOS unit tests (including `macos_host`'s chord
-capture), and a debug `hex app` with an isolated data root started, showed
+capture), and a debug `opcode app` with an isolated data root started, showed
 its 980×760 window (CGWindowList; `lsappinfo`: Foreground while open),
-answered `hex dev status/show/hud`, and quit cleanly on Ctrl-C, also with
+answered `opcode dev status/show/hud`, and quit cleanly on Ctrl-C, also with
 the meeting fixtures copied into its data root and the Meetings pane shown.
 `macos_host`'s tests cover the meeting feed over `tests/fixtures/meetings`
 (order, recovery to Interrupted, turns and pauses, no resend when unchanged)

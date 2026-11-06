@@ -1,5 +1,5 @@
 //! One PipeWire video stream on the screen-cast portal's remote. `libpipewire-0.3` is loaded
-//! when a capture starts, so Hex neither builds nor ships against it, and nothing changes for
+//! when a capture starts, so Opcode neither builds nor ships against it, and nothing changes for
 //! a desktop without it until a capture is asked for.
 //!
 //! The stream offers two formats: 32-bit RGB as a linear DMA-BUF (what niri and most
@@ -631,7 +631,7 @@ impl Stream {
     /// Connects to `node` on the portal's PipeWire remote.
     pub fn connect(remote: OwnedFd, node: u32) -> Result<Self> {
         let pw = pw()?;
-        let name = c"hex-capture";
+        let name = c"opcode-capture";
         let thread_loop = unsafe { (pw.pw_thread_loop_new)(name.as_ptr(), ptr::null()) };
         if thread_loop.is_null() {
             bail!("could not make a PipeWire loop");
@@ -684,7 +684,7 @@ impl Stream {
         let stream = unsafe {
             (pw.pw_stream_new)(
                 self.core,
-                c"hex-capture".as_ptr(),
+                c"opcode-capture".as_ptr(),
                 (pw.pw_properties_new_string)(props.as_ptr()),
             )
         };
@@ -707,7 +707,7 @@ impl Stream {
                 stream,
                 DIRECTION_INPUT,
                 node,
-                // Hex maps buffers itself (`Stream::map`), so a buffer PipeWire removes is never
+                // Opcode maps buffers itself (`Stream::map`), so a buffer PipeWire removes is never
                 // unmapped while the recorder still copies from it.
                 STREAM_FLAG_AUTOCONNECT,
                 params.as_mut_ptr(),

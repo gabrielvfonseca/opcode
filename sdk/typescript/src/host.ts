@@ -2,11 +2,11 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process"
 import { readFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { join } from "node:path"
-import { HexError } from "./errors.js"
+import { OpcodeError } from "./errors.js"
 import { makeClient } from "./client.js"
 import { resolveCommand } from "./helper.js"
 import { decodeEndpoint, decodeEndpointValue } from "./protocol.js"
-import type { ConnectOptions, CreateOptions, HexClient, HexHost, Transcriber, TranscriberOptions } from "./types.js"
+import type { ConnectOptions, CreateOptions, OpcodeClient, OpcodeHost, Transcriber, TranscriberOptions } from "./types.js"
 
 const DEFAULT_STARTUP_TIMEOUT_MS = 10_000
 const DEFAULT_SHUTDOWN_TIMEOUT_MS = 5_500
@@ -38,16 +38,16 @@ const stop = async (child: ChildProcessWithoutNullStreams, timeoutMs: number): P
   try {
     child.kill("SIGTERM")
   } catch (cause) {
-    throw new HexError("shutdown-failed", "Could not terminate the embedded HEX service", { cause })
+    throw new OpcodeError("shutdown-failed", "Could not terminate the embedded Opcode service", { cause })
   }
   if (await waitForExit(child, 1_000)) return
   try {
     child.kill("SIGKILL")
   } catch (cause) {
-    throw new HexError("shutdown-failed", "Could not kill the embedded HEX service", { cause })
+    throw new OpcodeError("shutdown-failed", "Could not kill the embedded Opcode service", { cause })
   }
   if (!await waitForExit(child, 1_000)) {
-    throw new HexError("shutdown-failed", "Embedded HEX remained alive after SIGKILL")
+    throw new OpcodeError("shutdown-failed", "Embedded Opcode remained alive after SIGKILL")
   }
 }
 
@@ -59,7 +59,7 @@ const readHandshake = (
   let settled = false
   let buffer = Buffer.alloc(0)
   let stderr = ""
-  const finish = (result: { readonly line: string } | { readonly error: HexError }) => {
+  const finish = (result: { readonly line: string } | { readonly error: OpcodeError }) => {
     if (settled) return
     settled = true
     clearTimeout(timeout)
@@ -74,7 +74,7 @@ const readHandshake = (
   const onData = (chunk: Buffer) => {
     buffer = Buffer.concat([buffer, chunk])
     if (buffer.length > MAX_HANDSHAKE_BYTES) {
-      finish({ error: new HexError("invalid-handshake", "HEX startup handshake exceeded its byte limit") })
+      finish({ error: new OpcodeError("invalid-handshake", "Opcode startup handshake exceeded its byte limit") })
       return
     }
     const newline = buffer.indexOf(0x0a)
@@ -84,22 +84,22 @@ const readHandshake = (
     stderr = `${stderr}${chunk.toString("utf8")}`.slice(-MAX_STDERR_BYTES)
   }
   const onError = (cause: Error) => {
-    finish({ error: new HexError("startup-failed", "Could not start the HEX helper", { cause }) })
+    finish({ error: new OpcodeError("startup-failed", "Could not start the Opcode helper", { cause }) })
   }
   const onExit = (code: number | null, exitSignal: NodeJS.Signals | null) => {
     const detail = stderr.trim()
     finish({
-      error: new HexError(
+      error: new OpcodeError(
         "service-exited",
-        `HEX exited before becoming ready (${code ?? exitSignal ?? "unknown"})${detail ? `: ${detail}` : ""}`,
+        `Opcode exited before becoming ready (${code ?? exitSignal ?? "unknown"})${detail ? `: ${detail}` : ""}`,
       ),
     })
   }
   const onAbort = () => {
-    finish({ error: new HexError("cancelled", "HEX startup was cancelled", { cause: signal?.reason }) })
+    finish({ error: new OpcodeError("cancelled", "Opcode startup was cancelled", { cause: signal?.reason }) })
   }
   const timeout = setTimeout(() => {
-    finish({ error: new HexError("startup-timeout", `HEX did not become ready within ${timeoutMs}ms`) })
+    finish({ error: new OpcodeError("startup-timeout", `Opcode did not become ready within ${timeoutMs}ms`) })
   }, timeoutMs)
   child.stdout.on("data", onData)
   child.stderr.on("data", onStderr)
@@ -109,9 +109,9 @@ const readHandshake = (
   if (signal?.aborted === true) onAbort()
 })
 
-export const startHost = async (options: Omit<CreateOptions, "model"> = {}): Promise<HexHost> => {
+export const startHost = async (options: Omit<CreateOptions, "model"> = {}): Promise<OpcodeHost> => {
   if (options.signal?.aborted) {
-    throw new HexError("cancelled", "HEX startup was cancelled", { cause: options.signal.reason })
+    throw new OpcodeError("cancelled", "Opcode startup was cancelled", { cause: options.signal.reason })
   }
   const [executable, ...arguments_] = resolveCommand(options)
   const child = spawn(executable, arguments_, {
@@ -123,7 +123,7 @@ export const startHost = async (options: Omit<CreateOptions, "model"> = {}): Pro
   let closed: Promise<void> | undefined
   const close = (): Promise<void> => {
     closed ??= (async () => {
-      lifetime.abort(new HexError("service-exited", "HEX host closed"))
+      lifetime.abort(new OpcodeError("service-exited", "Opcode host closed"))
       await stop(child, options.shutdownTimeoutMs ?? DEFAULT_SHUTDOWN_TIMEOUT_MS)
     })()
     return closed
@@ -132,18 +132,18 @@ export const startHost = async (options: Omit<CreateOptions, "model"> = {}): Pro
     const line = await readHandshake(child, options.startupTimeoutMs ?? DEFAULT_STARTUP_TIMEOUT_MS, options.signal)
     const endpoint = decodeEndpoint(line)
     if (endpoint.pid !== child.pid) {
-      throw new HexError("invalid-handshake", "HEX reported a different process identifier")
+      throw new OpcodeError("invalid-handshake", "Opcode reported a different process identifier")
     }
     child.stderr.resume()
     child.stdout.resume()
     child.once("exit", (code, exitSignal) => {
-      lifetime.abort(new HexError(
+      lifetime.abort(new OpcodeError(
         "service-exited",
-        `Embedded HEX exited (${code ?? exitSignal ?? "unknown"})`,
+        `Embedded Opcode exited (${code ?? exitSignal ?? "unknown"})`,
       ))
     })
     if (child.exitCode !== null || child.signalCode !== null) {
-      throw new HexError("service-exited", "HEX exited after its startup handshake")
+      throw new OpcodeError("service-exited", "Opcode exited after its startup handshake")
     }
     const client = makeClient(endpoint, options.fetch ?? globalThis.fetch, lifetime.signal)
     return { pid: endpoint.pid, client, close }
@@ -153,7 +153,7 @@ export const startHost = async (options: Omit<CreateOptions, "model"> = {}): Pro
   }
 }
 
-export const prepareTranscriber = async (host: HexHost, options: TranscriberOptions): Promise<Transcriber> => {
+export const prepareTranscriber = async (host: OpcodeHost, options: TranscriberOptions): Promise<Transcriber> => {
   const { model, language = "en", signal, onProgress } = options
   try {
     await host.client.models.prepare(model, {
@@ -161,7 +161,7 @@ export const prepareTranscriber = async (host: HexHost, options: TranscriberOpti
       ...(signal === undefined ? {} : { signal }),
       ...(onProgress === undefined ? {} : { onProgress }),
     })
-    if (signal?.aborted) throw new HexError("cancelled", "HEX preparation was cancelled", { cause: signal.reason })
+    if (signal?.aborted) throw new OpcodeError("cancelled", "Opcode preparation was cancelled", { cause: signal.reason })
   } catch (error) {
     await host.close()
     throw error
@@ -173,18 +173,18 @@ export const prepareTranscriber = async (host: HexHost, options: TranscriberOpti
     close: host.close,
     async transcribe(audio, { signal } = {}) {
       if (signal?.aborted) {
-        throw new HexError("cancelled", "HEX transcription was cancelled", { cause: signal.reason })
+        throw new OpcodeError("cancelled", "Opcode transcription was cancelled", { cause: signal.reason })
       }
       try {
         const result = await host.client.transcribe({
           audio: { data: audio, contentType: "audio/wav" }, model, language,
           ...(signal === undefined ? {} : { signal }),
         })
-        if (signal?.aborted) throw new HexError("cancelled", "HEX transcription was cancelled", { cause: signal.reason })
+        if (signal?.aborted) throw new OpcodeError("cancelled", "Opcode transcription was cancelled", { cause: signal.reason })
         return result
       } catch (error) {
         // Socket cancellation alone cannot stop native inference. Wait for its owner to exit.
-        if (signal?.aborted || error instanceof HexError && error.code === "service-exited") {
+        if (signal?.aborted || error instanceof OpcodeError && error.code === "service-exited") {
           await host.close()
         }
         throw error
@@ -194,8 +194,8 @@ export const prepareTranscriber = async (host: HexHost, options: TranscriberOpti
 }
 
 export function create(options: TranscriberOptions): Promise<Transcriber>
-export function create(options?: CreateOptions): Promise<HexHost>
-export async function create(options: CreateOptions | TranscriberOptions = {}): Promise<HexHost | Transcriber> {
+export function create(options?: CreateOptions): Promise<OpcodeHost>
+export async function create(options: CreateOptions | TranscriberOptions = {}): Promise<OpcodeHost | Transcriber> {
   if (options.model !== undefined) {
     const snapshot = { ...options }
     return prepareTranscriber(await startHost(snapshot), snapshot)
@@ -203,29 +203,29 @@ export async function create(options: CreateOptions | TranscriberOptions = {}): 
   return startHost(options)
 }
 
-// Where each OS's Hex keeps its data (`dirs::data_dir()` joined with `hex`).
+// Where each OS's Opcode keeps its data (`dirs::data_dir()` joined with `opcode`).
 const defaultSupportDirectory = (): string => {
   switch (process.platform) {
     case "darwin":
-      return join(homedir(), "Library", "Application Support", "hex")
+      return join(homedir(), "Library", "Application Support", "opcode")
     case "win32":
-      return join(process.env.APPDATA ?? join(homedir(), "AppData", "Roaming"), "hex")
+      return join(process.env.APPDATA ?? join(homedir(), "AppData", "Roaming"), "opcode")
     default:
-      return join(process.env.XDG_DATA_HOME || join(homedir(), ".local", "share"), "hex")
+      return join(process.env.XDG_DATA_HOME || join(homedir(), ".local", "share"), "opcode")
   }
 }
 
-export const connect = async (options: ConnectOptions = {}): Promise<HexClient> => {
+export const connect = async (options: ConnectOptions = {}): Promise<OpcodeClient> => {
   const discoveryPath = options.discoveryPath
-    ?? join(process.env.HEX_APPLICATION_SUPPORT_DIR ?? defaultSupportDirectory(), "local-api.json")
+    ?? join(process.env.OPCODE_APPLICATION_SUPPORT_DIR ?? defaultSupportDirectory(), "local-api.json")
   let value: unknown
   try {
     value = JSON.parse(await readFile(discoveryPath, "utf8"))
   } catch (cause) {
-    throw new HexError("startup-failed", "Could not read the running HEX endpoint", { cause })
+    throw new OpcodeError("startup-failed", "Could not read the running Opcode endpoint", { cause })
   }
   if (typeof value !== "object" || value === null) {
-    throw new HexError("invalid-handshake", "HEX discovery contained an invalid endpoint")
+    throw new OpcodeError("invalid-handshake", "Opcode discovery contained an invalid endpoint")
   }
   const input = value as Record<string, unknown>
   const endpoint = decodeEndpointValue({

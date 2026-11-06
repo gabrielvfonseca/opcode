@@ -40,15 +40,15 @@ const FRAME: Duration = Duration::from_micros(16_667);
 /// Scrawl's ink and laser colours: content drawn on the screen, like a
 /// pen's, not interface chrome, so they stay the same in either appearance.
 pub(crate) fn ink_red() -> Color {
-    rune::color::hex("#ff3b30").unwrap_or(Color::WHITE)
+    rune::color::opcode("#ff3b30").unwrap_or(Color::WHITE)
 }
 
 fn laser_red() -> Color {
-    rune::color::hex("#ff2930").unwrap_or(Color::WHITE)
+    rune::color::opcode("#ff2930").unwrap_or(Color::WHITE)
 }
 
 fn laser_hot() -> Color {
-    rune::color::hex("#fff7f7").unwrap_or(Color::WHITE)
+    rune::color::opcode("#fff7f7").unwrap_or(Color::WHITE)
 }
 
 /// A stroke's points, each with its pressure or weight.
@@ -348,7 +348,7 @@ impl InkOverlay {
             DisplayTarget, OverlayInput, OverlayLevel, OverlayOptions, OverlayPlacement,
             OverlaySpec,
         };
-        let spec = OverlaySpec::new("Hex ink", (1440.0, 900.0), view)
+        let spec = OverlaySpec::new("Opcode ink", (1440.0, 900.0), view)
             .options(OverlayOptions {
                 placement: Some(OverlayPlacement::FullScreen),
                 display: DisplayTarget::Primary,

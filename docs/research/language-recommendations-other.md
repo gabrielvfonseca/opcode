@@ -28,7 +28,7 @@ GGUF (same `cohere` arch; confirm it loads on 0.2.4).
 
 One source does almost all the work: the per-model docs in transcribe.cpp
 (`docs/models/*.md`, handy-computer, MIT), which score the **same Q8_0 GGUFs
-Hex would ship** on **FLEURS test** with one harness. That is third-party to
+Opcode would ship** on **FLEURS test** with one harness. That is third-party to
 the model vendors and apples-to-apples across models. Its limits:
 
 - FLEURS is read Wikipedia sentences, one run, about 900 utterances per
@@ -55,7 +55,7 @@ the model vendors and apples-to-apples across models. Its limits:
 ## Candidate models (what can actually ship)
 
 All Q8_0, Metal speed on M4 Max (transcribe.cpp, `asr-publication-v2`, jfk 11 s
-/ dots 35 s, x realtime). Only Whisper supports Hex's recognition hints today.
+/ dots 35 s, x realtime). Only Whisper supports Opcode's recognition hints today.
 
 ```ts
 model                      size     speed (jfk/dots)  license         langs   hints in transcribe.cpp        notes
@@ -81,12 +81,12 @@ at v0.4.1): Dolphin, FireRedASR, Paraformer/FunASR standalone, kotoba-whisper,
 Belle-whisper, Voxtral for these languages (Voxtral Mini 3B lists only en, fr,
 de, es, it, pt, nl, hi). Granite Speech 4.1 2B covers ja among these (6.30 CER,
 2.56 GB) and is not better than Whisper turbo. `breeze-asr-25` (Taiwan Mandarin
-Whisper fine-tune) is in the Whisper family list but is outside Hex's
+Whisper fine-tune) is in the Whisper family list but is outside Opcode's
 language set. Whisper fine-tunes such as kotoba-whisper could in principle be
 converted through the Whisper path, but nothing is published as GGUF there, so
 they are out under the "published GGUF" constraint.
 
-crate/version note: Hex pins `transcribe-cpp` 0.2.4 (2026-09-25); 0.3.0
+crate/version note: Opcode pins `transcribe-cpp` 0.2.4 (2026-09-25); 0.3.0
 (2026-10-03), 0.3.1, 0.4.0 and 0.4.1 (2026-10-22) exist. 0.4.x adds `ecapa_tdnn`
 (language ID, VoxLingua107) and `silero_vad` arches. No new ASR arch landed
 after 0.2.4 for these languages.
@@ -121,10 +121,10 @@ Whisper turbo is the better all-rounder under 1 GB. Qwen's own report agrees
 (vendor): on its 30-language Fleurs set Whisper-large-v3 scores 8.16 vs
 Qwen3-ASR 1.7B 12.60 and 0.6B 21.80 ("performance degrades on the full
 30-language setting"); Qwen leads only on the 12- and 20-language subsets of
-major languages. Hex's `QWEN_LANGUAGES` is the full 30-language set, so the
+major languages. Opcode's `QWEN_LANGUAGES` is the full 30-language set, so the
 hard tail (fa, mk, fil, el, hu, cs, da, fi, ro, sv) is exactly where 0.6B is
 worst. Note that those tail languages other than fa, fil, mk are Parakeet v3
-languages in Hex and never reach the Qwen branch.
+languages in Opcode and never reach the Qwen branch.
 
 ## Per-language table: current → proposed
 
@@ -182,7 +182,7 @@ set. It is only a guard.
 
 ## Recognition hints
 
-Hex currently enables hints only for Whisper (`supports_recognition_hints:
+Opcode currently enables hints only for Whisper (`supports_recognition_hints:
 true`). transcribe.cpp also documents `--vocabulary`/`--prompt` for Qwen3-ASR
 0.6B and 1.7B ("system message"; the 0.6B "echoes the dictionary into the output
 more often than the 1.7B") and `--vocabulary` hotwords for Fun-ASR-Nano and
@@ -193,7 +193,7 @@ MLT. Two options for hint-heavy users in these languages:
   yue (22.1) and th (8.8) and no better elsewhere.
 - Qwen 1.7B with `vocabulary`: better accuracy than Whisper turbo on ar, hi,
   vi, th, id, ja, ko, yue and tied on zh. This would need
-  `supports_recognition_hints: true` on the Qwen models and a check that Hex
+  `supports_recognition_hints: true` on the Qwen models and a check that Opcode
   maps its hint string to the vocabulary list. Not tested here; do not
   enable on 0.6B without testing the echo behavior.
 
@@ -225,7 +225,7 @@ Qwen 0.6B (also Recommended).
 
 ## What would raise confidence
 
-- Hex's own fixtures for zh/ja/ko/yue with Traditional and Simplified scoring,
+- Opcode's own fixtures for zh/ja/ko/yue with Traditional and Simplified scoring,
   across Qwen 0.6B and 1.7B, Whisper turbo, Fun-ASR-MLT/Nano, on dictation
   audio (short, noisy), not read Wikipedia.
 - A Cantonese run scored script-normalized to see how much of SenseVoice's

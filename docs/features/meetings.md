@@ -1,6 +1,6 @@
 # Meetings (beta)
 
-Record a call locally: Hex captures the other participants (system audio) and
+Record a call locally: Opcode captures the other participants (system audio) and
 you (microphone) as separate tracks, transcribes them on this Mac, and saves a
 Markdown transcript with `You` and `Them` turns. Recording starts automatically
 only for calls from a website or app set to Always record, and never stops
@@ -19,7 +19,7 @@ Labs > Meetings switch (macOS)                       // meetings.opt-in; off by 
 │   menu-bar items, call detection, Option-Control-V
 │   Settings view: Call recording, Calendar, Detected calls, Advanced ▸
 │   ├── System Audio Recording                  // meetings.permission; asked only now
-│   │   ├── Untrusted row shown / Allow -> retired Hex IDs cleared (`ScreenCapture` + `AudioCapture`)
+│   │   ├── Untrusted row shown / Allow -> retired Opcode IDs cleared (`ScreenCapture` + `AudioCapture`)
 │   │   ├── Allow -> macOS prompt the first time (tour's permission_control)
 │   │   ├── Decided before -> Privacy pane + drag guide ("System Audio Recording Only")
 │   │   ├── Asked -> pulse; TCC preflight re-read on each poll, no reopen needed
@@ -27,13 +27,13 @@ Labs > Meetings switch (macOS)                       // meetings.opt-in; off by 
 │   │   │   (`AudioCapture` reset on running bundle + retired IDs, re-prompt / guide)
 │   │   └── Granted -> the Allow pill morphs into a green Allowed; moves to Advanced
 │   ├── Advanced -> Show recording indicator (on by default; corner-snapping capsule),
-│   │   Transcript folder (~/Documents/Hex Meetings; Reveal / choose; an error opens
+│   │   Transcript folder (~/Documents/Opcode Meetings; Reveal / choose; an error opens
 │   │   Advanced), Summarize with Apple Intelligence (on by default), Summarize
 │   │   with OpenCode (off by default; when Apple Intelligence is off or missing),
 │   │   then with Labs › Choose meeting summary model on, Summary model: a
 │   │   searchable picker of the running OpenCode's models (the catalog Modes
 │   │   uses, read only while this row shows) whose pick is the provider/model
-│   │   OpenCode notes use, no fallback; "Hex picks a fast model" clears it ->
+│   │   OpenCode notes use, no fallback; "Opcode picks a fast model" clears it ->
 │   │   the ranked fast models. OpenCode missing or failing -> a notice with
 │   │   Check again / Retry, the saved model kept and shown by its ID
 │   │   (meetings.opencode_model; see labs.md, #1107, #1301)
@@ -46,10 +46,10 @@ Labs > Meetings switch (macOS)                       // meetings.opt-in; off by 
            the pane leaves the sidebar
 
 Debug builds -> Always in the sidebar (DEVELOPER_FEATURES_ENABLED)
-Agents -> hex mcp (read-only MCP server; works whether or not Meetings is on)
-Subtitles -> hex meetings show <id> --srt | --vtt   // Labs › Subtitle export, off by default (#633)
+Agents -> opcode mcp (read-only MCP server; works whether or not Meetings is on)
+Subtitles -> opcode meetings show <id> --srt | --vtt   // Labs › Subtitle export, off by default (#633)
              one cue per transcript entry (You / Them), timed by entry offsets,
-             not word timings; off -> refused naming hex labs on subtitle-export
+             not word timings; off -> refused naming opcode labs on subtitle-export
              (docs/transcript-cli.md; no export button in the window yet)
 Apps -> GET /meetings/events on the local API      // Labs › Meeting finished event, off by default (#964)
         one SSE event per meeting once its final transcript is written:
@@ -66,6 +66,15 @@ Live transcript scrolling                           // Labs › Follow live tran
         stay in view; scrolling up stops following, scrolling back to the
         bottom follows again. Finished meetings and off -> scroll by hand as before
         (follows_live_transcript in rune_ui/meetings.rs; not observed on a real call)
+Folding sections                                    // Labs › Collapsible meeting sections, off by default (#1348)
+        on -> each day heading in the list (Today, Yesterday, a date) and the
+        detail's Summary and Chapters labels are buttons with a chevron
+        (expanded/collapsed for screen readers); pressing one hides the day's
+        rows, the summary text, or the chapter rows, and the heading or label
+        stays. Typing in Search shows every match whatever the folds; a
+        selected meeting in a folded day stays in the detail. Folds last until
+        Opcode quits, never saved; everything starts open. Off -> as before
+        (rune_ui/meetings/folds.rs; no scene or golden with folds yet)
 ```
 
 Requires the selected local dictation model, Microphone, and System Audio
@@ -149,7 +158,7 @@ Files -> Reveal opens the folder (xdg-open, Explorer); Delete moves to the
 
 The pane's Start recording, Stop & transcribe, Rename, Delete, Reveal, and
 Summarize run in the window's own process there. Until
-[#566](https://github.com/anomalyco/hex/issues/566) they went to the OS host,
+[#566](https://github.com/anomalyco/opcode/issues/566) they went to the OS host,
 which ignored meeting requests, so a deleted recording stayed listed and no
 error showed. Check: `pane_requests_reach_the_window_s_own_meetings` in
 [rune_ui/meetings.rs](../../src/rune_ui/meetings.rs); a Recycle Bin delete on
@@ -157,7 +166,7 @@ a real Windows PC has not been observed.
 
 Not on Linux and Windows yet: the Option-Control-V meeting paste shortcut,
 Copy section from the tray, dragging the recording capsule to another corner,
-the `hex meetings` and `hex mcp` commands (shared-control), and website names
+the `opcode meetings` and `opcode mcp` commands (shared-control), and website names
 for browser calls. Verified: Linux and Windows x64 build and lint
 (`cargo clippy`, `cargo xwin clippy`); the PipeWire monitor capture and
 pw-dump parsing were checked by hand on Arch/niri. Not verified: a recorded
@@ -278,14 +287,14 @@ an AppleScript round trip, so the watcher starts it on its own
 thread (at most one at a time, about once a second) and reads the newest answer,
 at most 5 s after it finished; a slow or timed-out query (the existing 2 s
 limit) never holds up the loop. Answers and the remembered page are dropped
-while Hex records, Meetings is off, the browser is snoozed for a call without
+while Opcode records, Meetings is off, the browser is snoozed for a call without
 a meeting code, or no browser holds
 the microphone; a query in flight at that moment is not repeated beside itself,
 and its answer is discarded. When a browser's page is found for a run already
 under way (the first pass had no answer yet), the run keeps counting, now
 toward the known service's 2 s. When no answer names a page, the last page a browser showed while
 it held the microphone names the call for 60 s (`BrowserPageMemory`), so the
-site survives a failed query or Hex being in front. Safari, Chrome, Firefox and
+site survives a failed query or Opcode being in front. Safari, Chrome, Firefox and
 Edge expose no URL, so their calls are unnamed unless the foreground context
 says otherwise. Banshee has no recognised room path, so any `banshee.app` page
 counts; it is not in Settings' always-listed providers, but appears under
@@ -305,7 +314,7 @@ Checks: `a_slow_loop_still_offers_an_unknown_browser_call_after_about_20_seconds
 `a_slow_loop_still_ends_a_snooze_after_a_minute`,
 `a_stalled_loop_does_not_count_the_gap_as_time_on_the_microphone`,
 `banshee_is_offered_after_about_two_seconds`,
-`the_site_is_resolved_while_hex_is_in_front`,
+`the_site_is_resolved_while_opcode_is_in_front`,
 `a_page_seen_minutes_ago_no_longer_names_the_call`,
 `a_remembered_page_belongs_to_its_browser_and_its_call`,
 `finding_the_page_keeps_the_run_toward_the_known_threshold`,
@@ -359,8 +368,8 @@ Brave WebRTC `getUserMedia({audio: true})` reproduction on Pro confirmed
 `NSRunningApplication == nil` before parent/bundle resolution and resolved to
 `com.brave.Browser` and `com.tinyspeck.slackmacgap` afterward.
 
-The capsules have no `--snap` scene. `HEX_CAPSULE_SNAPS=<folder> cargo test
---bin hex capsule_snapshots` renders the offer, its choices, the
+The capsules have no `--snap` scene. `OPCODE_CAPSULE_SNAPS=<folder> cargo test
+--bin opcode capsule_snapshots` renders the offer, its choices, the
 calendar reminders, and the automatic-recording states in light and dark on a
 Mac with a GPU.
 
@@ -389,13 +398,13 @@ Lead time reached (or Mac wakes within 5 min of the start)   // meetings.reminde
      │   ├── Not now -> close; this call is not offered when detected
      │   ├── Join & record (only with a link) -> open the link, then record
      │   └── Record -> recording titled "Design sync" with its attendees
-     └── Service set to Always record: "Starts in 1 min · Hex records automatically"
+     └── Service set to Always record: "Starts in 1 min · Opcode records automatically"
          ├── Don't record -> close; the detected call neither offers nor auto-records
          └── Join (only with a link) -> open the link; Always record starts on detection
   -> Closes 60 s after the start (at least 30 s after showing); withdrawn if the
      meeting is cancelled, moved, or reminders are turned off. One at a time: an
      overlapping meeting's reminder waits until this one is answered or closes.
-     Waits while Hex records; a recording that starts closes it.
+     Waits while Opcode records; a recording that starts closes it.
 Detected call during a calendar meeting on the same service
   -> recording takes the calendar title and attendees
 ```
@@ -403,7 +412,7 @@ Detected call during a calendar meeting on the same service
 Settings persist as `meetings.calendar` (`connected`, `excluded_calendars`,
 `remind`, `lead_minutes`) in `settings.json`; missing means not connected, so
 files from older builds stay off. Every calendar is included unless excluded.
-Hex never asks for calendar access at launch: only Connect calendar calls
+Opcode never asks for calendar access at launch: only Connect calendar calls
 `requestFullAccessToEvents` (`NSCalendarsFullAccessUsageDescription`). With
 Meetings off there is no Calendar card, no EventKit read, and no reminder.
 
@@ -515,7 +524,7 @@ Record (offer, menu bar "Record Meeting", Meetings pane, or voice command)
      │   disabled until there is text
      │   └── Both read the Parakeet in-call transcript (TranscriptReader) once a
      │       second on the ticker thread, never on the main thread
-     ├── Open -> activates Hex, then opens the active meeting in the Meetings pane
+     ├── Open -> activates Opcode, then opens the active meeting in the Meetings pane
      └── Stop -> Stop & Transcribe
   -> Settings window may stay closed
 
@@ -541,12 +550,12 @@ Labs › Movable meeting capsules (macOS, off by default; #1093) // meetings.pan
   there
 
 Labs › Stop when the call ends (macOS, off by default; #835) // meetings.auto-stop
-  Only a recording Hex started on its own (Always record); manual, offered,
+  Only a recording Opcode started on its own (Always record); manual, offered,
   and calendar recordings are never stopped
   -> The call app counts as present while it holds the microphone OR any of
      its Core Audio processes plays output (WhatsApp keeps the microphone
      while muted; its output stays open until hang-up)
-  -> Both off for about 3 s -> capsule says "Hex stops recording in 30 s
+  -> Both off for about 3 s -> capsule says "Opcode stops recording in 30 s
      unless you keep recording."
      ├── App back on the microphone or output within 30 s -> nothing stops
      ├── Keep recording -> nothing stops for this absence; leaving again re-arms
@@ -561,7 +570,7 @@ Capture sources (meeting/capture.rs)                // meetings.capture
 │   │   device UID, ahead of the saved device and the default (#1086)
 │   │   ├── App switches input mid-call -> followed within 1 s, same track
 │   │   ├── App reports no input (muted) -> keeps the one it followed
-│   │   └── Not reported, not listed, Hex Microphone, or won't open -> as below
+│   │   └── Not reported, not listed, Opcode Microphone, or won't open -> as below
 │   │      // a_meeting_follows_the_input_its_call_app_records_from,
 │   │      // a_meeting_finds_the_input_its_call_uses_by_uid; unverified on a real call
 │   ├── System default changes, the Settings microphone changes, or a missing
@@ -570,7 +579,7 @@ Capture sources (meeting/capture.rs)                // meetings.capture
 │   │      // macOS only (meetings are macOS); a failed open keeps the old input
 │   └── Saved device listed but would not open -> System default stands in
 │       -> tried again after 1, 2, 4, 8, 16, 30, 30, 30 s, then only on a change
-└── System audio -> Core Audio process tap (global, excluding Hex) on a private
+└── System audio -> Core Audio process tap (global, excluding Opcode) on a private
     aggregate device; no display dependency
     └── Tap not authorized + Screen Recording granted -> ScreenCaptureKit fallback
 
@@ -585,7 +594,7 @@ A source fails (display sleep ends SCStream, device unplugged, tap stalls 3 s)
 
 Starting a recording no longer opens the Settings window; failures still do.
 A failure shows "Meeting could not be recorded." above the recordings until
-its close button dismisses it ([#562](https://github.com/anomalyco/hex/issues/562);
+its close button dismisses it ([#562](https://github.com/anomalyco/opcode/issues/562);
 check `a_meeting_recording_error_can_be_dismissed`).
 Checks: `call_end_is_reported_once_per_sustained_absence`,
 `an_ended_call_stops_after_the_grace_unless_it_comes_back_or_is_kept` in
@@ -665,7 +674,7 @@ While recording                                      // meetings.rolling
      ├── Backlog over 120 s of audio -> oldest chunks skipped, track marked
      │   incomplete; rebuilt from its WAV after Stop
      └── Model failure -> transcript.rolling.error.txt -> "Live transcript unavailable."
-  -> Every in-call view reads it: Meetings pane, `hex meetings show`, MCP,
+  -> Every in-call view reads it: Meetings pane, `opcode meetings show`, MCP,
      provisional titles (TranscriptReader)
 
 Copy new or Option-Control-V while recording       // meetings.copy-through-now
@@ -695,11 +704,11 @@ Stop & Transcribe
   -> Any track that fell behind or failed -> stream its WAV in 1 s blocks
   -> Join on one timeline -> Echo suppression -> Final publication
 
-Hex quits while recording                           // meetings.quit
+Opcode quits while recording                           // meetings.quit
   -> Capture stops; WAVs and manifest finalized; no chunk starts, no model loads
   -> Interrupted with its rolling draft + final.pending beside the manifest
-Hex quits during Stop & Transcribe's final pass (#1284)
-  -> Same: Interrupted + final.pending, never Failed with "Hex is quitting"
+Opcode quits during Stop & Transcribe's final pass (#1284)
+  -> Same: Interrupted + final.pending, never Failed with "Opcode is quitting"
   -> Next launch, Meetings on, no recording, once the dictation engine is up
      (or 30 s without one) -> full-WAV final pass -> Complete + Markdown + notes
      ├── Quit again or model not installed -> stays pending
@@ -881,7 +890,7 @@ Other checks:
 `a_copy_cut_holds_when_a_later_chunk_moves_the_words_slightly`,
 `a_track_rebuilt_from_its_wav_after_stop_keeps_the_copies_cuts`,
 `a_copy_waiting_when_capture_ends_is_still_answered`,
-`a_copy_stops_waiting_when_hex_quits`,
+`a_copy_stops_waiting_when_opcode_quits`,
 `a_copy_that_runs_out_of_time_gets_no_reply`,
 `a_copy_waits_out_dictation_and_a_preempted_chunk`,
 `a_copy_reaches_only_the_recording_this_process_runs`,
@@ -927,7 +936,7 @@ Option-Control-V -> `MeetingPasteCursor` in `meeting/delta.rs` over the transcri
 │   merge); an entry is new when its midpoint is outside them, so nothing
 │   repeats or drops when the final transcript replaces rolling after Stop, and
 │   text the final pass recovers for audio rolling skipped still pastes
-└── Resets when Hex restarts
+└── Resets when Opcode restarts
 ```
 
 ### Meetings Pane
@@ -1003,12 +1012,12 @@ Meeting controller, Meetings on or off           // meetings.retention
 │   -> the recording folder (audio, transcripts, notes and summary, live
 │      drafts) to the Trash, never removed outright
 │   -> the exported Markdown to the Trash only while its SHA-256 still
-│      matches the copy Hex last wrote (manifest `export_sha256`; Hex's own
+│      matches the copy Opcode last wrote (manifest `export_sha256`; Opcode's own
 │      heading and notes rewrites keep it current); an edited copy stays
 ├── Skips recording, transcribing, writing-notes, and final.pending
 │   meetings; a later pass retries them
-└── Nothing expires while Hex is not running
-Queries (`hex meetings`, `hex mcp`, the pane) -> leave out expired meetings
+└── Nothing expires while Opcode is not running
+Queries (`opcode meetings`, `opcode mcp`, the pane) -> leave out expired meetings
     at once, before a pass moves them; a process that never loaded settings
     reads `meetings.retention` from settings.json without writing it
 ```
@@ -1021,7 +1030,7 @@ Sources: `retention_for`, `expired`, `expire`, and `trash_expired` in
 Checks: `retention_expires_meetings_by_when_they_ended_and_skips_active_ones`,
 `until_one_is_chosen_only_meetings_recorded_since_the_default_expire`,
 `expiry_leaves_a_markdown_copy_the_user_edited`, and
-`hex_rewriting_its_markdown_keeps_it_hexs_and_a_user_edit_does_not`. No
+`opcode_rewriting_its_markdown_keeps_it_hexs_and_a_user_edit_does_not`. No
 live run of an expiry pass against a real Trash has been observed.
 
 ### Titles And Summary (Apple Intelligence)
@@ -1058,8 +1067,8 @@ Final publication complete                               // meetings.notes
          "model": "provider/model"} (no model when OpenCode's default answered);
          absent on notes written before #1125
   -> Markdown copy, same file name, atomic replace
-     ├── Heading -> final title, only while it still reads Hex's last title
-     ├── <!-- hex:notes --> ## Summary (one paragraph) above ## Transcript
+     ├── Heading -> final title, only while it still reads Opcode's last title
+     ├── <!-- opcode:notes --> ## Summary (one paragraph) above ## Transcript
      │   └── Footer names the writer: "Written on this Mac by Apple
      │       Intelligence", "Written by <provider/model> through OpenCode", or,
      │       for older notes without written_by, no writer at all (#1125;
@@ -1111,9 +1120,9 @@ model): `a_short_transcript_is_sent_whole_in_one_call`,
 `meeting_menu_offers_one_action_per_state`. The recorder thread, manifest write,
 and menu/pane refresh during a real recording are unexercised.
 
-Real model (debug CLI): `hex meeting summarize <file.md> [--excerpt-chars N]`
+Real model (debug CLI): `opcode meeting summarize <file.md> [--excerpt-chars N]`
 times the provisional title at the point a recording would ask for it, then the
-final title and summary, without saving; `hex meeting summarize <id>` writes
+final title and summary, without saving; `opcode meeting summarize <id>` writes
 them like Regenerate.
 
 Observed (2026-10-15, Mac Studio M2 Max, macOS 27.0.1, context 8,192 tokens,
@@ -1165,7 +1174,7 @@ After final publication, inside the notes thread       // meetings.chapters.refi
   -> Each call first waits (≤30 s) for dictation; a stop or quit ends the pass
      with nothing saved, so the next notes run redoes it
 Copy section (pane, per chapter; menu bar "Copy Section" while recording;
-`hex meetings show --chapter N`)
+`opcode meetings show --chapter N`)
   -> "## <name>\n\n<line>\n\n" + the transcript lines that start inside the
      chapter, joined into turns only within it (one shared function)
 ```
@@ -1180,7 +1189,7 @@ A title the user typed, including a rename while recording or transcribing, is
 never extended. Manifests without the field read as `user` when their title is
 not the default.
 
-Read surfaces: `hex meetings chapters <id> [--json]`, `hex meetings show <id>
+Read surfaces: `opcode meetings chapters <id> [--json]`, `opcode meetings show <id>
 --chapter N`, a `## Chapters` list in `show`, `chapters` in `show --json`
 (JSON stays version 1), and MCP `get_chapters`.
 
@@ -1201,7 +1210,7 @@ and CLI give the same section when one speaker's turn crosses a boundary);
 submenu, the recorder writing chapters during a real recording, and the
 `meetings-chapters` scene on a Mac screen are unexercised.
 
-Real model (debug CLI): `hex meeting chapters <file.md>` runs the live passes
+Real model (debug CLI): `opcode meeting chapters <file.md>` runs the live passes
 as a recording would, then the boundary pass, without saving.
 
 Observed (2026-10-23, Mac mini, debug build) on a synthetic 15-minute, three
@@ -1215,19 +1224,19 @@ current one), which is why Rust's name overlap decides.
 
 ### Agent Access (MCP)
 
-The release CLI also supports `hex meetings list`, `show <id|latest>` (with
+The release CLI also supports `opcode meetings list`, `show <id|latest>` (with
 `--from`/`--to` offsets or `--chapter N`), `chapters <id>`, and `search <query>`
 through this query layer. See the [transcript CLI map](transcript-cli.md)
 and [versioned JSON contract](../transcript-cli.md).
 
 ```ts
-hex mcp [--meetings-dir <path>]                     // meetings.mcp; release builds
+opcode mcp [--meetings-dir <path>]                     // meetings.mcp; release builds
 ├── MCP over stdio; independent of the Meetings opt-in (read-only)
 ├── Dispatches before process logging, the instance lock, GUI, and permissions
-│   └── Safe beside the running app; logs only to stderr (HEX_MCP_LOG)
-├── Default folder: Application Support/hex/meetings (hex on older builds)
+│   └── Safe beside the running app; logs only to stderr (OPCODE_MCP_LOG)
+├── Default folder: Application Support/opcode/meetings (opcode on older builds)
 │   └── --meetings-dir -> any mirrored copy (rsync of that folder)
-├── A copy named hex-meetings-mcp -> always `hex mcp` with the same flags
+├── A copy named opcode-meetings-mcp -> always `opcode mcp` with the same flags
 │   (no subcommand never falls back to listening)
 └── Tools (all readOnlyHint)
     ├── list_meetings(since?, until?, query?, limit?, include_in_progress?)
@@ -1249,7 +1258,7 @@ hex mcp [--meetings-dir <path>]                     // meetings.mcp; release bui
         └── "N. mm:ss–mm:ss · name" + line each, whether boundaries were
             corrected, a get_transcript start/end hint; or "No chapters are
             stored" ("No chapters yet" while recording); never generates any
-Resources: hex-meeting://<id> -> Markdown (metadata, notes, transcript)
+Resources: opcode-meeting://<id> -> Markdown (metadata, notes, transcript)
 ```
 
 Read-only and private: the server opens files for reading only, never writes,
@@ -1286,13 +1295,13 @@ three passages, while a typo of a rare word still finds it. A term's match in a
 passage is its exact stem when present, then the best score, kind, and
 alphabetically first stem, so ties are deterministic. `"Quoted words"` are
 required exact (stemmed) phrases; `fuzzy: false` keeps only exact stems.
-`hex history --search` shares this ranker, counting an entry's raw and final
+`opcode history --search` shares this ranker, counting an entry's raw and final
 text as one document.
 
 Semantic search is not shipped. On-device candidates are Apple NaturalLanguage
 `NLContextualEmbedding` (asset download, macOS 14+) or the older static
 `NLEmbedding` sentence model, through a Swift bridge like `apple_speech`, with a
-cache under `~/Library/Caches/hex/meeting-index` keyed by meeting
+cache under `~/Library/Caches/opcode/meeting-index` keyed by meeting
 fingerprints. Full-text with stemming and fuzzy matching answered the real
 queries below; embeddings wait until a query fails for lack of paraphrase.
 
@@ -1317,7 +1326,7 @@ schemas (including `from`/`to`) and read-only annotations, tools/call including
 stdout carries only JSON-RPC, no Application Support state created).
 
 Observed (2026-10-23, Mac Studio, debug build, live meetings folder, read-only):
-`hex meetings search "images database blob storage media"` dropped from 315 to
+`opcode meetings search "images database blob storage media"` dropped from 315 to
 140 matching passages, with no fuzzy-only hit in the top 25 (before: four,
 through `blog`, `blow`, `believe`, `made`, and `motto`); the top hit remains the
 in-progress meeting's 115:02 passage, and 6 of the top 10 fall in its
@@ -1332,29 +1341,29 @@ meetings without WAVs): first launch of a freshly signed binary 440 ms to
 #### Another Mac's Meetings (Mirror)
 
 ```ts
-Don't: MCP client config runs `ssh pro hex mcp`         // one SSH per client
+Don't: MCP client config runs `ssh pro opcode mcp`         // one SSH per client
   -> 41 OpenCode instances = 41 SSH sessions -> the Pro's sshd reset connections
 
 Do: one periodic pull, then local servers               // meetings.mcp.mirror
 scripts/sync-meetings-mirror.sh (LaunchAgent template, every 120 s,
   ProcessType Background, Nice 10, LowPriorityIO)
 ├── ONE rsync over ssh (BatchMode, ConnectTimeout 5, --timeout 60)
-│   pro:Library/Application Support/hex/meetings/
-│   -> ~/Library/Caches/hex-meetings-mirror/ (0700)
+│   pro:Library/Application Support/opcode/meetings/
+│   -> ~/Library/Caches/opcode-meetings-mirror/ (0700)
 ├── Skips *.wav, *.lock, *.tmp; --delay-updates (files land together at the
 │   end); --delete-delay (meetings trashed on the Pro disappear)
 └── Pro asleep / unreachable -> exit 0 silently; next run retries
-Each MCP client -> local `hex mcp --meetings-dir <mirror>` (no SSH, no lock)
+Each MCP client -> local `opcode mcp --meetings-dir <mirror>` (no SSH, no lock)
 └── No lock in the mirror -> a meeting still recording on the Pro reads as
     `interrupted` with its rolling transcript so far; final once published
 ```
 
-Template: [hex-meetings-mirror.plist](../../scripts/launchd/hex-meetings-mirror.plist)
+Template: [opcode-meetings-mirror.plist](../../scripts/launchd/opcode-meetings-mirror.plist)
 (placeholders for the checkout and home; not installed automatically).
 
 Observed (2026-10-15, Studio pulling from the Pro): one sync 0.44 s, 8 meetings,
 1.0 MB, no WAVs or locks; unreachable host exits 0 at once, unanswered address
-exits 0 after the 5 s connect timeout. `hex-meetings-mcp --meetings-dir` (release
+exits 0 after the 5 s connect timeout. `opcode-meetings-mcp --meetings-dir` (release
 build in `~/.local/bin`) over stdio: first launch of the new binary 378 ms to
 `initialize` (Gatekeeper), then 7 ms; `list_meetings` 3.5–11 ms cold, 0.5 ms
 warm; searches 0.6–1.5 ms; a 48,000-char `get_transcript` 0.6 ms;

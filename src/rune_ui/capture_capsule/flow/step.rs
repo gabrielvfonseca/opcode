@@ -185,8 +185,8 @@ impl Flow {
                 Phase::Selecting(mode)
             }
             // Closed before the router answered (dismissed, or the answer
-            // came after the hold): it stays closed, and `hex capture list`
-            // and `hex capture send` still offer the capture.
+            // came after the hold): it stays closed, and `opcode capture list`
+            // and `opcode capture send` still offer the capture.
             // A guess still waits for Send to….
             (Phase::Hidden, Input::Routed(route)) if self.closed => {
                 if !self.settled {
@@ -210,7 +210,7 @@ impl Flow {
                 self.phase = Phase::Routed(Routed { at: now, ..routed });
                 return self.step(Input::OpenList, now);
             }
-            // A queued send went on a retry: Hex can't take it back.
+            // A queued send went on a retry: Opcode can't take it back.
             (_, Input::Delivered(delivered)) => match delivered {
                 Delivered::Sent { to } => Phase::Sent(Sent {
                     undoable: false,

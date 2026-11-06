@@ -6,7 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use color_eyre::eyre::Result;
 use hound::{SampleFormat, WavSpec, WavWriter};
 
-const RETENTION_ENV: &str = "HEX_RETAIN_DICTATION_AUDIO";
+const RETENTION_ENV: &str = "OPCODE_RETAIN_DICTATION_AUDIO";
 const SAMPLE_RATE: u32 = 16_000;
 
 /// Retains a transcribed clip as `dictation-<ms>.wav`.
@@ -106,7 +106,7 @@ mod tests {
     #[test]
     fn diagnostic_recordings_are_owner_only_and_bounded() {
         let directory =
-            std::env::temp_dir().join(format!("hex-dictation-diagnostics-{}", std::process::id()));
+            std::env::temp_dir().join(format!("opcode-dictation-diagnostics-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         persist_at(&directory, &[0.25; 16_000], Kind::Transcribed, 1).unwrap();
         std::thread::sleep(std::time::Duration::from_millis(2));
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn near_silent_recordings_are_marked_and_share_the_bound() {
         let directory = std::env::temp_dir().join(format!(
-            "hex-dictation-diagnostics-near-silent-{}",
+            "opcode-dictation-diagnostics-near-silent-{}",
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&directory);

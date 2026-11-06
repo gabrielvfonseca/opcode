@@ -465,7 +465,7 @@ fn notes_are_read_and_their_absence_is_explicit() {
 #[test]
 fn a_held_lock_marks_the_meeting_in_progress() {
     let root = std::env::temp_dir().join(format!(
-        "hex-meeting-query-{}-{}",
+        "opcode-meeting-query-{}-{}",
         std::process::id(),
         crate::desktop::events::now_ms()
     ));
@@ -788,7 +788,7 @@ fn chapters_list_spans_and_lines_and_say_when_there_are_none() {
              2. 03:00–06:30 · Motion lint\n   A lint that flags animations which snap instead of easing.\n\
              3. 06:30–09:00 · Chat app name\n   Picking a name for the chat app.\n\
              \nModel-written names that may be wrong. Read a chapter with get_transcript (start and \
-             end as shown) or `hex meetings show 1790003000000-1005 --chapter N`.\n"
+             end as shown) or `opcode meetings show 1790003000000-1005 --chapter N`.\n"
         ),
         "{text}"
     );

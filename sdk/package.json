@@ -1,5 +1,5 @@
 {
-  "name": "hex-sdk-workspace",
+  "name": "opcode-sdk-workspace",
   "private": true,
   "workspaces": [
     "typescript",

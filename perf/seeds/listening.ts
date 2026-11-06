@@ -1,5 +1,5 @@
 // A home seed holding the default English model, hard-linked from this
-// machine's own Hex install, or from the folder HEX_SEED_MODELS names on a
+// machine's own Opcode install, or from the folder OPCODE_SEED_MODELS names on a
 // machine without one (read only; strobe copies the seed into each private
 // home). Returns null when no installed model is found.
 import { copyFileSync, existsSync, linkSync, mkdirSync } from "node:fs"
@@ -9,11 +9,11 @@ import { join } from "node:path"
 const MODELS = ["parakeet-unified-en-0.6b-Q8_0.gguf", "silero-vad-v6.2-F32.gguf"]
 
 function installedModels(): string | null {
-  if (process.env.HEX_SEED_MODELS && existsSync(join(process.env.HEX_SEED_MODELS, MODELS[0]))) return process.env.HEX_SEED_MODELS
+  if (process.env.OPCODE_SEED_MODELS && existsSync(join(process.env.OPCODE_SEED_MODELS, MODELS[0]))) return process.env.OPCODE_SEED_MODELS
   const roots = [
-    process.env.APPDATA && join(process.env.APPDATA, "hex"),
-    join(homedir(), "Library", "Application Support", "hex"),
-    join(process.env.XDG_DATA_HOME ?? join(homedir(), ".local", "share"), "hex"),
+    process.env.APPDATA && join(process.env.APPDATA, "opcode"),
+    join(homedir(), "Library", "Application Support", "opcode"),
+    join(process.env.XDG_DATA_HOME ?? join(homedir(), ".local", "share"), "opcode"),
   ]
   for (const root of roots) {
     if (root && existsSync(join(root, "models", MODELS[0]))) return join(root, "models")
@@ -21,9 +21,9 @@ function installedModels(): string | null {
   return null
 }
 
-/** Links the installed models into `folder`'s `hex-data/models`; false when there are none. */
+/** Links the installed models into `folder`'s `opcode-data/models`; false when there are none. */
 export function seedModels(folder: string): boolean {
-  const models = join(folder, "hex-data", "models")
+  const models = join(folder, "opcode-data", "models")
   if (existsSync(join(models, MODELS[0]))) return true
   const source = installedModels()
   if (!source) return false

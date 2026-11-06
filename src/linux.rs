@@ -34,15 +34,15 @@ use crate::linux::service::{Activation, Launch};
 
 #[derive(Parser)]
 #[command(
-    name = "hex",
+    name = "opcode",
     version = crate::VERSION,
     about = "Local, observable voice recognition (Linux beta)",
     long_about = "Local, observable voice recognition (Linux beta).\n\n\
         Control commands (status, dictation, settings, model, window, …) drive the one running \
-        Hex over its owner-only socket and never launch it, except `start` and `restart`. Every \
+        Opcode over its owner-only socket and never launch it, except `start` and `restart`. Every \
         one takes --json for a versioned reply (docs/cli.md). Exit codes: 0 done or nothing to \
-        change, 1 refused or failed, 2 usage, 3 Hex isn't running.",
-    after_help = "Run `hex <command> --help` for details, or `hex settings list` for every setting."
+        change, 1 refused or failed, 2 usage, 3 Opcode isn't running.",
+    after_help = "Run `opcode <command> --help` for details, or `opcode settings list` for every setting."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -53,23 +53,23 @@ struct Cli {
 enum Command {
     #[command(flatten)]
     Control(ControlCli),
-    /// Open the Hex window, starting Hex when it is not running (the default).
+    /// Open the Opcode window, starting Opcode when it is not running (the default).
     App {
-        /// Start Hex in the background without opening the window.
+        /// Start Opcode in the background without opening the window.
         #[arg(long)]
         hidden: bool,
         /// Arguments for a headless render, such as `--snap out.png --scene dark`.
         #[arg(last = true)]
         rune_args: Vec<String>,
     },
-    /// Run Hex in the foreground without opening the window (systemd's entry point).
+    /// Run Opcode in the foreground without opening the window (systemd's entry point).
     Service {
         /// Run only the local API as a direct child whose stdin is owned by
         /// the host application (the TypeScript SDK).
         #[arg(long, hide = true)]
         embedded: bool,
     },
-    /// Quit Hex after its accepted work finishes (same as `hex quit`).
+    /// Quit Opcode after its accepted work finishes (same as `opcode quit`).
     #[command(hide = true)]
     Stop,
     /// Run X11 or Wayland hotkey dictation and automatic paste until interrupted.
@@ -90,8 +90,8 @@ pub(crate) fn run(shutdown: &'static AtomicBool) -> Result<()> {
         hidden: false,
         rune_args: Vec::new(),
     });
-    // Control and read commands talk to the running Hex or read files: no
-    // log, lock, or Hex of their own.
+    // Control and read commands talk to the running Opcode or read files: no
+    // log, lock, or Opcode of their own.
     let command = match command {
         Command::Control(command) => crate::control::cli::finish(crate::control::cli::run(command)),
         Command::Stop => crate::control::cli::finish(crate::control::cli::send(
@@ -171,7 +171,7 @@ pub(crate) fn run(shutdown: &'static AtomicBool) -> Result<()> {
     }
 }
 
-/// Forwards to the running Hex, starts its systemd unit, or becomes Hex.
+/// Forwards to the running Opcode, starts its systemd unit, or becomes Opcode.
 fn launch(
     activation: &Activation,
     show: bool,
@@ -206,28 +206,28 @@ mod tests {
         Cli::command().debug_assert();
         let parse = |arguments: &[&str]| Cli::try_parse_from(arguments).map(|cli| cli.command);
         for arguments in [
-            &["hex", "status", "--json"][..],
-            &["hex", "dictation", "stop", "--print"],
-            &["hex", "paste-last"],
-            &["hex", "settings", "set", "sound_effects", "off"],
-            &["hex", "model", "use", "parakeet_v3", "--language", "pl"],
-            &["hex", "model", "install"],
-            &["hex", "model", "status"],
-            &["hex", "window", "show", "history"],
-            &["hex", "vocabulary", "add", "Rune"],
-            &["hex", "history", "clear", "--yes"],
-            &["hex", "check-for-updates"],
-            &["hex", "launch-at-login", "on"],
-            &["hex", "logs", "-n", "5"],
-            &["hex", "meetings", "list"],
-            &["hex", "mcp"],
-            &["hex", "commands", "check"],
-            &["hex", "onboarding", "reset"],
-            &["hex", "annotate", "status"],
-            &["hex", "capture", "draw"],
-            &["hex", "labs"],
-            &["hex", "restart", "--force"],
-            &["hex", "start"],
+            &["opcode", "status", "--json"][..],
+            &["opcode", "dictation", "stop", "--print"],
+            &["opcode", "paste-last"],
+            &["opcode", "settings", "set", "sound_effects", "off"],
+            &["opcode", "model", "use", "parakeet_v3", "--language", "pl"],
+            &["opcode", "model", "install"],
+            &["opcode", "model", "status"],
+            &["opcode", "window", "show", "history"],
+            &["opcode", "vocabulary", "add", "Rune"],
+            &["opcode", "history", "clear", "--yes"],
+            &["opcode", "check-for-updates"],
+            &["opcode", "launch-at-login", "on"],
+            &["opcode", "logs", "-n", "5"],
+            &["opcode", "meetings", "list"],
+            &["opcode", "mcp"],
+            &["opcode", "commands", "check"],
+            &["opcode", "onboarding", "reset"],
+            &["opcode", "annotate", "status"],
+            &["opcode", "capture", "draw"],
+            &["opcode", "labs"],
+            &["opcode", "restart", "--force"],
+            &["opcode", "start"],
         ] {
             assert!(
                 matches!(parse(arguments), Ok(Some(Command::Control(_)))),
@@ -235,14 +235,14 @@ mod tests {
             );
         }
         assert!(matches!(
-            parse(&["hex", "quit", "--force"]),
+            parse(&["opcode", "quit", "--force"]),
             Ok(Some(Command::Control(ControlCli::Quit { force: true, .. })))
         ));
-        assert!(matches!(parse(&["hex", "stop"]), Ok(Some(Command::Stop))));
+        assert!(matches!(parse(&["opcode", "stop"]), Ok(Some(Command::Stop))));
         assert!(matches!(
-            parse(&["hex", "app", "--hidden"]),
+            parse(&["opcode", "app", "--hidden"]),
             Ok(Some(Command::App { hidden: true, .. }))
         ));
-        assert!(matches!(parse(&["hex"]), Ok(None)));
+        assert!(matches!(parse(&["opcode"]), Ok(None)));
     }
 }

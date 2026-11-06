@@ -1,6 +1,6 @@
 # Vocabulary evaluation corpus
 
-Run these fixed WAVs through `hex benchmark-transcription manifest.json` to
+Run these fixed WAVs through `opcode benchmark-transcription manifest.json` to
 measure proper-name recall and unwanted vocabulary insertions. They are
 synthetic fixtures, not recordings of Kit speaking.
 
@@ -35,7 +35,7 @@ python3 scripts/vocabulary-librispeech.py perf/transcription-corpus/librispeech
 python3 scripts/vocabulary-eval.py merge .local-corpus/eval.json \
   tests/fixtures/vocabulary/manifest.json \
   perf/transcription-corpus/librispeech/manifest.json
-hex benchmark-transcription .local-corpus/eval.json --runs 7 > .local-corpus/baseline.jsonl
+opcode benchmark-transcription .local-corpus/eval.json --runs 7 > .local-corpus/baseline.jsonl
 python3 scripts/vocabulary-eval.py score .local-corpus/eval.json .local-corpus/baseline.jsonl
 ```
 
@@ -62,9 +62,9 @@ False replacements count vocabulary occurrences beyond their count in the
 reference, including repetitions. The rate is affected clips / clips, not
 insertions / words. A group without expected terms reports null recall.
 
-The scorer accepts either the Hex JSONL or the isolated decoder runner's JSONL.
+The scorer accepts either the Opcode JSONL or the isolated decoder runner's JSONL.
 It refuses missing, duplicated or unknown clip results. Quality uses the first
-measured pass; latency uses every measured pass, including Hex's `measurement`
+measured pass; latency uses every measured pass, including Opcode's `measurement`
 records. Model loading and warmups are excluded.
 
 Compare target recall (at least 70%), combined ordinary/distractor false-replacement
@@ -76,4 +76,4 @@ The synthetic clips are short; use the public guard's longer clips for latency.
 Keep the scoring vocabulary fixed across baseline and candidate runs, including
 when merging private clips: merge unions all inputs' vocabularies.
 The approved spike also requires
-real Hanks→Hex evidence; synthetic success cannot replace it.
+real Hanks→Opcode evidence; synthetic success cannot replace it.

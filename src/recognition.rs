@@ -35,11 +35,11 @@ enum FinishResult {
 #[derive(Debug)]
 pub enum RecognitionControl {
     /// Pastes the last dictation once nothing records; `reply` answers
-    /// `hex paste-last`, and the menu bar sends none.
+    /// `opcode paste-last`, and the menu bar sends none.
     PasteLast {
         reply: Option<SyncSender<ControlReply>>,
     },
-    /// `hex dictation`: drives the shortcut machine as a press would, so the
+    /// `opcode dictation`: drives the shortcut machine as a press would, so the
     /// shortcut still finishes it.
     /// A dictation `stop` with `print` answers `reply` once recording stops
     /// and sends the transcript to `print` instead of pasting it.
@@ -50,16 +50,16 @@ pub enum RecognitionControl {
         raw: bool,
         reply: SyncSender<ControlReply>,
     },
-    /// What is recording, for `hex status`.
+    /// What is recording, for `opcode status`.
     CaptureStatus { reply: SyncSender<CaptureSnapshot> },
-    /// `hex capture` (the `capture` experiment; see `capture_host`).
-    #[cfg(hex_capture)]
+    /// `opcode capture` (the `capture` experiment; see `capture_host`).
+    #[cfg(opcode_capture)]
     ScrawlCapture {
         action: crate::control::ScrawlCaptureAction,
         reply: SyncSender<ControlReply>,
     },
     /// The capture capsule's switch chips and picker (`capture_host`).
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     CaptureCommand {
         command: crate::capture_host::CaptureCommand,
         reply: SyncSender<ControlReply>,
@@ -145,7 +145,7 @@ struct Hotkeys {
     second: Option<DictationHotkey>,
     raw: Option<DictationHotkey>,
     /// The recording (or the last) skips processing: the raw shortcut or
-    /// `hex dictation start --raw` started it.
+    /// `opcode dictation start --raw` started it.
     raw_capture: bool,
 }
 
@@ -339,7 +339,7 @@ pub fn listen(
     };
     hotkeys.configure(CaptureInstant::now());
     let recording_environment = RecordingEnvironmentController::start();
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     let capture_environment = recording_environment.clone();
     let (mut microphone_revision, microphone) = crate::app_settings::microphone_selection();
     let dictation_worker = DictationWorker::start(
@@ -356,10 +356,10 @@ pub fn listen(
         microphone_policy.release_while_idle,
         dictation_worker.engine(),
     )?;
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     let mut capture_host =
         crate::capture_host::CaptureHost::start(dictation_worker.engine(), &capture_environment);
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     let mut capture_shortcut = crate::capture_host::CaptureShortcut::default();
     let (mut transcription_revision, _) = crate::app_settings::transcription_selection();
     let mut personal_host_enabled = crate::app_settings::custom_transformations_enabled();
@@ -397,7 +397,7 @@ pub fn listen(
     tracing::info!(device = %input.device_name(), "dictation listener started");
 
     while !shutdown.load(Ordering::Relaxed) {
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         crate::capture_host::CaptureHost::reconcile(
             &mut capture_host,
             dictation_worker.engine().as_ref(),
@@ -421,19 +421,19 @@ pub fn listen(
                             let _ = reply.send(answer);
                         }
                     }
-                    #[cfg(hex_capture)]
+                    #[cfg(opcode_capture)]
                     RecognitionControl::ScrawlCapture { action, reply } => {
                         let answer = match capture_host.as_mut() {
                             Some(host) => host.control(action, &input),
                             None => ControlReply::error(
                                 "feature-off",
                                 "Annotate is off; turn it on in Settings › Annotate or \
-                                 run `hex settings set capture.enabled true`",
+                                 run `opcode settings set capture.enabled true`",
                             ),
                         };
                         let _ = reply.send(answer);
                     }
-                    #[cfg(hex_capture)]
+                    #[cfg(opcode_capture)]
                     RecognitionControl::CaptureCommand { command, reply } => {
                         let answer = match capture_host.as_mut() {
                             Some(host) => host.command(command, &input),
@@ -838,7 +838,7 @@ pub fn listen(
         }
         // The capture shortcut ignores keys while shortcuts are suspended or
         // a programmatic dictation holds them, so their releases go unseen.
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         if hotkey_capture_suspended || programmatic.is_some() {
             capture_shortcut.reset();
         }
@@ -855,7 +855,7 @@ pub fn listen(
             if hotkey_capture_suspended {
                 continue;
             }
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             if let Some(host) = capture_host.as_mut() {
                 // Escape while drawing stops drawing, never the recording.
                 if input_event.is_escape_down() && crate::capture_host::exit_drawing() {
@@ -882,7 +882,7 @@ pub fn listen(
             // Escape closes the capsule's picker or open list (never an
             // Undo: that is a click). It never ends a dictation or a
             // recording capture: it may be meant for the app in front (#786).
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             if input_event.is_escape_down()
                 && crate::capture_host::capsule_key(crate::capture_host::CapsuleKey::Escape)
             {
@@ -891,7 +891,7 @@ pub fn listen(
             // Annotate records the narration itself: while it records, the
             // dictation shortcut starts nothing. The tap still swallows its
             // chord, so it never reaches the app.
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             if !hotkeys.any_recording()
                 && capture_host
                     .as_mut()
@@ -1008,12 +1008,12 @@ pub fn listen(
         // A recording capture takes Escape only while it draws (Escape stops
         // drawing); otherwise only the capture shortcut's press before it
         // starts, and the capsule's picker.
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         let capture_escape = capture_host.is_some() && capture_shortcut.takes_escape();
-        #[cfg(not(hex_capture))]
+        #[cfg(not(opcode_capture))]
         let capture_escape = false;
         input_monitor.set_takes_escape(claims_escape(programmatic.is_some(), capture_escape));
-        // Toggle's cancel key is Hex's only while one of its shortcuts'
+        // Toggle's cancel key is Opcode's only while one of its shortcuts'
         // recordings runs; the listener ignores keys during a programmatic one.
         input_monitor.set_takes_cancel(programmatic.is_none() && hotkeys.any_recording());
         if received_worker_event {
@@ -1133,7 +1133,7 @@ pub fn listen(
         }
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     if let Some(host) = &mut capture_host {
         host.shutdown(&input);
     }
@@ -1368,7 +1368,7 @@ fn finish_hotkey_dictation(
     Ok(finished)
 }
 
-/// Whether Hex takes Escape from the app in front: only for a capture
+/// Whether Opcode takes Escape from the app in front: only for a capture
 /// (drawing, its press, the capsule's picker), never for dictation, and never
 /// while a programmatic dictation records: the listener ignores every key
 /// then, so Escape stays with its owner app rather than being swallowed.
@@ -1386,7 +1386,7 @@ fn capture_refusal(other_recording: bool, suspended: bool) -> Option<ControlRepl
     } else if suspended {
         Some(ControlReply::error(
             "busy",
-            "Hex is recording a shortcut in Settings or reopening the microphone; try again",
+            "Opcode is recording a shortcut in Settings or reopening the microphone; try again",
         ))
     } else {
         None
@@ -1424,7 +1424,7 @@ fn finish_reply(finished: Option<FinishResult>, submitted: &str) -> ControlReply
     }
 }
 
-/// `hex dictation`: a start locks the shortcut machine as a double tap
+/// `opcode dictation`: a start locks the shortcut machine as a double tap
 /// does, so the next press or `stop` finishes it.
 #[allow(clippy::too_many_arguments)]
 fn control_dictation(
@@ -1493,7 +1493,7 @@ fn control_dictation(
             if accepted {
                 // A warm start already queued its provisional tone.
                 make_control_capture_intentional(input, release_while_idle)?;
-                ControlReply::done("Recording; `hex dictation stop` or the shortcut finishes")
+                ControlReply::done("Recording; `opcode dictation stop` or the shortcut finishes")
             } else {
                 hotkeys.dictation.suspend();
                 ControlReply::error("busy", "the microphone is busy; try again")
@@ -1529,14 +1529,14 @@ fn control_dictation(
                 ),
                 finished => finish_reply(
                     Some(finished),
-                    "Finished recording; Hex pastes the text when it's ready",
+                    "Finished recording; Opcode pastes the text when it's ready",
                 ),
             }
         }
     })
 }
 
-/// A `hex paste-last` (or the menu bar's Paste Last Dictation) waits for
+/// A `opcode paste-last` (or the menu bar's Paste Last Dictation) waits for
 /// every capture and shortcut gesture to end: pasting cancels the audio
 /// owner's capture, which would strand the machine that started it.
 fn paste_last_refusal(capture_active: bool) -> Option<ControlReply> {
@@ -1595,7 +1595,7 @@ fn fail_capture(
 enum CaptureEnd {
     /// The capture never became a dictation; no feedback tone.
     Discarded(Option<DiscardCause>),
-    /// The capture ended unfinished: the cancel shortcut, or Hex itself
+    /// The capture ended unfinished: the cancel shortcut, or Opcode itself
     /// when its shortcuts were suspended or the event tap was lost.
     Cancelled,
 }

@@ -212,7 +212,7 @@ pub(crate) fn controller_loop(
     Ok(())
 }
 
-/// How often meetings past their retention move to the Trash while Hex runs.
+/// How often meetings past their retention move to the Trash while Opcode runs.
 const EXPIRY_INTERVAL: Duration = Duration::from_secs(60 * 60);
 
 /// Moves meetings past their retention to the Trash: at launch, then
@@ -243,7 +243,7 @@ impl MeetingExpiry {
 /// before loading its own model, as a recording without one does.
 const ENGINE_GRACE: Duration = Duration::from_secs(30);
 
-/// Finishes, once per launch, the transcripts of meetings Hex quit while
+/// Finishes, once per launch, the transcripts of meetings Opcode quit while
 /// recording. It waits for the dictation engine so the work borrows its
 /// model rather than loading a second copy.
 struct PendingFinals {
@@ -532,7 +532,7 @@ impl Reminders {
     }
 
     /// The scheduler pass over the meetings last read. A reminder waits
-    /// while Hex records; it shows after, if still due.
+    /// while Opcode records; it shows after, if still due.
     fn step(&mut self, recording: bool, now_ms: i64, lead_ms: i64) -> Option<ReminderUpdate> {
         if recording {
             return None;
@@ -556,7 +556,7 @@ impl Reminders {
             lead_ms,
         ) {
             start.meeting.calendar = Some(calendar_context(meeting));
-            // A title the user gave (`hex meetings record --title`) wins.
+            // A title the user gave (`opcode meetings record --title`) wins.
             if !(candidate.named
                 && candidate.source == crate::meeting::detection::MeetingSource::Manual)
             {
@@ -758,7 +758,7 @@ fn poll_recording(
     Ok(())
 }
 
-/// Whether a recording stops on its own once its call ends: only one Hex
+/// Whether a recording stops on its own once its call ends: only one Opcode
 /// started automatically (Always record), and only with Labs › Stop when
 /// the call ends on. Manual and offered recordings never do.
 fn stops_when_call_ends(automatic: bool, lab_on: bool) -> bool {

@@ -1,4 +1,4 @@
-//! The Windows listener host, which outlives the window while Hex hides in
+//! The Windows listener host, which outlives the window while Opcode hides in
 //! the tray, and the single-instance claim for the login session. The tray
 //! and the window are `windows_rune`.
 
@@ -40,7 +40,7 @@ struct RunningListener {
     /// Saved settings the listener applies in place.
     updates: mpsc::Sender<Box<AppSettings>>,
     swap_failures: Receiver<crate::transcription::local_transcriber::SwapFailed>,
-    /// The tray's and `hex` commands, handled as the shortcut would be.
+    /// The tray's and `opcode` commands, handled as the shortcut would be.
     commands: mpsc::Sender<crate::windows::dictation::ListenerCommand>,
 }
 
@@ -88,22 +88,22 @@ pub(crate) struct WindowsDesktopHost {
     foreground: ForeignWindow,
 }
 
-/// Names the event that marks the running Hex app in this login session.
-const APP_INSTANCE_EVENT: &str = r"Local\anomaly.hex.app";
+/// Names the event that marks the running Opcode app in this login session.
+const APP_INSTANCE_EVENT: &str = r"Local\anomaly.opcode.app";
 
-/// The data root `HEX_APPLICATION_SUPPORT_DIR` names, unless it is the
+/// The data root `OPCODE_APPLICATION_SUPPORT_DIR` names, unless it is the
 /// default one, which keeps the default event.
 fn custom_root() -> Option<std::path::PathBuf> {
     let canonical = |path: std::path::PathBuf| path.canonicalize().unwrap_or(path);
-    let root = canonical(std::env::var_os("HEX_APPLICATION_SUPPORT_DIR")?.into());
-    let default = dirs::data_dir().map(|data| canonical(data.join("hex")));
+    let root = canonical(std::env::var_os("OPCODE_APPLICATION_SUPPORT_DIR")?.into());
+    let default = dirs::data_dir().map(|data| canonical(data.join("opcode")));
     (default.as_ref() != Some(&root)).then_some(root)
 }
 
 /// The instance event for a data root: [`APP_INSTANCE_EVENT`] for the
 /// default one, and its own event for another root that
-/// `HEX_APPLICATION_SUPPORT_DIR` names, so a copy of Hex with its own data,
-/// such as a benchmark, neither signals nor yields to the person's Hex.
+/// `OPCODE_APPLICATION_SUPPORT_DIR` names, so a copy of Opcode with its own data,
+/// such as a benchmark, neither signals nor yields to the person's Opcode.
 fn instance_event_name(custom_root: Option<&std::path::Path>) -> String {
     use sha2::{Digest, Sha256};
     match custom_root {
@@ -121,7 +121,7 @@ fn instance_event_name(custom_root: Option<&std::path::Path>) -> String {
     }
 }
 
-/// Ownership of the one Hex app in this login session (per data root).
+/// Ownership of the one Opcode app in this login session (per data root).
 ///
 /// Windows does not bring a running app forward when it is launched again, so
 /// a Start menu launch while the login item runs in the tray would start a
@@ -131,7 +131,7 @@ fn instance_event_name(custom_root: Option<&std::path::Path>) -> String {
 pub(crate) struct AppInstance(HANDLE);
 
 impl AppInstance {
-    /// Returns `None` when a Hex app already runs in this session, after
+    /// Returns `None` when a Opcode app already runs in this session, after
     /// asking it to show its window unless this launch is a hidden (login)
     /// launch, which must never pop up an app that is already running.
     pub(crate) fn claim(start_hidden: bool) -> Result<Option<Self>> {
@@ -141,7 +141,7 @@ impl AppInstance {
         let event = unsafe { CreateEventW(std::ptr::null(), 0, 0, name.as_ptr()) };
         if event.is_null() {
             return Err(eyre!(
-                "could not create the Hex instance event: {}",
+                "could not create the Opcode instance event: {}",
                 std::io::Error::last_os_error()
             ));
         }
@@ -150,7 +150,7 @@ impl AppInstance {
             return Ok(Some(Self(event)));
         }
         if !start_hidden {
-            tracing::info!("Hex is already running; showing its window");
+            tracing::info!("Opcode is already running; showing its window");
             // SAFETY: `event` is a valid handle owned by this function. A
             // launched app may take the foreground; pass that right on so
             // the running app can activate its window.
@@ -166,11 +166,11 @@ impl AppInstance {
 
     /// Calls `on_launch` whenever a later launch signals the event, until it
     /// returns false. The handle stays open until the process exits, keeping
-    /// this process the session's Hex app.
+    /// this process the session's Opcode app.
     pub(crate) fn forward_launches(self, on_launch: impl Fn() -> bool + Send + 'static) {
         let event = self.0 as usize;
         let spawned = std::thread::Builder::new()
-            .name("hex-relaunch".into())
+            .name("opcode-relaunch".into())
             .spawn(move || {
                 // SAFETY: the handle is never closed while the process runs.
                 while unsafe { WaitForSingleObject(event as HANDLE, INFINITE) } == WAIT_OBJECT_0 {
@@ -180,7 +180,7 @@ impl AppInstance {
                 }
             });
         if let Err(error) = spawned {
-            tracing::warn!(%error, "relaunching Hex will not show the running window");
+            tracing::warn!(%error, "relaunching Opcode will not show the running window");
         }
     }
 }
@@ -251,7 +251,7 @@ impl WindowsDesktopHost {
         host
     }
 
-    /// Handles one window or tray request; returns `true` when Hex should quit.
+    /// Handles one window or tray request; returns `true` when Opcode should quit.
     pub(crate) fn handle(&mut self, request: Request) -> bool {
         match request {
             Request::Desktop(action) => return self.dispatch(action),
@@ -309,7 +309,7 @@ impl WindowsDesktopHost {
             | DesktopAction::ConfirmUpdateSwitch
             | DesktopAction::WindowFocused => {
                 if let Err(error) = self.updater.act(&action) {
-                    self.error = Some(tr_fill("Could not restart Hex: {}", &format!("{error:#}")));
+                    self.error = Some(tr_fill("Could not restart Opcode: {}", &format!("{error:#}")));
                 }
             }
             // Windows saves shortcuts from the window.
@@ -458,8 +458,8 @@ impl WindowsDesktopHost {
         }
     }
 
-    /// Enable and Disable also decide whether Hex listens at its next launch,
-    /// so a disabled Hex stays disabled after a restart (#575).
+    /// Enable and Disable also decide whether Opcode listens at its next launch,
+    /// so a disabled Opcode stays disabled after a restart (#575).
     fn remember_listening(&mut self, enabled: bool) {
         if self.settings.enable_on_launch == enabled {
             return;
@@ -578,7 +578,7 @@ impl WindowsDesktopHost {
     }
 
     /// True once Restart to update has handed off to the new version, after
-    /// the updater's final check; Hex then quits so it can take the named
+    /// the updater's final check; Opcode then quits so it can take the named
     /// event.
     pub(crate) fn update_restarted(&mut self) -> bool {
         match self.updater.take_restart() {
@@ -587,7 +587,7 @@ impl WindowsDesktopHost {
                 true
             }
             Some(Err(error)) => {
-                self.error = Some(tr_fill("Could not restart Hex: {}", &format!("{error:#}")));
+                self.error = Some(tr_fill("Could not restart Opcode: {}", &format!("{error:#}")));
                 false
             }
             None => false,
@@ -673,7 +673,7 @@ impl WindowsDesktopHost {
         }
     }
 
-    /// Where `hex` dictation commands go: the running listener, once its
+    /// Where `opcode` dictation commands go: the running listener, once its
     /// session started (a listener still loading its model would replay
     /// them late).
     pub(crate) fn listener_commands(
@@ -835,16 +835,16 @@ mod tests {
     #[test]
     fn an_isolated_data_root_has_its_own_instance_event() {
         assert_eq!(instance_event_name(None), APP_INSTANCE_EVENT);
-        let isolated = instance_event_name(Some(std::path::Path::new(r"C:\bench\home\hex")));
-        assert!(isolated.starts_with(r"Local\anomaly.hex.app."));
+        let isolated = instance_event_name(Some(std::path::Path::new(r"C:\bench\home\opcode")));
+        assert!(isolated.starts_with(r"Local\anomaly.opcode.app."));
         assert_eq!(isolated.len(), APP_INSTANCE_EVENT.len() + 17);
         assert_eq!(
             isolated,
-            instance_event_name(Some(std::path::Path::new(r"c:\Bench\Home\HEX")))
+            instance_event_name(Some(std::path::Path::new(r"c:\Bench\Home\OPCODE")))
         );
         assert_ne!(
             isolated,
-            instance_event_name(Some(std::path::Path::new(r"C:\bench\other\hex")))
+            instance_event_name(Some(std::path::Path::new(r"C:\bench\other\opcode")))
         );
     }
 

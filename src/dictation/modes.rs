@@ -292,8 +292,8 @@ mod tests {
             let processing = &mut settings.dictation_processing;
             processing.default_mode.replacements =
                 vec![crate::dictation::text_replacements::TextReplacement {
-                    matched_phrase: "hex".into(),
-                    output: "Hex".into(),
+                    matched_phrase: "opcode".into(),
+                    output: "Opcode".into(),
                 }];
             processing.modes = vec![DictationMode {
                 replacements: vec![crate::dictation::text_replacements::TextReplacement {
@@ -309,9 +309,9 @@ mod tests {
         };
         let transformations = crate::personal_commands::TransformationClient::default();
 
-        let processed = runtime.process("Use open code in hex.", &context, &transformations);
+        let processed = runtime.process("Use open code in opcode.", &context, &transformations);
 
-        assert_eq!(processed.text, "Use OpenCode in Hex.");
+        assert_eq!(processed.text, "Use OpenCode in Opcode.");
         assert!(processed.observation.is_none());
     }
 
@@ -336,7 +336,7 @@ mod tests {
 
     #[test]
     fn saved_post_processing_enables_the_global_rewrite() {
-        let path = std::env::temp_dir().join(format!("hex-970-{}.json", std::process::id()));
+        let path = std::env::temp_dir().join(format!("opcode-970-{}.json", std::process::id()));
         std::fs::write(
             &path,
             br#"{"dictation_processing":{"default_mode":{"post_processing":{"enabled":true,"prompt":"Fix it.","model":"opencode/big-pickle","deadline_seconds":30}}}}"#,
@@ -360,7 +360,7 @@ mod tests {
             Some("x.com")
         );
         assert_eq!(
-            canonical_host("github.com/hex/pull/1").as_deref(),
+            canonical_host("github.com/opcode/pull/1").as_deref(),
             Some("github.com")
         );
         assert_eq!(

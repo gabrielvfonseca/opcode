@@ -2,7 +2,7 @@
 //! at a time receives `data: {"type":"meeting.finished","id":"<id>"}` once
 //! per meeting whose final transcript is written, and a comment keepalive
 //! between. Only the id is sent; clients read the rest with
-//! `hex meetings show <id>`. While the toggle is off the route answers
+//! `opcode meetings show <id>`. While the toggle is off the route answers
 //! `404 labs-off`, and a stream already open ends.
 
 use std::io::Write;
@@ -155,7 +155,7 @@ mod tests {
     fn a_finished_meeting_is_streamed_as_its_id_to_one_authenticated_subscriber() {
         static HUB: Hub = Hub::new();
         let directory = std::env::temp_dir().join(format!(
-            "hex-meeting-events-{}-{}",
+            "opcode-meeting-events-{}-{}",
             std::process::id(),
             crate::desktop::events::now_ms()
         ));

@@ -28,7 +28,7 @@ pub(super) struct StartedStream {
     pub stream: InputStream,
     pub chunks: Receiver<(Vec<f32>, CaptureInstant)>,
     pub stream_errors: Receiver<String>,
-    pub hex_microphone: crate::audio::hex_microphone::CaptureFeedSwitch,
+    pub opcode_microphone: crate::audio::opcode_microphone::CaptureFeedSwitch,
     pub sample_rate: u32,
 }
 
@@ -79,7 +79,7 @@ pub(super) fn start_stream_with_fallback(
         "the microphone refused its default format; trying the others it lists"
     );
     // Intel Smart Sound refused every stream cpal built, at any format and
-    // buffer, so Hex tries its own WASAPI paths next (#988).
+    // buffer, so Opcode tries its own WASAPI paths next (#988).
     #[cfg(target_os = "windows")]
     match super::wasapi_capture::start(device, device_name) {
         Ok(started) => return Ok(started),
@@ -222,7 +222,7 @@ fn start_stream(
         sender: error_sender,
         default_name,
     };
-    let (feed, hex_microphone) = crate::audio::hex_microphone::capture_feed(sample_rate);
+    let (feed, opcode_microphone) = crate::audio::opcode_microphone::capture_feed(sample_rate);
     let stream = match sample_format {
         SampleFormat::F32 => build_stream(
             device,
@@ -280,7 +280,7 @@ fn start_stream(
         stream: InputStream::Cpal { _stream: stream },
         chunks,
         stream_errors,
-        hex_microphone,
+        opcode_microphone,
         sample_rate,
     })
 }

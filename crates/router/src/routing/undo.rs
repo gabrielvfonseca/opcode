@@ -908,13 +908,13 @@ mod tests {
 
     const SENT_AT: u64 = 1_000_000;
 
-    /// A remembered send of `msg_mine` to `ses_hex`, from decision `d1`.
+    /// A remembered send of `msg_mine` to `ses_opcode`, from decision `d1`.
     fn sent(dir: &Path, was_idle: bool) -> String {
         let record = Record {
             delivery_id: "abc1".into(),
             time: SENT_AT,
-            session: "ses_hex".into(),
-            title: Some("HEX".into()),
+            session: "ses_opcode".into(),
+            title: Some("OPCODE".into()),
             message_id: Some("msg_mine".into()),
             delivery: "steer".into(),
             was_idle: Some(was_idle),
@@ -976,11 +976,11 @@ mod tests {
             report,
             Report {
                 undone: Undone::Withdrawn,
-                session: Some("ses_hex".into()),
+                session: Some("ses_opcode".into()),
                 message_id: Some("msg_mine".into()),
             }
         );
-        assert!(calls().contains(&"DELETE /api/session/ses_hex/inbox/msg_mine".to_owned()));
+        assert!(calls().contains(&"DELETE /api/session/ses_opcode/inbox/msg_mine".to_owned()));
         assert!(
             calls().iter().all(|c| !c.starts_with("POST")),
             "{:?}",
@@ -1062,7 +1062,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(dir);
     }
 
-    const CLEAR: &str = "DELETE /api/session/ses_hex/revert";
+    const CLEAR: &str = "DELETE /api/session/ses_opcode/revert";
 
     #[test]
     fn input_arriving_while_the_revert_is_staged_is_kept() {
@@ -1245,7 +1245,7 @@ mod tests {
                 "{name}: no abort"
             );
             assert!(posted("/revert/stage").is_empty(), "{name}: no revert");
-            let prompts = posted("/api/session/ses_hex/prompt");
+            let prompts = posted("/api/session/ses_opcode/prompt");
             assert_eq!(prompts.len(), 1, "{name}");
             assert!(prompts[0].contains(DISOWN) && prompts[0].contains(r#""delivery":"steer""#));
             let _ = std::fs::remove_dir_all(dir);
@@ -1350,7 +1350,7 @@ mod tests {
             ..Fake::default()
         });
         assert_eq!(undo_now(&dir, &id).unwrap().undone, Undone::Withdrawn);
-        assert!(calls().contains(&"DELETE /api/session/ses_hex/inbox/msg_mine".to_owned()));
+        assert!(calls().contains(&"DELETE /api/session/ses_opcode/inbox/msg_mine".to_owned()));
         FAKE.with(|f| assert!(f.borrow().inbox.is_empty()));
         let _ = std::fs::remove_dir_all(dir);
 
@@ -1522,11 +1522,11 @@ mod tests {
         let report = Report::of(Undone::Withdrawn, read(&dir, &id).as_ref());
         assert_eq!(
             serde_json::to_value(&report).unwrap(),
-            json!({"undone": "withdrawn", "session": "ses_hex", "message_id": "msg_mine"})
+            json!({"undone": "withdrawn", "session": "ses_opcode", "message_id": "msg_mine"})
         );
         assert_eq!(serde_json::to_value(Undone::TooOld).unwrap(), "too-old");
         let sent = remember(
-            "ses_hex",
+            "ses_opcode",
             None,
             &Posted {
                 message_id: Some("msg_x".into()),
@@ -1553,7 +1553,7 @@ mod tests {
         assert_eq!(line["decision_id"], "d1");
         assert_eq!(line["item_id"], "A1B2");
         assert_eq!(line["undone"], "reverted");
-        assert_eq!(line["from"], json!({"id": "ses_hex", "title": "HEX"}));
+        assert_eq!(line["from"], json!({"id": "ses_opcode", "title": "OPCODE"}));
         assert_eq!(line["to"], Value::Null);
         let _ = std::fs::remove_dir_all(dir);
     }
@@ -1573,7 +1573,7 @@ mod tests {
         let record = Record {
             delivery_id: "c1".into(),
             time: SENT_AT,
-            session: "ses_hex".into(),
+            session: "ses_opcode".into(),
             title: None,
             message_id: Some("msg_mine".into()),
             delivery: "steer".into(),

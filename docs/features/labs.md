@@ -5,12 +5,12 @@ for that we built**: they land in Labs, off by default, instead of shipping
 on. Each feature also has an **audience** (`labs::Feature::audience`, one
 `match` beside `on_this_os`, so a new feature must choose): `Everyone` ships
 in every build; `Dev` exists only in dev builds (`dev_build::is_dev_build`:
-debug, local `HEX_LOCAL_BUILD`, test `HEX_TEST_BUILD`, and dev-channel
-`HEX_BUILD_CHANNEL=dev` builds). A stable build never lists, accepts
-(`hex labs on`, `hex settings set`), or runs a Dev feature: `available()`
+debug, local `OPCODE_LOCAL_BUILD`, test `OPCODE_TEST_BUILD`, and dev-channel
+`OPCODE_BUILD_CHANNEL=dev` builds). A stable build never lists, accepts
+(`opcode labs on`, `opcode settings set`), or runs a Dev feature: `available()`
 drops it, its gate reads false even when `settings.json` says on, and the
 saved setting is kept untouched. In dev builds a Dev row carries a quiet
-"Dev" tag, and `hex labs` prints each feature's audience. Every feature
+"Dev" tag, and `opcode labs` prints each feature's audience. Every feature
 below is `Everyone` today unless marked `(Dev)`. Each feature also has a
 **group** (`labs::Feature::group` in `src/labs/group.rs`, one exhaustive
 `match`, so a new feature must choose): Dictation, Output (paste, formatting,
@@ -21,9 +21,9 @@ under its group's collapsible header, each **off by default**, plus Send
 feedback and Run setup again.
 
 ```ts
-Feature             Pane  Toggle (settings.json, hex settings)   On: what it does
+Feature             Pane  Toggle (settings.json, opcode settings)   On: what it does
 ├── Meetings (beta) yes   meetings.enabled             (macOS)   Meetings joins the sidebar: call detection, recording, transcripts
-├── Voice Filter (Dev) yes experimental.hex_microphone (macOS, Linux) Voice Filter joins the sidebar; feeds the Hex Microphone (macOS driver, Linux PipeWire source)
+├── Voice Filter (Dev) yes experimental.opcode_microphone (macOS, Linux) Voice Filter joins the sidebar; feeds the Opcode Microphone (macOS driver, Linux PipeWire source)
 │                                        a stable build never feeds it; with the macOS driver installed it keeps the pane with Uninstall alone
 ├── Playground (Dev) yes  labs.playground                        a Playground sidebar item and ⇧⌘D open the story browser
 ├── Live text       no    labs.live_text                         provisional words beside the HUD while dictating
@@ -42,7 +42,7 @@ Feature             Pane  Toggle (settings.json, hex settings)   On: what it doe
 ├── Spoken formatting no labs.spoken_formatting      spoken "new line"/"line break", "new paragraph", "open/close quote", "quote … unquote" become line breaks and quotation marks; Spanish "nuevo párrafo", "nueva línea", "abre/cierra comillas", … too (#630, #1040)
 ├── Spoken symbols  no    labs.spoken_symbols          spoken "hashtag", "underscore", "comma", … become symbols joined to their words: "#release", "my_variable", "done, thanks"; Spanish "arroba", "guion bajo", "coma", … too (#678, #1040)
 ├── Remove filler words no labs.filler_words          um, umm, uh, uhh, erm, er, ah leave dictations, with no model (#631)
-├── Subtitle export no    labs.subtitle_export         (macOS)   hex meetings show --srt|--vtt writes a meeting as timed subtitles (#633)
+├── Subtitle export no    labs.subtitle_export         (macOS)   opcode meetings show --srt|--vtt writes a meeting as timed subtitles (#633)
 ├── Second dictation shortcut no labs.second_dictation_shortcut + second_dictation_hotkey (macOS)
 │                                        another shortcut dictates like the main one (#627); General shows its recorder while on
 ├── Smart spacing   no    labs.smart_spacing           (macOS)   a dictation pasted right after a word gets one leading space (#632)
@@ -53,21 +53,21 @@ Feature             Pane  Toggle (settings.json, hex settings)   On: what it doe
 ├── Parakeet Ultra  no    labs.parakeet_ultra          the picker offers Moondream's Parakeet Ultra (pinned Q8_0, CC BY 4.0) with a details view; stays on while it dictates (#648)
 ├── Special keys alone no labs.standalone_special_keys (Linux, Windows) Linux: Menu, Pause, Scroll Lock may be a shortcut's key, alone or with modifiers (#767); Windows: Insert, Home, End, Page Up, Page Down may stand alone (#794)
 ├── Section key alone no  labs.section_key_alone       (Linux) the § key, left of 1 on ISO keyboards, may be a shortcut with no modifier (#1050)
-├── Dictation stats no    labs.history_stats           History shows a summary of retained dictations; hex history stats prints it (#790)
+├── Dictation stats no    labs.history_stats           History shows a summary of retained dictations; opcode history stats prints it (#790)
 ├── Copy recent dictations no labs.recent_dictations (macOS) the menu bar's Copy Recent Dictation submenu copies one of the last five dictations (#877)
 ├── Skip long pauses no    labs.skip_pauses             (Linux, Windows) a whole-clip dictation run hears only the head and tail of each long pause (#899)
-├── Stop when the call ends no labs.stop_when_call_ends (macOS) a recording Hex started on its own stops 30 s after its call app leaves the microphone and goes quiet (#835)
+├── Stop when the call ends no labs.stop_when_call_ends (macOS) a recording Opcode started on its own stops 30 s after its call app leaves the microphone and goes quiet (#835)
 ├── Fix results in Output no labs.output_fixes           Output's Try card offers Vocabulary and Fix this, which copies an agent prompt naming the wrong result (#989)
 ├── Model in use first no labs.picker_active_first     the speech model picker shows the model in use first: Compare's first column, Every model's first row (#1019)
 ├── Use model files where they are no labs.model_in_place the picker adds a model file without copying it, so accounts can share one (#941)
-├── Downloaded models only no labs.picker_downloaded   the picker's All speech models view can show only downloaded models, with the space Hex's copies take (#1018)
+├── Downloaded models only no labs.picker_downloaded   the picker's All speech models view can show only downloaded models, with the space Opcode's copies take (#1018)
 ├── Keep recordings no    labs.keep_recordings         History entries keep their dictation audio; Transcribe again runs it through another installed model (#1032)
-├── Hide menu bar icon no labs.hide_menu_bar_icon      (macOS) the menu-bar icon hides while no meeting is under way; shortcuts keep working, reopening Hex shows Settings (#1064)
+├── Hide menu bar icon no labs.hide_menu_bar_icon      (macOS) the menu-bar icon hides while no meeting is under way; shortcuts keep working, reopening Opcode shows Settings (#1064)
 ├── Notch indicator no    labs.notch_indicator         (macOS) with the indicator at Top, the notch widens sideways in the Dynamic Island's compact style: an orange mic and level bars, the macOS spinner, a green checkmark; flat screens keep it below the menu bar
 ├── Movable meeting capsules no labs.movable_meeting_capsules (macOS) panel capsules (Meeting transcript ready, Recording automatically, offers, reminders) drag to another corner and show in the last one, shared with the recording capsule (#1093)
 ├── Choose meeting summary model no labs.meeting_summary_model + meetings.opencode_model (every OS with Meetings)
 │                                        OpenCode meeting notes use exactly that provider/model, no fallback; Meetings › Settings › Advanced shows a
-│                                        searchable picker of OpenCode's models, "Hex picks a fast model" first (clears it), Retry / Check again
+│                                        searchable picker of OpenCode's models, "Opcode picks a fast model" first (clears it), Retry / Check again
 │                                        while OpenCode is missing, the saved ID kept and shown (#1107, #1301)
 │                                        // check: the_meeting_summary_model_is_picked_from_opencode_s_models (tests/panes.rs);
 │                                        // scenes and light/dark goldens meetings-summary-model, meetings-summary-model-not-running;
@@ -84,6 +84,12 @@ Feature             Pane  Toggle (settings.json, hex settings)   On: what it doe
 │                                        the bottom; scroll up to read, back to the bottom to follow again (#1332)
 │                                        // check: only_a_recording_transcript_follows_and_only_with_its_lab (rune_ui/meetings.rs,
 │                                        // Linux and Windows); not observed on a real call; Labs page goldens need regenerating
+├── Collapsible meeting sections no labs.collapsible_meeting_sections (every OS with Meetings)
+│                                        the Meetings list's day headings (Today, Yesterday, dates) and the detail's Summary and
+│                                        Chapters labels become buttons with a chevron that fold what follows; a folded day keeps
+│                                        its heading, search shows every match whatever the folds, folds last until Opcode quits (#1348)
+│                                        // checks: nothing_folds_with_the_lab_off, days_and_sections_fold_with_the_lab_on_and_search_ignores_folds
+│                                        // (rune_ui/meetings/folds.rs, Linux and Windows); no scene with folds yet; Labs page goldens need regenerating
 ├── Restore clipboard on GNOME no labs.gnome_clipboard_restore (Linux) on a Wayland desktop without data-control (GNOME), a paste snapshots and restores
 │                                        the clipboard through XWayland, only while this user's Xwayland already runs; never starts it (#1111)
 ├── Floating meeting capsules on GNOME no labs.gnome_meeting_capsules (Linux) on a Wayland desktop without layer-shell (GNOME), the recording offer and
@@ -95,7 +101,7 @@ Feature             Pane  Toggle (settings.json, hex settings)   On: what it doe
 ├── Screenshots     no    labs.screenshots + screenshots.hotkey (default ⌘⇧4) + screenshots.folder (macOS)
 │                                        the shortcut picks an area (Space: a window); the PNG goes on the clipboard, into the folder (Desktop), and into a corner thumbnail
 ├── Annotate 15 s replay no labs.annotate_replay + capture.replay_hotkey (macOS 27+)
-│                                        keeps a rolling 15 s SCClipBufferingOutput screen buffer for hex capture replay and the replay shortcut;
+│                                        keeps a rolling 15 s SCClipBufferingOutput screen buffer for opcode capture replay and the replay shortcut;
 │                                        macOS keeps its screen-recording dot lit the whole time it is on
 └── Terminal paste  no    paste_with_shift             (Windows) paste with Ctrl+Shift+V (#477/#478; Linux keeps it in General);
                                          Java games (javaw/java, e.g. Minecraft) still get Ctrl+V (#1362)
@@ -108,7 +114,7 @@ Settings › Labs                          // labs.page, a store (labs/store.rs)
 ├── Discover, no chip or search -> New in Labs: the two newest labs, then every other lab
 │   under its group's header; a lab added on the newest date among those shown carries New
 ├── Group header (key group-<id>) -> name, card count, chevron; a group with no card here hides
-│   ├── Press -> folds or unfolds it, saved at once in labs.groups (settings.json, not a hex settings key)
+│   ├── Press -> folds or unfolds it, saved at once in labs.groups (settings.json, not a opcode settings key)
 │   ├── Never pressed -> open while it holds a lab that's on, folded otherwise
 │   └── Turning off a group's last lab -> the group stays open (it is saved open first)
 ├── A chip, a search (name, description, group), or Turned on -> only the matching cards,
@@ -126,23 +132,23 @@ Settings › Labs                          // labs.page, a store (labs/store.rs)
 │   Screenshots: its shortcut, Saves to, and the macOS-takes-this-shortcut note with Open Keyboard Settings.
 │   Annotate 15 s replay's shortcut lives in Annotate's pane
 │   // checks: unload_when_idle_shows_its_minutes_on_its_card_while_on; scenes mac-labs-settings, mac-labs-screenshots
-├── Opened by a link (macOS) -> hex://labs opens this page; ?tab=on, ?category=<group id> and ?search=<text>
-│   set the store; hex://labs/<lab> also selects that lab's group chip (unless ?category names one). It never turns a lab on. An unknown
-│   or absent name -> the page opens and process.log notes it. hex://settings/<pane>
-│   (general, output, history, meetings, voice-filter) opens a main pane; one Hex doesn't show -> General.
-│   Links over 2048 bytes are ignored; a test build's scheme is hex-test://
-├── Annotate is listed as a lab (Annotate group) wherever Hex has the Annotate pane; its switch flips capture.enabled
+├── Opened by a link (macOS) -> opcode://labs opens this page; ?tab=on, ?category=<group id> and ?search=<text>
+│   set the store; opcode://labs/<lab> also selects that lab's group chip (unless ?category names one). It never turns a lab on. An unknown
+│   or absent name -> the page opens and process.log notes it. opcode://settings/<pane>
+│   (general, output, history, meetings, voice-filter) opens a main pane; one Opcode doesn't show -> General.
+│   Links over 2048 bytes are ignored; a test build's scheme is opcode-test://
+├── Annotate is listed as a lab (Annotate group) wherever Opcode has the Annotate pane; its switch flips capture.enabled
 └── Footer -> "Unfinished features. They may change or break.", Run setup again (replays the onboarding,
-    below), Send feedback -> https://github.com/anomalyco/hex/issues/new
+    below), Send feedback -> https://github.com/anomalyco/opcode/issues/new
 
-hex labs                                 // labs.cli; edits settings.json, no running Hex
-├── (list) -> every feature this build has: name, on/off, audience, description, its hex settings key
-├── link <feature> -> macOS: prints hex://labs/<feature> (hex-test:// in a test build), which opens Labs on its group
-├── on <feature> | off <feature> -> a running Hex saves and applies it (hex settings set); otherwise settings.json
+opcode labs                                 // labs.cli; edits settings.json, no running Opcode
+├── (list) -> every feature this build has: name, on/off, audience, description, its opcode settings key
+├── link <feature> -> macOS: prints opcode://labs/<feature> (opcode-test:// in a test build), which opens Labs on its group
+├── on <feature> | off <feature> -> a running Opcode saves and applies it (opcode settings set); otherwise settings.json
 ├── off voice-filter with the driver installed -> refused: uninstall the driver (dev builds; stable has no voice-filter)
-└── hex experiments … -> points at hex labs
+└── opcode experiments … -> points at opcode labs
 
-hex settings set labs.live_text true     // macOS: through the running Hex
+opcode settings set labs.live_text true     // macOS: through the running Opcode
 ```
 
 Checks: `rune_ui::deep_link` tests (parser, query, every feature's link reads
@@ -151,14 +157,14 @@ filters, ⌘F, a lone card's width, group folds and each OS's groups) and the
 `mac-labs`, `mac-labs-link`, `windows-labs`, and `linux-labs` goldens (Linux).
 Scenes: `mac-labs`, `mac-labs-on`, `mac-labs-category`, `mac-labs-search`,
 `mac-labs-settings`, `mac-labs-screenshots`, `mac-labs-link`, `windows-labs`, `linux-labs`. Not yet observed: the store in a running
-Hex.
+Opcode.
 
 Settings saved before this model may carry `labs.enabled`; it is read and
-ignored, and every feature keeps its own toggle. `hex status` lists the
+ignored, and every feature keeps its own toggle. `opcode status` lists the
 features on (`Labs` line on macOS, `labs` array in the macOS and Linux JSON,
 `labs\t…` on Windows).
 
-Every toggle applies at once, from the window or `hex labs on|off` (issue
+Every toggle applies at once, from the window or `opcode labs on|off` (issue
 568, from @maharshi365): Live text is asked as each dictation starts and its
 plate is always installed (prewarmed on macOS whatever the setting, so a
 plate turned on after launch never flashes the last dictation's words,
@@ -168,24 +174,24 @@ sidebar item, ⇧⌘D, the macOS View menu, and story links open it only while
 the toggle is on. Live chapters are read when a recording starts. Nothing
 starts at launch for a feature that is off. Limit: the macOS window's fixed
 size is chosen when it is created, so it becomes resizable for the
-playground only after Hex restarts.
+playground only after Opcode restarts.
 
 Gate a Labs feature where its work starts (the worker, thread, or capture),
 not only where its UI appears: `labs::live_text()`, `labs::live_chapters()`,
 `labs::playground()`, `labs::vocabulary_biasing()`,
-`app_settings::meetings_enabled()`, or `app_settings::hex_microphone_enabled()`.
+`app_settings::meetings_enabled()`, or `app_settings::opcode_microphone_enabled()`.
 Add a new feature to `labs::Feature` (name, settings key, description, audience), give
-it a row in `rune_ui/labs.rs` and a `hex settings` key, and default it off.
+it a row in `rune_ui/labs.rs` and a `opcode settings` key, and default it off.
 When a feature graduates, remove it from Labs.
 
-Mouse shortcuts off: the recorder ignores mouse buttons, `hex settings`
+Mouse shortcuts off: the recorder ignores mouse buttons, `opcode settings`
 refuses one, and a saved mouse-button shortcut goes back to its default when
 settings load (macOS), with a one-time note in General
 (`mouse_shortcut_notice`). Check:
 `mouse_shortcuts_go_back_to_their_default_while_their_labs_toggle_is_off` in
 [app_settings.rs](../../src/app_settings.rs).
 
-Clicks and drags reach Hex's filtering (event-consuming) session tap only
+Clicks and drags reach Opcode's filtering (event-consuming) session tap only
 while some shortcut is a mouse button; otherwise they go to the listen-only
 tap, as chord evidence only. A filtering tap on mouse events, even one that
 passes every event through, broke dragging windows between displays and
@@ -194,7 +200,7 @@ shortcut is bound or cleared, so for up to 5 s after that a newly bound button
 still reaches the app. Check:
 `mouse_events_reach_the_filtering_tap_only_while_a_mouse_shortcut_is_bound` in
 [suppression/tests.rs](../../src/suppression/tests.rs) (macOS only). Not yet
-observed: a real two-display Mac dragging windows with Hex running.
+observed: a real two-display Mac dragging windows with Opcode running.
 
 Unload model when idle (`unload-idle`, issue 442 from @theoneand33): while
 on, its card shows "Unload after" (5, 15, 30, or 60 minutes; default 15).
@@ -218,7 +224,7 @@ General › Advanced › Paste last dictation shows a Restore default shortcut
 button (`restore-paste-last`) whenever the shortcut is not its default
 (Option-Shift-V on macOS, Ctrl+Alt+V elsewhere), and a cleared shortcut's
 row reads "Default shortcut: …". Pressing it saves the default through the
-same checks a recorded shortcut meets; if another Hex shortcut already uses
+same checks a recorded shortcut meets; if another Opcode shortcut already uses
 it, nothing changes and the recorder opens with "Already in use". Off, the
 row is exactly as before. The gate is the row itself (the feature does no
 other work). Check:
@@ -231,7 +237,7 @@ on, a pasted dictation stays on the clipboard. `paste::Paster` reads
 without the nspasteboard.org transient markers (so clipboard managers may
 record it), schedules no 500 ms restore, and drops any earlier snapshot and
 pending restore (`ClipboardRestore::keep`), so a later restoring paste never
-brings back an older clipboard. Into Chromium 155/156, where Hex types the
+brings back an older clipboard. Into Chromium 155/156, where Opcode types the
 text instead of pasting, it also writes the transcript to the clipboard after
 typing. Off, pasting and clipboard restore are exactly as before. Checks:
 `a_kept_paste_leaves_nothing_to_restore` and
@@ -243,7 +249,7 @@ on a Mac with the toggle on.
 
 Copy dictation only (`copy-only`, issue 629, macOS): while on, a finished
 dictation (the dictation shortcut, Dictate without processing, or
-`hex dictation` without `--print`) is put on the clipboard and nothing is
+`opcode dictation` without `--print`) is put on the clipboard and nothing is
 sent to the focused app: no ⌘V, no typed text (Chromium 155/156 included),
 and no 500 ms restore, so selected text is never replaced. The paste worker
 (`parakeet::finish_output`) reads `labs::copy_only()` as each dictation's
@@ -342,14 +348,14 @@ dictation with the toggle on; the Labs page goldens need regenerating on
 Linux with the new row.
 
 Subtitle export (`subtitle-export`, issue 633, macOS like Meetings; its row
-shows wherever Meetings does): while on, `hex meetings show <id> --srt` or
+shows wherever Meetings does): while on, `opcode meetings show <id> --srt` or
 `--vtt` writes the meeting's transcript as SubRip or WebVTT subtitles, one cue
 per transcript entry (speaker turn) labelled You or Them, timed by the entry's
 offsets from the meeting's start rather than word timings, and limited by
 `--from`/`--to` or `--chapter` as the other outputs are
 ([transcript-cli.md](../transcript-cli.md)). The gate,
 `labs::subtitle_export()`, is read where the command starts: off, `--srt` and
-`--vtt` fail naming `hex labs on subtitle-export` before any meeting is read,
+`--vtt` fail naming `opcode labs on subtitle-export` before any meeting is read,
 and every other output is exactly as before. There is no export button in the
 window yet. Checks:
 `subtitles_render_speaker_turns_as_srt_and_vtt_cues` and
@@ -364,8 +370,8 @@ Second dictation shortcut (`second-dictation-shortcut`, issue 627, macOS):
 for a Globe/Fn shortcut on the laptop keyboard and another key on an
 external keyboard. While on, General shows a "Second dictation shortcut"
 recorder under Shortcut, unbound by default and clearable
-(`second_dictation_hotkey`, also `hex settings set second_dictation_hotkey
-f5`). It is refused when it shares a key with another Hex shortcut, and the
+(`second_dictation_hotkey`, also `opcode settings set second_dictation_hotkey
+f5`). It is refused when it shares a key with another Opcode shortcut, and the
 others' checks count it while the toggle is on. The gate is
 `AppSettings::active_second_dictation_hotkey`: only on macOS, with the toggle
 on, a binding saved, and no overlap does `RuntimeHotkeys::second_dictation`
@@ -377,7 +383,7 @@ last and meeting paste still come only from the main machine. The shortcut
 that starts a capture finishes or cancels it, and the other stands down
 until its keys lift while it records. Turning the toggle off or clearing the
 binding mid-capture cancels that capture. Off, nothing is matched,
-suppressed, or checked for it, and Hex is unchanged. Checks:
+suppressed, or checked for it, and Opcode is unchanged. Checks:
 `the_second_dictation_shortcut_needs_its_lab_and_its_own_keys` in
 [app_settings.rs](../../src/app_settings.rs) and
 `the_shortcut_that_starts_a_capture_owns_it` in
@@ -400,7 +406,7 @@ whitespace, opening punctuation, straight quotes, or symbols such as `@ $ # /
 -`, and never before text that starts with whitespace or closing punctuation.
 Selected text, a cursor at the start, or an app that doesn't expose its
 cursor leaves the text unchanged, and both the clipboard paste and the
-Chromium 155/156 typing path use the adjusted text. Hex's own window is
+Chromium 155/156 typing path use the adjusted text. Opcode's own window is
 never asked: its tree belongs to the main thread that updates it (#1402).
 Lowercasing the first letter is not done. Off, pasting is exactly as before.
 Checks:
@@ -419,7 +425,7 @@ pressed on, so Right ⌘ + Right ⌥ saves as `right-option+right-command` and
 the tray shows R⌥ R⌘; only those keys press it, and the left keys don't.
 The gate is the recorder: `labs::sided_modifier_chords()` is read once when
 a recording starts. Matching, the conflict checks, and saved shortcuts are
-unchanged (chords already store and match sides; `hex settings set` could
+unchanged (chords already store and match sides; `opcode settings set` could
 always save one), a chord with a non-modifier key still records its
 modifiers from either side, and the side picker stays for one-modifier
 shortcuts only. Off, a chord such as ⌥⌘ records from either side exactly as
@@ -452,7 +458,7 @@ finishes its capture, with the usual release tail; a sooner release locks as
 Toggle does. The desktop's key repeats of a held press don't move its start,
 and a release the desktop drops leaves the capture recording until the next
 press finishes it, as before. It applies to the dictation shortcut and
-Dictate without processing, each for the capture it started; `hex dictation`
+Dictate without processing, each for the capture it started; `opcode dictation`
 commands are unchanged. X11 counts a release after its 50 ms auto-repeat
 grace. Windows doesn't have it.
 
@@ -506,11 +512,11 @@ test records (945 utterances, batch 8, no timestamps, source revision
 7045d1c; run IDs and scoring or artifact revisions unknown); the catalog's
 7.64 and 10.11 stay as the alternate legacy figures the picker shows with the
 toggle off. QwenCleo-ASR 1.7B names its author's 3,699-utterance Egyptian
-Arabic test. ivrit.ai Whisper large-v3-turbo carries Hex's own run of
+Arabic test. ivrit.ai Whisper large-v3-turbo carries Opcode's own run of
 transcribe.cpp's WER harness on the FLEURS Hebrew test (18.45% WER, 792
 utterances, batch 1, no timestamps, Radeon 8060S over Vulkan, source revision
-7045d1c), NB-Whisper Medium Hex's run on the FLEURS Norwegian test (6.68%
-WER, 357 utterances, same conditions), and Granite Speech 5.0 Hex's run on
+7045d1c), NB-Whisper Medium Opcode's run on the FLEURS Norwegian test (6.68%
+WER, 357 utterances, same conditions), and Granite Speech 5.0 Opcode's run on
 the FLEURS English test (4.77% WER, 647 utterances, same conditions); every other figure is English WER with dataset and source
 unrecorded. A "Most accurate" badge stays only when its record is comparable
 (`BenchmarkRecord::comparable`: same metric, language, and a known, equal
@@ -528,7 +534,7 @@ page goldens need regenerating on Linux with the new row.
 
 Use your own speech model (`custom-models`) graduated: adding a model file
 and models found on this computer are always on now
-([own-models.md](own-models.md)). `hex labs on|off custom-models` still
+([own-models.md](own-models.md)). `opcode labs on|off custom-models` still
 answers with that and exits 0 (`labs::GRADUATED`); the saved
 `labs.custom_models` key is ignored.
 
@@ -542,24 +548,24 @@ Picker row -> "Parakeet Ultra" + Labs tag; 25 languages, offline, Token     // l
 ├── Download -> handy-computer/parakeet-ultra-gguf@a1539be1, parakeet-ultra-Q8_0.gguf,
 │   740,363,168 bytes, SHA-256 007a5976…0a59 (430 F32, 225 Q8_0, 48 F16 tensors)
 ├── Details -> languages; peak memory measured on apollo (~0.7 GB GPU, ~0.2 GB
-│   RAM, Radeon 8060S over Vulkan; not measured elsewhere); "Experimental: Hex
+│   RAM, Radeon 8060S over Vulkan; not measured elsewhere); "Experimental: Opcode
 │   has run it only on Linux (Vulkan) so far."; the credit word for word ("Parakeet
 │   Ultra by Moondream, based on NVIDIA Parakeet TDT 0.6B v3. GGUF conversion and
 │   quantization by handy-computer. Creative Commons Attribution 4.0 International
 │   (CC BY 4.0)."); the publisher's NOTICE; Source and License links
-├── "Published conversion benchmarks; not measured in Hex" (folded) -> conditions
+├── "Published conversion benchmarks; not measured in Opcode" (folded) -> conditions
 │   (FLEURS test, Q8_0, CUDA, batch 8, each language's hint, no timestamps,
 │   transcribe.cpp 021aa17d; file digest, dataset revision, scorer unknown), then
 │   25 FLEURS WERs from transcribe.cpp 7045d1c's catalog/parakeet-ultra.json
 ├── Accuracy 98.2% / Labs › Benchmark details: LibriSpeech test-clean 1.80%
 │   WER, the same published source (2,620 utterances, batch 8, CUDA)
 └── Toggle off while Ultra is the dictation model -> refused (row locked,
-    `hex labs off`, `hex settings set`); a saved Ultra with the toggle off some
+    `opcode labs off`, `opcode settings set`); a saved Ultra with the toggle off some
     other way stays saved and the listener runs a downloaded fallback
 ```
 
 Observed on apollo (Linux, Radeon 8060S over Vulkan, 2026-11-01): the file
-matched its pinned size and SHA-256 (`hex model install` verified it); `hex
+matched its pinned size and SHA-256 (`opcode model install` verified it); `opcode
 model transcribe` with Ultra, passed and saved, transcribed FLEURS German and
 English and JFK correctly; Ultra ran a FLEURS English clip at 191x against
 Parakeet v3's 211x in transcribe-cli; turning the toggle off while Ultra was
@@ -576,12 +582,12 @@ to dictate on GNOME Wayland by remapping it to Menu (GNOME's "Caps Lock is
 also a Menu" keyboard option), or using Pause or Scroll Lock.
 
 ```ts
-hex settings set dictation_hotkey menu        // labs.special-keys
+opcode settings set dictation_hotkey menu        // labs.special-keys
 ├── Toggle on (Linux) -> saved; any shortcut may use menu, pause, scrolllock,
 │   alone like a function key or with modifiers (ctrl+pause)
 │   ├── X11 -> grabs keysym Menu 0xff67, Pause 0xff13, Scroll_Lock 0xff14
 │   └── Wayland portal -> preferred trigger Menu, Pause, Scroll_Lock
-├── Toggle off -> "menu needs Labs › Special keys alone: hex labs on special-keys"
+├── Toggle off -> "menu needs Labs › Special keys alone: opcode labs on special-keys"
 ├── Windows -> Menu, Pause, Scroll Lock always allowed, alone too; the toggle
 │   instead lets Insert, Home, End, Page Up, Page Down stand alone ("home alone
 │   needs Labs › Special keys alone" while off), and off puts a saved one back
@@ -589,7 +595,7 @@ hex settings set dictation_hotkey menu        // labs.special-keys
 ├── Window recorder (Linux) -> records them, alone too, while on (#1187);
 │   refuses them while off ("Add a modifier")
 │   Check: `recorder_takes_special_keys_alone` in `rune_ui/settings.rs`
-└── Toggle turned off (row, hex labs off, hex settings), or settings load with
+└── Toggle turned off (row, opcode labs off, opcode settings), or settings load with
     it off -> a Linux shortcut on one goes back to its default (Dictate without
     processing unbound), so the listener never registers it
 ```
@@ -597,7 +603,7 @@ hex settings set dictation_hotkey menu        // labs.special-keys
 The gates are `AppSettings::special_keys_allowed` in `control/settings.rs`'s
 `apply` and the window's `settings::validate`, and
 `AppSettings::repair_special_keys` (`app_settings/shortcut_repair.rs`) where
-settings load and where the toggle turns off. Off, Hex is unchanged: the
+settings load and where the toggle turns off. Off, Opcode is unchanged: the
 added keysym names are reached only by a saved shortcut on one of these keys.
 Checks: `menu_alone_needs_its_labs_toggle` in
 [control/settings.rs](../../src/control/settings.rs) and
@@ -616,24 +622,24 @@ the ISO § key, left of 1 above Tab, without a modifier.
 ```ts
 Settings › General › Shortcut, press § alone      // labs.section-key
 ├── Toggle off -> "Add a modifier", as before; § with a modifier records as before
-├── Toggle on  -> saved as § (hex settings also takes `section`); Settings shows §
+├── Toggle on  -> saved as § (opcode settings also takes `section`); Settings shows §
 │   ├── X11 -> grabs the keycode that types XK_section 0xa7
 │   └── Wayland portal -> preferred trigger `section`
-├── hex settings set dictation_hotkey §, off -> "section needs Labs › Section key
-│   alone: hex labs on section-key"
-└── Toggle turned off (row, hex labs off, hex settings), or settings load with
+├── opcode settings set dictation_hotkey §, off -> "section needs Labs › Section key
+│   alone: opcode labs on section-key"
+└── Toggle turned off (row, opcode labs off, opcode settings), or settings load with
     it off -> a Linux shortcut on § alone goes back to its default (Dictate
     without processing unbound), so the listener never registers it
 ```
 
-While bound, Hex takes § from every app (an X11 grab or a portal shortcut
+While bound, Opcode takes § from every app (an X11 grab or a portal shortcut
 holds its key), so typing § needs another key. The window's
 `settings::recorded_binding` and `control/settings.rs`'s `parse_hotkey` let a
 lone § through on Linux; the gates are `AppSettings::section_key_allowed` in
 the window's `settings::validate` and in `control/settings.rs`'s `apply`
 (`special_key_refusal`), and `AppSettings::repair_section_key`
 (`app_settings/shortcut_repair.rs`) where settings load and where the toggle
-turns off. Off, Hex is unchanged: a lone § is refused everywhere, and the
+turns off. Off, Opcode is unchanged: a lone § is refused everywhere, and the
 added `section` keysym names are reached only by a saved § shortcut (§ with a
 modifier now also resolves on X11 and the portal, where it was refused as an
 unsupported key). macOS and Windows don't have it. Checks:
@@ -651,14 +657,14 @@ goldens need regenerating on Linux with the new row.
 Dictation stats (`history-stats`, issue 790, every OS): while on, the History
 pane shows a "Dictation stats" block above the list once anything is retained:
 dictations, words, words per minute, how often Output changed the text, the
-daily streak, and the top five apps; `hex history stats [--since] [--until]
+daily streak, and the top five apps; `opcode history stats [--since] [--until]
 [--json]` prints the same ([transcript-cli.md](../transcript-cli.md)). It sums
 every entry within retention (`History::stats`, `history/stats.rs`), not the
 pane's 200-entry search, so it ends with what retention removes; the rollup that
 outlives retention, streak notifications, and per-replacement counts are not
 built. The gates are `labs::history_stats()`, read when the pane reloads (off,
 it reads nothing for stats, and sums again only when the entries or the toggle
-change) and where `hex history stats` starts (off, it fails naming `hex labs on
+change) and where `opcode history stats` starts (off, it fails naming `opcode labs on
 history-stats` before History is read), and the window's own setting for the
 block. Off, History is exactly as before. Checks: the tests in
 [history/stats.rs](../../src/history/stats.rs) (words, speed, changes, top
@@ -673,7 +679,7 @@ page goldens need regenerating on Linux with the new row.
 Copy recent dictations (`recent-dictations`, issue 877, macOS): while on,
 the menu-bar menu shows a Copy Recent Dictation submenu right under Paste
 Last Dictation. It lists the five newest History entries within retention,
-newest first, skipping printed (`hex dictation stop --print`) and empty ones
+newest first, skipping printed (`opcode dictation stop --print`) and empty ones
 as Paste Last does, each on one line (whitespace and line breaks collapsed,
 cut to 48 characters with "…"). Clicking one puts its full final text on the
 clipboard as an ordinary entry; nothing is pasted. The gate is the menu's
@@ -714,7 +720,7 @@ clip is passed through untouched. Checks:
 `with_skip_pauses_off_the_whole_clip_is_untouched` in
 [transcription/engine.rs](../../src/transcription/engine.rs);
 `skip_pauses_is_its_own_bit_and_off_by_default` in [labs.rs](../../src/labs.rs).
-Not yet observed: a real dictation with the toggle on in Hex (the reporter
+Not yet observed: a real dictation with the toggle on in Opcode (the reporter
 measured their own branch on an i5-8259U); the Labs page goldens need
 regenerating on Linux with the new row.
 
@@ -724,11 +730,11 @@ Always record call that keeps recording after hang-up. The gate,
 `labs::stop_when_call_ends()`, is read on each pass of the meeting
 controller (`poll_recording` in
 [meeting/watcher.rs](../../src/meeting/watcher.rs)), and only for a recording
-Hex started on its own. While on, the call app counts as present while it
+Opcode started on its own. While on, the call app counts as present while it
 holds the microphone or any of its Core Audio processes has output running
 (`microphone_activity::application_running_output`), since WhatsApp keeps
 the microphone while muted and closes both on hang-up. Once both are off for
-about 3 s, the "left the call" capsule says "Hex stops recording in 30 s
+about 3 s, the "left the call" capsule says "Opcode stops recording in 30 s
 unless you keep recording."; Keep recording sends
 `ControllerCommand::KeepRecording`, which drops the stop for this absence, and
 the call app coming back drops it too. After 30 s (`AUTO_STOP_GRACE`,
@@ -748,7 +754,7 @@ result in Settings › Output that comes out wrong. While on, the Try card
 adds a row under the sentence with a Vocabulary button, which opens the same
 Vocabulary sheet as General's Vocabulary row, and, once a sentence is typed,
 Fix this, which copies Edit with agent's prompt ending `What I want: When I
-say "<sentence>", Hex pastes "<result>". It should paste: ` for the person to
+say "<sentence>", Opcode pastes "<result>". It should paste: ` for the person to
 finish in their agent; it reads Copied until the sentence changes or the pane
 is left. The result is what the Try card shows (corrections and built-in
 steps; scripts and rewriting run only when dictating). Nothing is saved:
@@ -808,7 +814,7 @@ seeing which speech models take disk space and deleting unused ones. While
 on, the speech model picker's All speech models view shows one row under its
 header (below Sort and filter models' row when that Lab is on too): "Downloaded
 models take <size>", the sum of the pinned sizes of every downloaded catalog
-model and import whose file is in Hex's own models folder (files another app
+model and import whose file is in Opcode's own models folder (files another app
 downloaded, and imports added where they are, aren't counted), and a switch,
 "Only downloaded models". The switch keeps only the rows the picker reads as
 downloaded (catalog models, imports, and found catalog models in use) and
@@ -891,8 +897,8 @@ turning it on or off applies at once. A meeting starting, recording, or
 transcribing brings the icon back, so a recording stays visible and
 stoppable from the menu bar, and it hides again once the meeting ends; an
 Annotate capture keeps its own capsule and doesn't bring it back. With the
-Dock icon off too, a launch stays quiet, and opening Hex again from Finder
-or Spotlight (the reopen Apple event) opens Settings, which has Quit Hex.
+Dock icon off too, a launch stays quiet, and opening Opcode again from Finder
+or Spotlight (the reopen Apple event) opens Settings, which has Quit Opcode.
 Off, the icon is exactly as before. Checks:
 `a_hidden_icon_comes_back_while_a_meeting_is_under_way` in
 [macos_rune/status_item.rs](../../src/macos_rune/status_item.rs) (macOS
@@ -926,7 +932,7 @@ next dictation. `hud_placement::ears` places it only on a screen whose
 `NSScreen` reports a notch, and only with Settings' indicator position at
 Top; a flat external display, Bottom, and Hidden keep what they did, and
 with the lab off HUD Lab's placement stands. Linux and Windows have no row,
-`hex labs on notch-indicator` doesn't know it there, and `hex settings set
+`opcode labs on notch-indicator` doesn't know it there, and `opcode settings set
 labs.notch_indicator` answers `unsupported` (as any `labs.` switch for
 another OS now does). Checks: `ears_widen_the_notch_sideways_at_its_own_height`
 in [rune_hud/hud_placement.rs](../../src/rune_hud/hud_placement.rs);
@@ -936,14 +942,14 @@ in [rune_hud/hud_placement.rs](../../src/rune_hud/hud_placement.rs);
 [control/settings.rs](../../src/control/settings.rs);
 `notch_indicator_is_its_own_bit_and_off_by_default` in
 [labs.rs](../../src/labs.rs); its frames render through the real shaders
-with `HEX_HUD_EARS=1` and `rune_hud_frames`. Not yet observed: a real
-dictation through the ears on a Mac with the lab on (`hex dev hud` drives
+with `OPCODE_HUD_EARS=1` and `rune_hud_frames`. Not yet observed: a real
+dictation through the ears on a Mac with the lab on (`opcode dev hud` drives
 them in a debug build), and the failure glyph, which no render covers yet; the
 row renders only in macOS builds, so no golden changes.
 
 Screenshots (`screenshots`, macOS only, group Annotate): for people who
 miss CleanShot's ⌘⇧4. While on, the shortcut (`screenshots.hotkey`,
-default ⌘⇧4; the card's recorder changes it and refuses one another Hex
+default ⌘⇧4; the card's recorder changes it and refuses one another Opcode
 shortcut uses) opens a second copy of Annotate's capture picker
 (`PickerOverlay::install_as` in
 [capture_capsule/picker.rs](../../src/rune_ui/capture_capsule/picker.rs)):
@@ -954,10 +960,10 @@ shortcut uses) opens a second copy of Annotate's capture picker
 ├── Space      -> window mode: a camera replaces the pointer and the window under it highlights;
 │                 Space again -> area
 ├── Click      -> the whole display ("Full screen · Click to capture")
-├── Escape     -> closes it, nothing shot; Escape reaches no other app or Hex shortcut
-└── Release    -> shot at the display's own pixels (ScreenCaptureKit), Hex's overlays,
+├── Escape     -> closes it, nothing shot; Escape reaches no other app or Opcode shortcut
+└── Release    -> shot at the display's own pixels (ScreenCaptureKit), Opcode's overlays,
                   the picker, and the pointer left out
-                  ├── PNG (pHYs at the display's scale) -> "Hex Screenshot 2026-11-04 at 14.03.22.png"
+                  ├── PNG (pHYs at the display's scale) -> "Opcode Screenshot 2026-11-04 at 14.03.22.png"
                   │   in screenshots.folder (the Desktop when unset); a second shot that second gets " (2)"
                   ├── clipboard -> the PNG and the file's URL, one pasteboard item
                   └── thumbnail bottom right for 5 s (held while the pointer is on it), 16 pt in,
@@ -965,7 +971,7 @@ shortcut uses) opens a second copy of Annotate's capture picker
                       slides in from past the right edge on the HUD's spring and out the same way
                       (Reduce Motion: a fade); ✕ shows inside its top-left corner on hover;
                       click -> opens it in the editor, drag -> the file, ✕ -> closes
-                      a failure -> the error tone; there is no success sound (Hex has no shutter cue)
+                      a failure -> the error tone; there is no success sound (Opcode has no shutter cue)
 ```
 
 A click on the thumbnail opens the editor
@@ -1000,7 +1006,7 @@ deleting a single mark, redo, or zoom; a shot larger than the GPU's
 largest texture exports without its marks; Send lists sessions only, not
 Annotate's rules; no Save as or drag out of the editor.
 
-The shortcut is taken in Hex's session tap (`screenshots::key`, called
+The shortcut is taken in Opcode's session tap (`screenshots::key`, called
 from [suppression.rs](../../src/suppression.rs) before the listener's
 own handling), never by the listener, and its press and release stay with
 it. With the lab off the tap returns at once and nothing is made: no
@@ -1008,27 +1014,27 @@ picker window, no thumbnail, no work. Screen Recording is Annotate's: a
 press without it shows Annotate's permission helper instead of the
 picker.
 
-The picker is a non-key overlay, so Hex is usually not the frontmost app
-while it shows, and macOS ignores a background app's cursor. Hex builds
+The picker is a non-key overlay, so Opcode is usually not the frontmost app
+while it shows, and macOS ignores a background app's cursor. Opcode builds
 Rune with `macos-background-cursor`, which sets WindowServer's private
 `SetsCursorInBackground` property so the picker's crosshair (and Window
 mode's hidden arrow under the drawn camera) shows over any app. It is a
-private API, acceptable because Hex isn't sold through the App Store; if a
+private API, acceptable because Opcode isn't sold through the App Store; if a
 macOS release drops the property, Rune skips it and the cursor shows only
-while Hex is frontmost. Checks: `the_badge_stays_on_the_display` in
+while Opcode is frontmost. Checks: `the_badge_stays_on_the_display` in
 [capture_capsule/picker.rs](../../src/rune_ui/capture_capsule/picker.rs).
 Not yet observed: the cursor over another frontmost app on a real Mac.
 
 macOS matches its own screenshot shortcuts (Keyboard Shortcuts ›
 Screenshots, ⌘⇧4 among them) in the window server before any app's event
-tap, so while that system shortcut is on, Hex never sees the press. Hex
+tap, so while that system shortcut is on, Opcode never sees the press. Opcode
 reads `com.apple.symbolichotkeys` (`screenshots::system_shortcut`) and,
-when the system takes Hex's chord, the card says so with Open Keyboard
+when the system takes Opcode's chord, the card says so with Open Keyboard
 Settings, which opens that pane; turning macOS's shortcut off, or
-choosing another chord, hands it to Hex.
+choosing another chord, hands it to Opcode.
 
-`hex screenshot` shoots the whole display under the pointer and prints the
-file's path; `hex screenshot --pick` opens the picker instead
+`opcode screenshot` shoots the whole display under the pointer and prints the
+file's path; `opcode screenshot --pick` opens the picker instead
 ([cli.md](../cli.md)). With the lab off it answers `disabled`; Linux and
 Windows answer `unsupported`.
 
@@ -1063,7 +1069,7 @@ at run time through Objective-C, so macOS 26 and earlier neither link nor
 list it) while both `labs.annotate_replay` and `capture.enabled` are on and
 Screen Recording is granted. Because an active `SCStream` feeds `replayd`,
 macOS shows its purple screen-recording indicator the whole time the lab is
-on, which the Labs store card states plainly. `hex capture replay` (or a tap
+on, which the Labs store card states plainly. `opcode capture replay` (or a tap
 on `capture.replay_hotkey`, unbound by default and recordable in
 Settings › Annotate) exports the last 15 seconds into a normal
 `.scrawl` bundle; holding `capture.replay_hotkey` (≥ 300 ms) freezes the clip
@@ -1102,13 +1108,13 @@ for choosing which OpenCode provider and subscription writes meeting notes.
 
 ```ts
 Meetings › Settings › Advanced, Summarize with OpenCode on   // labs.meeting-summary-model
-├── Toggle off -> no field; notes try Hex's ranked fast models, as before
+├── Toggle off -> no field; notes try Opcode's ranked fast models, as before
 └── Toggle on -> "Summary model" field, placeholder provider/model, saved on Return or Save
     ├── meetings.opencode_model, only for meeting notes (titles, summaries, live
     │   chapters written by OpenCode); left out of settings.json while empty
     ├── Set, e.g. openai/gpt-5.4-mini -> "Summaries use openai/gpt-5.4-mini. If it isn't
     │   available, the meeting shows the error instead of trying another model"
-    ├── Empty -> "Empty: Hex tries its list of fast models in order and uses the first one OpenCode has"
+    ├── Empty -> "Empty: Opcode tries its list of fast models in order and uses the first one OpenCode has"
     └── No provider/ part -> says how to write it; the ranked models run until then
 ```
 
@@ -1120,7 +1126,7 @@ OpenCode is still starting it, as for a mode's model) and never the ranked
 list, so a failure is recorded as the meeting's `notes_error`
 ("Notes could not be written.", prefixed with the model). Apple
 Intelligence, when it writes the notes, is unchanged. Off, notes are exactly
-as before. `hex settings set meetings.opencode_model openai/gpt-5.4-mini`
+as before. `opcode settings set meetings.opencode_model openai/gpt-5.4-mini`
 sets it (`none` clears it). Not built: picking from the OpenCode catalog or
 a thinking variant. Checks: `a_summary_model_needs_a_provider_and_a_model`
 and `without_its_labs_toggle_no_summary_model_is_used` in
@@ -1154,15 +1160,15 @@ with the new row.
 Meeting finished event (`meeting-finished-event`, issue 964; every OS with
 Meetings; its row shows wherever Meetings does): for a companion app that
 processes a meeting once its transcript is ready, without watching the
-meetings folder or polling `hex meetings list`. While on, the local API's
+meetings folder or polling `opcode meetings list`. While on, the local API's
 authenticated `GET /meetings/events` is a server-sent event stream that
 sends `{"type":"meeting.finished","id":"<id>"}` once per meeting, after
 its final transcript and Markdown are written and the manifest says
-`complete` (`record` after Stop, or `finish_pending` for a meeting Hex quit
+`complete` (`record` after Stop, or `finish_pending` for a meeting Opcode quit
 while recording), with a `: keep-alive` comment every 15 s
 ([streams.md](../streams.md#meeting-finished-events-get-meetingsevents-labs)).
 Only the id is sent, never a title, path, transcript, or audio, and nothing
-leaves the computer; the client reads the meeting with `hex meetings show
+leaves the computer; the client reads the meeting with `opcode meetings show
 <id>`. One subscriber at a time (a second answers `409 subscriber-busy`), so
 it holds at most one of the four HTTP workers. The gates are
 `labs::meeting_finished_event()`, read where the route starts (off: `404
@@ -1223,10 +1229,10 @@ vocabulary list itself (rewriting and search), and Linux's Terminal paste.
   `labs.live_chapters` (off by default). The gate,
   `labs::live_chapters()`, is where the work starts: the recorder's chapter worker, recording
   chapters in the manifest, and the boundary pass after Stop.
-- Run setup again (not a feature toggle; every build): replays Hex's one
+- Run setup again (not a feature toggle; every build): replays Opcode's one
   onboarding, the first-run story every new install gets
   ([setup.tour](README.md)). Labs' **Run setup again** and
-  `hex onboarding reset` (macOS control socket, the Linux service socket,
+  `opcode onboarding reset` (macOS control socket, the Linux service socket,
   and a named event on Windows) forget that onboarding finished
   (`desktop::onboarding::reset_at`) and open it from the start without
   touching settings, history, models, or permissions; ready pages pass at
@@ -1245,7 +1251,7 @@ vocabulary list itself (rewriting and search), and Linux's Terminal paste.
   live stream no partial slot and never reads the model's text between
   feeds, and no host adds the line's overlay. Each dictation's `finished
   live stream` line in process.log counts its text changes (`partials`);
-  `RUST_LOG=hex=debug` adds a `live text` line per change with the audio
+  `RUST_LOG=opcode=debug` adds a `live text` line per change with the audio
   fed and the word counts, never the words. Checks:
   `a_dictation_stream_publishes_its_text_after_each_feed_with_live_text`,
   `without_live_text_a_dictation_stream_publishes_nothing`,
@@ -1285,7 +1291,7 @@ vocabulary list itself (rewriting and search), and Linux's Terminal paste.
   ```
 
   Every group starts folded; opening a story, from the list or a link,
-  unfolds the groups above it, and folds hold until Hex quits. The list
+  unfolds the groups above it, and folds hold until Opcode quits. The list
   keeps only its own keys (arrows, Return, J/K, a story's trigger letters,
   Tab, Esc, `/` to filter) and ⇧⌘D; every other key, ⌘-chords and digits
   included, reaches the open story. Each
@@ -1294,7 +1300,7 @@ vocabulary list itself (rewriting and search), and Linux's Terminal paste.
   beside the playground's columns has room. Off, no shortcut, menu item,
   sidebar item, or link opens it.
   Headless renders take `--playground [story]` while it is on, e.g.
-  `hex app -- --snap out.png --playground "Window/General/Settings"`. Checks: `every_scene_but_live_has_a_path_under_a_group`,
+  `opcode app -- --snap out.png --playground "Window/General/Settings"`. Checks: `every_scene_but_live_has_a_path_under_a_group`,
   `the_playgrounds_keys_work_with_a_story_open`, and
   `a_scene_opened_from_the_list_hears_command_digits` in
   [playground.rs](../../src/rune_ui/playground.rs).
@@ -1318,9 +1324,9 @@ vocabulary list itself (rewriting and search), and Linux's Terminal paste.
   On macOS a story opens from a link or the CLI:
 
   ```ts
-  open 'hex://story/prototypes/hud/notch?variant=pulse-fail&play=1'   // hex-test:// in Hex Test.app
-  open 'hex://story/prototypes/capture-capsule/suggestions?variant=toast'
-  hex window story Prototypes/HUD/Processing [--variant 2] [--play]
+  open 'opcode://story/prototypes/hud/notch?variant=pulse-fail&play=1'   // opcode-test:// in Opcode Test.app
+  open 'opcode://story/prototypes/capture-capsule/suggestions?variant=toast'
+  opcode window story Prototypes/HUD/Processing [--variant 2] [--play]
   ├── the window opens on the story: its path, name, or slug, `/` or `-` between groups and name
   ├── a link from before the groups nested (`hud/processing`, `General/mac-settings`, `mac-settings`) → that story now
   ├── variant=<n|name> → that variant
@@ -1337,14 +1343,14 @@ vocabulary list itself (rewriting and search), and Linux's Terminal paste.
   playground.rs open every HUD and capsule link headlessly. The URL
   handler and the replay have no automated end-to-end check.
 - Voice Filter: the Voice Filter pane (macOS and Linux), the only home of
-  the Hex Microphone (macOS's driver, Linux's PipeWire virtual source), its
+  the Opcode Microphone (macOS's driver, Linux's PipeWire virtual source), its
   filter modes, and Try it
-  ([Hex Microphone](README.md#experimental-hex-microphone-and-voice-filter)).
-  Its toggle is `experimental.hex_microphone` (off by default). Off, the pane
-  is hidden and Hex neither reads the driver's status nor starts its sink
+  ([Opcode Microphone](README.md#experimental-opcode-microphone-and-voice-filter)).
+  Its toggle is `experimental.opcode_microphone` (off by default). Off, the pane
+  is hidden and Opcode neither reads the driver's status nor starts its sink
   supervisor. While the driver is installed the Voice Filter runs (apps using
-  the Hex Microphone keep their audio), its pane shows, and its Labs row is
-  on and disabled: "On while the Hex Microphone driver is installed.
+  the Opcode Microphone keep their audio), its pane shows, and its Labs row is
+  on and disabled: "On while the Opcode Microphone driver is installed.
   Uninstall the driver in Voice Filter to turn it off." Checks:
   `voice_filter_shows_only_while_its_labs_toggle_is_on` and
   `an_installed_driver_keeps_the_voice_filter_on` in

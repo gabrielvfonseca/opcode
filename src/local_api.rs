@@ -120,7 +120,7 @@ struct CapabilitiesResponse {
 #[derive(Default)]
 pub struct LocalApiOptions {
     pub developer_control: Option<SyncSender<crate::control::developer_control::DeveloperCall>>,
-    /// The `hex` control commands (`POST /control`).
+    /// The `opcode` control commands (`POST /control`).
     pub control: Option<SyncSender<crate::control::ControlCall>>,
     /// Running-app dictation (`/dictations`): the macOS recognition loop or
     /// the Linux listener.
@@ -143,7 +143,7 @@ impl LocalApi {
         )
     }
 
-    /// Start the running Linux or Windows app's local API. Hex runs on
+    /// Start the running Linux or Windows app's local API. Opcode runs on
     /// without it, so a failure is only logged.
     #[cfg_attr(target_os = "macos", allow(dead_code))]
     pub fn start_for_app(
@@ -313,7 +313,7 @@ impl LocalApi {
         let Some(worker) = self.worker.take() else {
             return;
         };
-        // Retract discovery before draining so a replacement Hex can publish
+        // Retract discovery before draining so a replacement Opcode can publish
         // while this listener is still bound and finishing in-flight requests.
         if let Some(discovery) = &self.discovery {
             discovery.remove_if_owned();
@@ -331,7 +331,7 @@ impl LocalApi {
     }
 }
 
-/// Runs `hex service`: the local API without the app, until `shutdown`.
+/// Runs `opcode service`: the local API without the app, until `shutdown`.
 /// Published, it is the one discoverable service. Embedded (`--embedded`,
 /// the TypeScript SDK's direct child), it prints its endpoint as one JSON line
 /// on stdout instead and exits when its host closes stdin.
@@ -456,7 +456,7 @@ fn serve(listener: TcpListener, context: HttpContext, ready: mpsc::SyncSender<bo
             },
             // Waking on the next connection (or shutdown's wake) instead of
             // polling took a loopback request from 12.5 ms to 0.12 ms, and
-            // an idle Hex from 100 wakeups a second to one.
+            // an idle Opcode from 100 wakeups a second to one.
             Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                 wait_for_connection(&listener, ACCEPT_WAIT);
             }
@@ -893,7 +893,7 @@ fn developer_control(
     }
 }
 
-/// Hands one `hex` control request to the app and waits for its reply.
+/// Hands one `opcode` control request to the app and waits for its reply.
 /// Refusals travel as a 200 `ControlReply::Error`; an HTTP error means the
 /// request never reached the app.
 fn control(
@@ -917,7 +917,7 @@ fn control(
     }
     let request = match serde_json::from_slice::<ControlRequest>(&body) {
         Ok(request) => request,
-        // A newer `hex` may name a command this app doesn't know.
+        // A newer `opcode` may name a command this app doesn't know.
         Err(_) => match serde_json::from_slice::<serde_json::Value>(&body)
             .ok()
             .and_then(|value| value.get("version")?.as_u64())
@@ -1417,7 +1417,7 @@ struct ModelInfo {
     languages: Vec<&'static str>,
     supports_language_detection: bool,
     /// `found: owner/name@abcdef1` (another app's download, used where it
-    /// is), `imported`, `hex`, or `download`.
+    /// is), `imported`, `opcode`, or `download`.
     source: String,
 }
 
@@ -1453,7 +1453,7 @@ mod tests {
         let unauthorized = request(document.port, None, "/health");
         assert!(unauthorized.starts_with("HTTP/1.1 401"));
         assert_eq!(response_body(&unauthorized), "");
-        let wrong_token = request(document.port, Some("hex_wrong"), "/health");
+        let wrong_token = request(document.port, Some("opcode_wrong"), "/health");
         assert!(wrong_token.starts_with("HTTP/1.1 401"));
         let preflight = raw_request(
             document.port,
@@ -1643,7 +1643,7 @@ mod tests {
             ControlReply::done("Started recording")
         );
 
-        let unauthorized = post("hex_wrong", r#"{"version":4,"command":"status"}"#);
+        let unauthorized = post("opcode_wrong", r#"{"version":4,"command":"status"}"#);
         assert!(unauthorized.starts_with("HTTP/1.1 401"));
         let unknown = post(&token, r#"{"version":4,"command":"explode"}"#);
         assert!(unknown.starts_with("HTTP/1.1 400"));
@@ -1718,7 +1718,7 @@ mod tests {
                 panic!("expected dictation start")
             };
             assert_eq!(source, "tp7");
-            assert!(owner_token.starts_with("hex_"));
+            assert!(owner_token.starts_with("opcode_"));
             reply
                 .send(Ok(crate::dictation::service::ProgrammaticDictationStart {
                     id: 7,
@@ -1796,7 +1796,7 @@ mod tests {
         assert_eq!(started["id"], 7);
         assert_eq!(started["sampleRate"], 48_000);
         let owner_token = started["ownerToken"].as_str().unwrap().to_owned();
-        assert!(owner_token.starts_with("hex_"));
+        assert!(owner_token.starts_with("opcode_"));
 
         let missing_owner = request_with_method(port, Some(&token), "POST", "/dictations/7/finish");
         assert!(missing_owner.starts_with("HTTP/1.1 404"));
@@ -1811,7 +1811,7 @@ mod tests {
         assert!(heartbeat.starts_with("HTTP/1.1 204"));
 
         let wrong_levels =
-            request_with_dictation_token(port, &token, "hex_wrong", "GET", "/dictations/7/levels");
+            request_with_dictation_token(port, &token, "opcode_wrong", "GET", "/dictations/7/levels");
         assert!(wrong_levels.starts_with("HTTP/1.1 404"));
 
         let level_token = token.clone();
@@ -1822,7 +1822,7 @@ mod tests {
             raw_request_signalling(
                 port,
                 &format!(
-                    "GET /dictations/7/levels HTTP/1.1\r\nAuthorization: Bearer {level_token}\r\nX-Hex-Dictation-Token: {level_owner}\r\nConnection: close\r\n\r\n"
+                    "GET /dictations/7/levels HTTP/1.1\r\nAuthorization: Bearer {level_token}\r\nX-Opcode-Dictation-Token: {level_owner}\r\nConnection: close\r\n\r\n"
                 ),
                 b"rmsDb",
                 subscribed,
@@ -1975,7 +1975,7 @@ mod tests {
         let discovery_path = directory.join("local-api.json");
         let stale = DiscoveryDocument {
             port: unused_port(),
-            token: "hex_0000000000000000000000000000000000000000000000000000000000000000".into(),
+            token: "opcode_0000000000000000000000000000000000000000000000000000000000000000".into(),
             api_version: API_VERSION.into(),
             pid: std::process::id(),
         };
@@ -1997,7 +1997,7 @@ mod tests {
         let api = start_published(discovery_path.clone(), events).unwrap();
         let replacement = DiscoveryDocument {
             port: 1234,
-            token: "hex_replacement".into(),
+            token: "opcode_replacement".into(),
             api_version: API_VERSION.into(),
             pid: std::process::id(),
         };
@@ -2286,7 +2286,7 @@ mod tests {
     }
 
     #[test]
-    fn tokens_have_256_bits_of_random_lowercase_hex() {
+    fn tokens_have_256_bits_of_random_lowercase_opcode() {
         let first = generate_token().unwrap();
         let second = generate_token().unwrap();
         assert!(valid_token(&first));
@@ -2381,7 +2381,7 @@ mod tests {
         raw_request(
             port,
             &format!(
-                "{method} {path} HTTP/1.1\r\nAuthorization: Bearer {token}\r\nX-Hex-Dictation-Token: {owner_token}\r\nConnection: close\r\n\r\n"
+                "{method} {path} HTTP/1.1\r\nAuthorization: Bearer {token}\r\nX-Opcode-Dictation-Token: {owner_token}\r\nConnection: close\r\n\r\n"
             ),
         )
     }
@@ -2390,7 +2390,7 @@ mod tests {
         raw_request_bytes(
             port,
             &format!(
-                "GET {path} HTTP/1.1\r\nAuthorization: Bearer {token}\r\nX-Hex-Dictation-Token: {owner_token}\r\nConnection: close\r\n\r\n"
+                "GET {path} HTTP/1.1\r\nAuthorization: Bearer {token}\r\nX-Opcode-Dictation-Token: {owner_token}\r\nConnection: close\r\n\r\n"
             ),
         )
     }
@@ -2401,7 +2401,7 @@ mod tests {
 
     fn temp_directory() -> PathBuf {
         let path = std::env::temp_dir().join(format!(
-            "hex-local-api-{}-{}",
+            "opcode-local-api-{}-{}",
             std::process::id(),
             NEXT_TEMP.fetch_add(1, Ordering::Relaxed)
         ));

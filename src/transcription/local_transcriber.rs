@@ -99,7 +99,7 @@ pub fn init_backends() -> Result<Backend> {
     if gpu_guard::crashed_before() {
         tracing::warn!(
             marker = %gpu_guard::marker().map(|path| path.display().to_string()).unwrap_or_default(),
-            "a previous launch of this Hex crashed while starting the GPU for transcription; transcribing on the CPU until Hex updates or the marker is deleted"
+            "a previous launch of this Opcode crashed while starting the GPU for transcription; transcribing on the CPU until Opcode updates or the marker is deleted"
         );
         cpu_only()?;
         return Ok(*BACKEND.get_or_init(|| Backend::Cpu));
@@ -782,7 +782,7 @@ impl ModelSwap {
         let (sender, receiver) = std::sync::mpsc::channel();
         let load = selection.clone();
         let spawned = std::thread::Builder::new()
-            .name("hex-model-swap".into())
+            .name("opcode-model-swap".into())
             .spawn(move || {
                 let _ = sender
                     .send(LocalTranscriber::load(&load).map_err(|error| format!("{error:#}")));

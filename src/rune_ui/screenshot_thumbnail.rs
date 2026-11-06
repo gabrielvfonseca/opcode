@@ -150,7 +150,7 @@ impl Thumbnail {
     /// Adds the overlay, hidden, made the first time it shows.
     pub(crate) fn install<S: 'static>(app: &mut rune::App<S>) -> Self {
         let spec = OverlaySpec {
-            name: "Hex screenshot",
+            name: "Opcode screenshot",
             size: SIZE,
             edge: ScreenEdge::Bottom,
             margin: MARGIN,
@@ -291,7 +291,7 @@ mod tests {
         );
         image.wait().unwrap();
         Shot {
-            path: PathBuf::from("/tmp/Hex Screenshot.png"),
+            path: PathBuf::from("/tmp/Opcode Screenshot.png"),
             image,
             size,
         }
@@ -319,7 +319,7 @@ mod tests {
             std::thread::yield_now();
         }
         Shot {
-            path: PathBuf::from("/tmp/Hex Screenshot.png"),
+            path: PathBuf::from("/tmp/Opcode Screenshot.png"),
             image,
             size,
         }
@@ -357,8 +357,8 @@ mod tests {
     }
 
     /// The card at rest and under the pointer against
-    /// `tests/golden/screenshot-thumbnail-*.png`; `HEX_UPDATE_GOLDENS=1`
-    /// rewrites them and `HEX_GOLDEN_RENDERS` also writes them there.
+    /// `tests/golden/screenshot-thumbnail-*.png`; `OPCODE_UPDATE_GOLDENS=1`
+    /// rewrites them and `OPCODE_GOLDEN_RENDERS` also writes them there.
     /// Without a GPU adapter it skips. Checked on Linux only, like every
     /// golden.
     #[test]
@@ -376,14 +376,14 @@ mod tests {
                 let name = format!("screenshot-thumbnail-{name}-{theme}");
                 let card = Card::still(desktop([1440, 900]), hovered);
                 let (w, h, pixels) = render(&gpu, card, dark);
-                if let Some(renders) = std::env::var_os("HEX_GOLDEN_RENDERS") {
+                if let Some(renders) = std::env::var_os("OPCODE_GOLDEN_RENDERS") {
                     let renders = std::path::PathBuf::from(renders);
                     std::fs::create_dir_all(&renders).unwrap();
                     rune::render::write_png(&renders.join(format!("{name}.png")), w, h, &pixels)
                         .unwrap();
                 }
                 let path = folder.join(format!("{name}.png"));
-                if std::env::var_os("HEX_UPDATE_GOLDENS").is_some() {
+                if std::env::var_os("OPCODE_UPDATE_GOLDENS").is_some() {
                     rune::render::write_png(&path, w, h, &pixels).unwrap();
                     continue;
                 }
@@ -412,12 +412,12 @@ mod tests {
         assert!(misses.is_empty(), "{}", misses.join("\n"));
     }
 
-    /// `HEX_SCREENSHOT_FRAMES=<folder>` writes the card coming in, held,
+    /// `OPCODE_SCREENSHOT_FRAMES=<folder>` writes the card coming in, held,
     /// and leaving at 60 fps, dark, to `<folder>/thumbnail/`. Without the
     /// variable or a GPU adapter it does nothing.
     #[test]
     fn thumbnail_frames() {
-        let Some(folder) = std::env::var_os("HEX_SCREENSHOT_FRAMES") else {
+        let Some(folder) = std::env::var_os("OPCODE_SCREENSHOT_FRAMES") else {
             return;
         };
         let Ok(gpu) = rune::render::Gpu::try_new(rune::render::Gpu::instance(), None) else {

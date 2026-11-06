@@ -23,7 +23,7 @@ The Linux beta keeps its contracts explicit:
 The beta does not claim voice commands, application or browser context,
 meetings, or universal Wayland support. Wayland needs `wl-copy`, `wtype`, and
 compatible compositor protocols; shortcuts come from the GlobalShortcuts portal
-or from the user's compositor keybindings running `hex` commands.
+or from the user's compositor keybindings running `opcode` commands.
 There is no hidden XWayland or privileged injection fallback. See
 [`../linux.md`](../linux.md) and [`../nix.md`](../nix.md).
 
@@ -35,12 +35,12 @@ There is no hidden XWayland or privileged injection fallback. See
 - Automatic clipboard insertion with bounded settling. The transcript remains
   on the clipboard; arbitrary previous formats are not restored.
 - CLI microphone override.
-- One Hex process per user (optionally under a systemd user unit) with the
+- One Opcode process per user (optionally under a systemd user unit) with the
   Rune window on demand, CLI controls, owner-only Unix IPC, desktop launcher,
   and autostart entry.
 - One shortcut state machine fed by X11 grabs, the Wayland GlobalShortcuts
-  portal, or idempotent `hex dictation`, `hex voice-action`, and
-  `hex paste-last` commands for desktops without the portal; persistent
+  portal, or idempotent `opcode dictation`, `opcode voice-action`, and
+  `opcode paste-last` commands for desktops without the portal; persistent
   click-through recording/processing overlay.
 - Visible listener controls, transactional shortcut edits, and explicit service
   shutdown; closing Settings leaves the managed runtime running.
@@ -82,7 +82,7 @@ Only begin this slice when command parity is a product priority. Add:
 - Moonshine command recognition and wake/sleep behavior;
 - X11 foreground application and title through EWMH;
 - platform-appropriate command shortcuts and application launch;
-- MPRIS pause/resume for players Hex actually paused;
+- MPRIS pause/resume for players Opcode actually paused;
 - logind or XDG idle-sleep inhibition;
 - visible context age and failure.
 
@@ -103,7 +103,7 @@ writers, live drafts, gap accounting, manifests, recovery, and atomic final
 publication.
 
 Handle route replacement, Bluetooth profile changes, clock alignment, queue
-pressure, and Hex feedback appearing in the output monitor. Route loss must
+pressure, and Opcode feedback appearing in the output monitor. Route loss must
 produce a visible gap or failure rather than silent corruption.
 
 ### 4. Add Metadata-Only Meeting Offers
@@ -116,7 +116,7 @@ recording automatically.
 ### 5. Expand Wayland Only With Explicit Capabilities
 
 The implemented beta takes shortcuts from the GlobalShortcuts portal, or from
-`hex` commands the user binds in the compositor, plus compositor-provided
+`opcode` commands the user binds in the compositor, plus compositor-provided
 clipboard and virtual-keyboard protocols. It reads no input devices and grants
 no permissions. Broader support requires a separate capability decision:
 
@@ -130,7 +130,7 @@ activity observation, foreground application identity, or bare-modifier
 shortcuts. Do not hide those limitations behind XWayland.
 
 Do not add compositor-specific shortcut paths or raw input-device readers;
-the portal and the `hex` commands are the one general contract. If appliance
+the portal and the `opcode` commands are the one general contract. If appliance
 parity is ever required, decide on an approved helper separately and do not
 build a general-purpose root daemon.
 
@@ -205,7 +205,7 @@ implementation assumptions.
 | Generic Wayland parity is not a stable contract | Critical | Publish one constrained contract |
 | Native Wayland insertion is compositor-controlled | High | Validate `wl-copy`/`wtype` on compatible compositors; broader portal/libei or approved-helper support needs separate validation |
 | Foreground and browser context lack universal APIs | High | EWMH first; add a real browser adapter later |
-| PipeWire output monitoring includes Hex feedback | High | Suppress feedback or construct a filtered capture graph |
+| PipeWire output monitoring includes Opcode feedback | High | Suppress feedback or construct a filtered capture graph |
 | PipeWire metadata varies by package format | Medium | Build identity rules from observed fixtures |
 | Packaging multiplies native dependencies | Medium | Keep one distro and channel until validated |
 
@@ -216,9 +216,9 @@ implementation assumptions.
 - Require automatic insertion and a key-containing shortcut.
 - Exclude meetings; scope native Wayland to compatible wlroots protocols rather
   than claiming every compositor. Shortcuts use the GlobalShortcuts portal or
-  user-bound `hex` commands, never raw input devices.
+  user-bound `opcode` commands, never raw input devices.
 - Keep package-manager and app-managed update ownership separate.
 - Do not install a privileged helper for the X11 contract.
-- Rebuild the proposals in [#28](https://github.com/anomalyco/hex/pull/28) and
-  [#29](https://github.com/anomalyco/hex/pull/29) with regression coverage for
+- Rebuild the proposals in [#28](https://github.com/anomalyco/opcode/pull/28) and
+  [#29](https://github.com/anomalyco/opcode/pull/29) with regression coverage for
   input state, overlay ownership, helper I/O, settings restart, and Nix environments.

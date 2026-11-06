@@ -1,4 +1,4 @@
-//! Hex's window on every OS, on Rune.
+//! Opcode's window on every OS, on Rune.
 //!
 //! The window talks to a host in the same process: on Linux the dictation
 //! host beside it (`linux_host`); on Windows and macOS the runtime thread
@@ -10,7 +10,7 @@
 //! design language (`rune-theme-opencode`); see `docs/design-system.md`.
 
 mod activity;
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub(crate) mod capture_capsule;
 mod controls;
 #[cfg(target_os = "macos")]
@@ -51,9 +51,9 @@ mod platform_settings;
 pub(crate) mod playground;
 mod practice;
 mod scenes;
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 mod scrawl;
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub(crate) mod screenshot_thumbnail;
 mod settings;
 mod shortcut_mode;
@@ -92,7 +92,7 @@ const DRAFT_DELAY: Duration = Duration::from_millis(250);
 /// the setup beat, permission polling) is checked while the window shows.
 const WINDOW_TICK: Duration = Duration::from_millis(250);
 
-/// Runs the Linux window's app on the main thread until Hex quits: the
+/// Runs the Linux window's app on the main thread until Opcode quits: the
 /// window side of `linux_app`'s seam. It starts without a window; each
 /// `Activate` opens or focuses it with the launcher's activation token, and
 /// closing it keeps the app, its state, and the host running.
@@ -138,7 +138,7 @@ pub(crate) fn run_app(
     let quit = app.handle();
     let window = app.handle();
     std::thread::Builder::new()
-        .name("hex-window-requests".into())
+        .name("opcode-window-requests".into())
         .spawn(move || {
             while let Ok(request) = requests.recv() {
                 match request {
@@ -196,14 +196,14 @@ fn managed_note() -> &'static str {
     tr("Managed by your organization")
 }
 
-/// A `hex://` link the system opened with Hex: a story link opens the window
+/// A `opcode://` link the system opened with Opcode: a story link opens the window
 /// on that playground story; anything else is ignored.
 #[cfg(target_os = "macos")]
 fn on_open_url(ui: &mut Ui, link: &str, tx: &mut Tx) {
     if let Some(target) = deep_link::parse(link, story_link::scheme()) {
         match target {
             Ok(target) => deep_link::open(ui, target, tx),
-            Err(why) => tracing::warn!(%why, "ignored a link opened with Hex"),
+            Err(why) => tracing::warn!(%why, "ignored a link opened with Opcode"),
         }
         crate::macos_rune::bring_window_forward();
         return;
@@ -211,7 +211,7 @@ fn on_open_url(ui: &mut Ui, link: &str, tx: &mut Tx) {
     let link = match story_link::parse(link, story_link::scheme()) {
         Ok(link) => link,
         Err(why) => {
-            tracing::warn!(%why, "ignored a link opened with Hex");
+            tracing::warn!(%why, "ignored a link opened with Opcode");
             return;
         }
     };
@@ -221,7 +221,7 @@ fn on_open_url(ui: &mut Ui, link: &str, tx: &mut Tx) {
     crate::macos_rune::bring_window_forward();
 }
 
-/// `hex app -- --snap …`: a headless render of a fixture scene. With the
+/// `opcode app -- --snap …`: a headless render of a fixture scene. With the
 /// Labs on, `--playground [story]` renders the playground.
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 pub(crate) fn render_app(rune_args: Vec<String>) -> rune::App<Ui> {
@@ -351,7 +351,7 @@ fn build(init: impl FnOnce() -> Ui + 'static, playground: PlaygroundMode) -> run
 }
 
 /// Closing the window saves pending text edits and stops a shortcut
-/// recording, as leaving a pane does. Hex keeps running.
+/// recording, as leaving a pane does. Opcode keeps running.
 fn on_close(ui: &mut Ui, _: &mut Tx) {
     ui.flush_drafts();
     settings::cancel_capture(ui);
@@ -374,7 +374,7 @@ fn on_close(ui: &mut Ui, _: &mut Tx) {
     crate::macos_rune::window_closed();
 }
 
-/// Where the menu bar, a meeting, or a `hex window show` sends the window.
+/// Where the menu bar, a meeting, or a `opcode window show` sends the window.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Destination {
     Settings,
@@ -386,7 +386,7 @@ pub(crate) enum Destination {
     History,
 }
 
-/// Where `hex window show` opens the window. While Meetings is off, its
+/// Where `opcode window show` opens the window. While Meetings is off, its
 /// pane shows the opt-in.
 #[cfg(not(target_os = "macos"))]
 pub(crate) fn destination(pane: Option<crate::control::Pane>) -> Destination {
@@ -425,8 +425,8 @@ pub(crate) fn show(ui: &mut Ui, destination: Destination, tx: &mut Tx) {
     }
 }
 
-/// What this OS's Hex can do, by capability name, for `hex status` and the
-/// settings `hex settings` can change here.
+/// What this OS's Opcode can do, by capability name, for `opcode status` and the
+/// settings `opcode settings` can change here.
 pub(crate) fn capabilities() -> std::collections::BTreeMap<String, bool> {
     platform::Capabilities::current()
         .fields()
@@ -435,7 +435,7 @@ pub(crate) fn capabilities() -> std::collections::BTreeMap<String, bool> {
         .collect()
 }
 
-/// Whether this OS's Hex has the capability `name` ([`capabilities`]).
+/// Whether this OS's Opcode has the capability `name` ([`capabilities`]).
 pub(crate) fn capability(name: &str) -> bool {
     platform::Capabilities::current()
         .fields()
@@ -443,13 +443,13 @@ pub(crate) fn capability(name: &str) -> bool {
         .any(|(field, on)| field == name && on)
 }
 
-/// `hex onboarding reset`: replays the first run in the window now; the
+/// `opcode onboarding reset`: replays the first run in the window now; the
 /// window also shows why it couldn't.
 pub(crate) fn restart_onboarding(ui: &mut Ui, tx: &mut Tx) -> Result<(), String> {
     onboarding_kit::live::restart(ui, tx).inspect_err(|why| ui.error = Some(why.clone()))
 }
 
-/// The pane the window shows, by its `hex window show` name: General is
+/// The pane the window shows, by its `opcode window show` name: General is
 /// still `settings` there.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub(crate) fn current_pane(ui: &Ui) -> &'static str {
@@ -460,7 +460,7 @@ pub(crate) fn current_pane(ui: &Ui) -> &'static str {
 }
 
 /// The OS's rules for a shortcut, the ones Settings applies when recording
-/// one; shared with `hex settings set`.
+/// one; shared with `opcode settings set`.
 pub(crate) fn shortcut_rule(
     slot: crate::app_settings::HotkeySlot,
     binding: &HotkeyBinding,
@@ -471,11 +471,11 @@ pub(crate) fn shortcut_rule(
         HotkeySlot::PasteLast => ShortcutTarget::PasteLast,
         HotkeySlot::RawDictation => ShortcutTarget::RawDictation,
         HotkeySlot::Cancel => ShortcutTarget::Cancel,
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         HotkeySlot::Capture => ShortcutTarget::Capture,
-        #[cfg(all(hex_capture, target_os = "macos"))]
+        #[cfg(all(opcode_capture, target_os = "macos"))]
         HotkeySlot::CaptureReplay => ShortcutTarget::CaptureReplay,
-        #[cfg(all(hex_capture, not(target_os = "macos")))]
+        #[cfg(all(opcode_capture, not(target_os = "macos")))]
         HotkeySlot::CaptureReplay => ShortcutTarget::Capture,
         #[cfg(target_os = "macos")]
         HotkeySlot::SecondDictation => ShortcutTarget::SecondDictation,
@@ -502,7 +502,7 @@ pub(crate) fn hotkey_key_named(name: &str) -> Result<HotkeyKey, &'static str> {
     Ok(HotkeyKey::named(name))
 }
 
-/// The OS's shortcut rules for `hex settings set`.
+/// The OS's shortcut rules for `opcode settings set`.
 pub(crate) fn shortcut_rules() -> crate::control::settings::ShortcutRules {
     crate::control::settings::ShortcutRules {
         key_named: |name| hotkey_key_named(name).map_err(str::to_owned),
@@ -548,8 +548,8 @@ pub(crate) fn meeting_failed(ui: &mut Ui, error: String) {
     ui.meetings.runtime_error = Some(error);
 }
 
-/// `hex app -- --snap out.png --scene …`: a headless render of a fixture
-/// scene, or `live` for the running Hex's `hex status`.
+/// `opcode app -- --snap out.png --scene …`: a headless render of a fixture
+/// scene, or `live` for the running Opcode's `opcode status`.
 #[cfg(target_os = "linux")]
 pub(crate) fn render() {
     let with_playground =
@@ -583,7 +583,7 @@ pub(crate) fn fixed_window() -> rune::WindowOptions {
 
 fn spec() -> AppSpec<Ui> {
     AppSpec {
-        title: "Hex",
+        title: "Opcode",
         size: WINDOW_SIZE,
         // Narrower windows crowd the sidebar and rows.
         min_size: Some((860.0, 560.0)),
@@ -622,7 +622,7 @@ struct ServiceView {
     transcription: DesktopTranscriptionSnapshot,
     update_status: DesktopUpdateStatus,
     update_notes: Option<crate::desktop::host::UpdateNotes>,
-    /// Why this Hex can't update itself, beside Download update (Windows).
+    /// Why this Opcode can't update itself, beside Download update (Windows).
     update_blocked: Option<&'static str>,
     /// The service is recording or saving a shortcut.
     editing: bool,
@@ -651,7 +651,7 @@ enum Menu {
     /// The transformations a mode can add (the Modes pane).
     Transformations,
     /// How long annotations are kept (the Annotate pane).
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     CaptureRetention,
     /// A settings row's quiet select, by the row's key.
     Pick(&'static str),
@@ -727,7 +727,7 @@ pub(crate) struct Ui {
     hud_copied: bool,
     /// HUD Lab saved Dot scope's tuning, until the next change.
     hud_saved: bool,
-    /// Settings saves and Quit Hex a fixture recorded.
+    /// Settings saves and Quit Opcode a fixture recorded.
     saved: usize,
     quit_requested: bool,
     /// The person asked for an update check (the footer or the menu bar),
@@ -952,7 +952,7 @@ impl Ui {
             ) => {
                 // Previews grant Screen Recording on the second ask, as for
                 // system audio.
-                #[cfg(hex_capture)]
+                #[cfg(opcode_capture)]
                 if *kind == crate::desktop::onboarding::PermissionKind::ScreenRecording
                     && self.host.is_fixture()
                     && self.platform.asked(*kind)
@@ -979,7 +979,7 @@ impl Ui {
                 self.platform.clear_stale(kind);
                 self.platform.note_asked(kind);
             }
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             platform::PlatformRequest::Scrawl(platform::ScrawlRequest::QuitScrawl) => {
                 let fixture = self.host.is_fixture();
                 if let Some(view) = self.platform.scrawl.as_mut() {
@@ -1073,7 +1073,7 @@ impl Ui {
     /// Adopts settings the host saved, unless they are the stale copy of an
     /// edit this window just made. An editor with typing not yet saved
     /// keeps it; every other editor and setting is adopted beneath, so the
-    /// draft's save never writes back what another writer (`hex settings
+    /// draft's save never writes back what another writer (`opcode settings
     /// set`, a capture's saved rule) changed meanwhile.
     fn adopt(&mut self, service: AppSettings) -> bool {
         if self.service_settings.as_ref() == Some(&service) {
@@ -1130,7 +1130,7 @@ impl Ui {
         match pane {
             Pane::History => self.history.reload(),
             Pane::HudLab => self.ask(platform::PlatformRequest::ConfigureHud(self.platform.hud)),
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Pane::Annotate => self.ask(platform::PlatformRequest::Scrawl(
                 platform::ScrawlRequest::Refresh,
             )),
@@ -1151,7 +1151,7 @@ fn on_key(ui: &mut Ui, event: &rune::KeyEvent, tx: &mut Tx) -> bool {
         tx.toggle_playground();
         return true;
     }
-    // Ctrl+Q quits Hex on Linux, as Quit Hex in the sidebar does (#808).
+    // Ctrl+Q quits Opcode on Linux, as Quit Opcode in the sidebar does (#808).
     // macOS's menu bar owns ⌘Q; Windows quits from its tray.
     #[cfg(target_os = "linux")]
     if event.key == rune::Key::Command('q') && !event.mods.shift && !event.mods.alt {
@@ -1343,8 +1343,8 @@ fn poll(ui: &mut Ui, clock: f64, tx: &mut Tx) -> bool {
         }
         if let Some(settings) = settings {
             changed |= ui.adopt(settings);
-            // A pane the adopted settings hide (the Hex Microphone turned
-            // off from `hex settings`) leaves for General.
+            // A pane the adopted settings hide (the Opcode Microphone turned
+            // off from `opcode settings`) leaves for General.
             if !ui.pane.shown(ui) {
                 ui.pane = Pane::General;
                 ui.open = None;
@@ -1387,7 +1387,7 @@ fn view(ui: &Ui, cx: &mut Cx<Ui>) -> El {
         Pane::Modes => modes::pane(ui, p, &mut layer),
         Pane::History => history::pane(ui, p, &mut layer),
         Pane::Meetings => meetings::pane(ui, p, &mut layer),
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         Pane::Annotate => (Vec::new(), scrawl::pane(ui, p, &mut layer)),
         Pane::VoiceFilter => (Vec::new(), fun::pane(ui, p)),
         Pane::HudLab => hud_lab::pane(ui, p),
@@ -1457,8 +1457,8 @@ fn window_focused(ui: &mut Ui, focused: bool, tx: &mut Tx) {
         ui.send(Request::Desktop(DesktopAction::WindowFocused));
     }
     // Screen Recording is often switched on in System Settings, so the
-    // Annotate pane reads it again as soon as Hex comes back.
-    #[cfg(hex_capture)]
+    // Annotate pane reads it again as soon as Opcode comes back.
+    #[cfg(opcode_capture)]
     if focused && ui.pane == Pane::Annotate && ui.platform.scrawl.is_some() {
         ui.ask(platform::PlatformRequest::Scrawl(
             platform::ScrawlRequest::Refresh,
@@ -1486,7 +1486,7 @@ fn faded_body(k: &rune_kit::Kit, key: &str, content: El, fades: (f32, f32)) -> E
 #[cfg(all(test, target_os = "linux"))]
 mod tests;
 
-#[cfg(any(test, hex_capture))]
+#[cfg(any(test, opcode_capture))]
 mod offscreen;
 
 #[cfg(test)]

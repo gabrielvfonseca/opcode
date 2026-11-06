@@ -1,6 +1,6 @@
 //! The capsule's side of the capture: it follows the newest capture in
 //! `capture_host`'s published snapshot from its start to its outcome, and
-//! hands presses back to the listener as `hex capture` commands.
+//! hands presses back to the listener as `opcode capture` commands.
 
 use std::path::PathBuf;
 use std::time::Duration;
@@ -26,7 +26,7 @@ pub(crate) struct Follow {
     /// to save it, not to start it.
     began: bool,
     /// The settled capture the previous snapshot held: `None` before the
-    /// first snapshot, so an outcome from before Hex started moves nothing.
+    /// first snapshot, so an outcome from before Opcode started moves nothing.
     last_seen: Option<Option<PathBuf>>,
     /// The captures the previous snapshot held recording or finishing: a
     /// failure among them is a background capture's, never a start's.
@@ -43,7 +43,7 @@ impl Follow {
     /// shortcut started it on the pointer's display; its first click,
     /// scroll, or stroke folds them. A start that failed before any
     /// snapshot showed it recording still shows its failure. A capture it
-    /// never showed otherwise (one that settled before Hex started, or one a
+    /// never showed otherwise (one that settled before Opcode started, or one a
     /// chip discarded) moves nothing.
     pub(crate) fn next(&mut self, snapshot: &CaptureSnapshot) -> Vec<Input> {
         let mut inputs = Vec::new();
@@ -158,7 +158,7 @@ impl Follow {
             {
                 inputs.push(Input::Delivered(Delivered::Sent { to }));
             }
-            // A send the capsule knows of, or one from `hex capture send`.
+            // A send the capsule knows of, or one from `opcode capture send`.
             Some(RouteDelivery::Sent { .. }) => inputs.push(Input::Settled),
             Some(RouteDelivery::TakenBack) => inputs.push(Input::Undone(Undone::TakenBack)),
             Some(RouteDelivery::TooLate { .. }) => inputs.push(Input::Undone(Undone::TooLate)),
@@ -300,7 +300,7 @@ pub(crate) struct CaptureOverlays {
 impl CaptureOverlays {
     /// Adds the three overlays, hidden, and starts following captures. They
     /// make their GPU surfaces only to show, and on macOS and Windows their
-    /// windows too, so a Hex that never annotates holds none: idle
+    /// windows too, so a Opcode that never annotates holds none: idle
     /// screen-sized panels emptied macOS 27's Mission Control Space
     /// thumbnails (#1315).
     pub(crate) fn install<S: 'static>(app: &mut rune::App<S>) -> Self {
@@ -441,7 +441,7 @@ fn first_frame(images: &rune::ImageCache, bundle: &std::path::Path) -> Option<ru
 }
 
 /// Carries out a press or key on the capsule: Finish and Cancel end the
-/// capture as `hex capture stop|cancel` would, a chip discards the
+/// capture as `opcode capture stop|cancel` would, a chip discards the
 /// recording, the picker starts what it picked, and Record (or the
 /// shortcut) without a pick records the display under the pointer. Runs on the
 /// main thread, so it only queues the commands.
@@ -504,7 +504,7 @@ pub(crate) fn act(action: Action) {
     }
 }
 
-/// Whether this Hex can't record the screen now, read afresh.
+/// Whether this Opcode can't record the screen now, read afresh.
 fn screen_off() -> bool {
     crate::capture_host::permission_state(CaptureNeed::ScreenRecording, true).is_some()
 }
@@ -515,7 +515,7 @@ fn show_helper(capsule: &CaptureCapsule, need: CaptureNeed) {
     watch_grant(capsule.clone(), need);
 }
 
-/// The pointer. Wayland tells Hex nothing of it: the portal picks the
+/// The pointer. Wayland tells Opcode nothing of it: the portal picks the
 /// screen.
 #[cfg(target_os = "linux")]
 fn pointer() -> [f64; 2] {
@@ -826,7 +826,7 @@ mod tests {
         );
         let rule = || RouteAnswer::Rule {
             to: dest("SEER", "rule"),
-            suggested: vec![dest("HEX", "last sent")],
+            suggested: vec![dest("OPCODE", "last sent")],
             recent: vec![dest("HOME", "yesterday")],
             site: Some("seer.example.com".into()),
         };
@@ -838,7 +838,7 @@ mod tests {
                 to: Dest::new("SEER", "rule").session("ses_SEER"),
                 suggested: vec![
                     Dest::new("SEER", "rule").session("ses_SEER"),
-                    Dest::new("HEX", "last sent").session("ses_HEX"),
+                    Dest::new("OPCODE", "last sent").session("ses_OPCODE"),
                 ],
                 recent: vec![Dest::new("HOME", "yesterday").session("ses_HOME")],
                 site: Some("seer.example.com".into()),
@@ -860,35 +860,35 @@ mod tests {
         let mut follow = Follow::default();
         follow.next(&recording("a"));
         let guess = || RouteAnswer::Guess {
-            suggested: vec![dest("HEX", "same page")],
+            suggested: vec![dest("OPCODE", "same page")],
             recent: Vec::new(),
             site: None,
         };
         follow.next(&routed("a", guess(), None));
         let queued = Some(RouteDelivery::Queued {
-            to: "HEX".into(),
+            to: "OPCODE".into(),
             why: "OpenCode can't see files".into(),
         });
         assert_eq!(
             follow.next(&routed("a", guess(), queued)),
             [Input::Delivered(Delivered::Queued {
-                to: "HEX".into(),
+                to: "OPCODE".into(),
                 why: "OpenCode can't see files".into(),
             })]
         );
-        let sent = Some(RouteDelivery::Sent { to: "HEX".into() });
+        let sent = Some(RouteDelivery::Sent { to: "OPCODE".into() });
         assert_eq!(
             follow.next(&routed("a", guess(), sent)),
-            [Input::Delivered(Delivered::Sent { to: "HEX".into() })]
+            [Input::Delivered(Delivered::Sent { to: "OPCODE".into() })]
         );
         let failed = Some(RouteDelivery::Failed {
-            to: "HEX".into(),
+            to: "OPCODE".into(),
             why: "gone".into(),
         });
         assert_eq!(
             follow.next(&routed("a", guess(), failed)),
             [Input::Failed(
-                Failure::Send("HEX".into()),
+                Failure::Send("OPCODE".into()),
                 Some("gone".into())
             )]
         );

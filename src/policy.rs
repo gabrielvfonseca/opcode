@@ -1,5 +1,5 @@
 //! Feature locks an organization sets through managed preferences (macOS
-//! configuration profiles) in the `anomaly.hex` domain: `DisableMeetings`,
+//! configuration profiles) in the `anomaly.opcode` domain: `DisableMeetings`,
 //! `DisableAnnotate`, `DisableOpenCodeProcessing`, `DisableTransforms`, and
 //! `DisableLabs`, plus `RestrictTransformsToLoopback`, which keeps
 //! transformations on but holds their `fetch` to this computer and runs no
@@ -21,13 +21,13 @@ use crate::app_settings::AppSettings;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Lock {
     /// No new meeting recording or meeting processing; existing meetings stay
-    /// readable (`hex meetings`, `hex mcp`).
+    /// readable (`opcode meetings`, `opcode mcp`).
     Meetings,
     Annotate,
     /// No OpenCode generation: mode rewrites, meeting notes, and Annotate's
     /// sends to OpenCode sessions.
     OpenCodeProcessing,
-    /// No transformations at all, built in or from `hex.config.ts`.
+    /// No transformations at all, built in or from `opcode.config.ts`.
     Transforms,
     /// Every Labs feature off.
     Labs,
@@ -47,7 +47,7 @@ impl Lock {
         Self::LoopbackTransforms,
     ];
 
-    /// Its key in the `anomaly.hex` managed preferences.
+    /// Its key in the `anomaly.opcode` managed preferences.
     pub const fn key(self) -> &'static str {
         match self {
             Self::Meetings => "DisableMeetings",
@@ -134,7 +134,7 @@ impl Policy {
         self.locks(Lock::Labs).then_some(Lock::Labs)
     }
 
-    /// The lock on `hex settings` key `name`, if any.
+    /// The lock on `opcode settings` key `name`, if any.
     pub fn setting_lock(self, name: &str) -> Option<Lock> {
         if let Some(feature) = crate::labs::Feature::for_settings_key(name) {
             return self.labs_lock(feature);
@@ -151,12 +151,12 @@ impl Policy {
     fn switches(settings: &mut AppSettings, lock: Lock) -> Vec<&mut bool> {
         match lock {
             Lock::Meetings => vec![&mut settings.meetings.enabled],
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Lock::Annotate => vec![
                 &mut settings.capture.enabled,
                 &mut settings.labs.annotate_replay,
             ],
-            #[cfg(not(hex_capture))]
+            #[cfg(not(opcode_capture))]
             Lock::Annotate => Vec::new(),
             Lock::OpenCodeProcessing => vec![&mut settings.meetings.summarize_with_opencode],
             Lock::Transforms | Lock::LoopbackTransforms => Vec::new(),
@@ -194,7 +194,7 @@ mod platform {
         CFPreferencesAppValueIsForced, CFPreferencesGetAppBooleanValue, CFString,
     };
 
-    const DOMAIN: &str = "anomaly.hex";
+    const DOMAIN: &str = "anomaly.opcode";
 
     /// Whether a configuration profile forces `key` to true.
     pub fn forced(key: &str) -> bool {

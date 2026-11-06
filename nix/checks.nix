@@ -1,19 +1,19 @@
 { self, pkgs }:
 let
   inherit (pkgs) lib;
-  hex = self.packages.${pkgs.stdenv.hostPlatform.system}.hex;
+  opcode = self.packages.${pkgs.stdenv.hostPlatform.system}.opcode;
   shell = self.devShells.${pkgs.stdenv.hostPlatform.system}.default;
   home =
     settings:
     (self.inputs.home-manager.lib.homeManagerConfiguration {
       inherit pkgs;
       modules = [
-        self.homeManagerModules.hex
+        self.homeManagerModules.opcode
         {
-          home.username = "hex-test";
-          home.homeDirectory = "/home/hex-test";
+          home.username = "opcode-test";
+          home.homeDirectory = "/home/opcode-test";
           home.stateVersion = "26.05";
-          programs.hex = settings;
+          programs.opcode = settings;
         }
       ];
     }).config;
@@ -34,7 +34,7 @@ let
       "transcription.language" = "de";
     };
   };
-  declaredSettings = (pkgs.formats.json { }).generate "hex-settings.json" {
+  declaredSettings = (pkgs.formats.json { }).generate "opcode-settings.json" {
     dictation_hotkey = "control+option+space";
     "transcription.model" = "parakeet_v3";
     "transcription.language" = "de";
@@ -51,30 +51,30 @@ let
     (self.inputs.nixpkgs.lib.nixosSystem {
       system = pkgs.stdenv.hostPlatform.system;
       modules = [
-        self.nixosModules.hex
+        self.nixosModules.opcode
         {
-          programs.hex.enable = true;
+          programs.opcode.enable = true;
           system.stateVersion = "26.05";
         }
       ];
     }).config;
 in
 {
-  package = pkgs.runCommand "hex-package-check" { } ''
+  package = pkgs.runCommand "opcode-package-check" { } ''
     export HOME="$TMPDIR/home"
     mkdir -p "$HOME"
-    ${lib.getExe hex} --version
-    ${lib.getExe hex} model status | grep '^missing[[:space:]]'
+    ${lib.getExe opcode} --version
+    ${lib.getExe opcode} model status | grep '^missing[[:space:]]'
     touch "$out"
   '';
 
   shell-environment =
-    assert lib.all (name: shell.${name} == hex.${name}) [
+    assert lib.all (name: shell.${name} == opcode.${name}) [
       "BLA_VENDOR"
       "OPENSSL_NO_VENDOR"
     ];
     # OpenBLAS ordering belongs to build.rs, not an injected Nix-only workaround.
-    assert !(hex ? RUSTFLAGS) && !(shell ? RUSTFLAGS);
+    assert !(opcode ? RUSTFLAGS) && !(shell ? RUSTFLAGS);
     assert lib.all
       (package: builtins.elem "${lib.getLib package}/lib" (lib.splitString ":" shell.LD_LIBRARY_PATH))
       [
@@ -90,7 +90,7 @@ in
       pkgs.wtype
       pkgs.ffmpeg-headless
     ];
-    pkgs.runCommand "hex-shell-environment-check" { } ''
+    pkgs.runCommand "opcode-shell-environment-check" { } ''
       test -d ${shell.ALSA_PLUGIN_DIR}
       ${lib.getExe' pkgs.ffmpeg-headless "ffmpeg"} -hide_banner -encoders | grep ' libx264 ' >/dev/null
       test -x ${lib.getExe' pkgs.ffmpeg-headless "ffprobe"}
@@ -98,45 +98,45 @@ in
     '';
 
   modules =
-    assert builtins.elem hex system.environment.systemPackages;
-    assert builtins.elem hex enabled.home.packages;
-    assert !(builtins.elem hex disabled.home.packages);
-    assert manual.systemd.user.services.hex.Install.WantedBy == [ ];
-    assert !(disabled.systemd.user.services ? hex);
-    assert enabled.systemd.user.services.hex.Service.ExecStart == [ "${lib.getExe hex} service" ];
-    assert enabled.systemd.user.services.hex.Service.Restart == "on-failure";
-    assert enabled.systemd.user.services.hex.Service.Type == "notify";
-    assert enabled.systemd.user.services.hex.Service.NotifyAccess == "main";
-    assert builtins.elem "HEX_APPLICATION_SUPPORT_DIR=${enabled.xdg.dataHome}/hex"
-      enabled.systemd.user.services.hex.Service.Environment;
-    assert custom.systemd.user.services.hex.Service.ExecStart == [ "${lib.getExe pkgs.hello} service" ];
-    assert lib.all (name: custom.systemd.user.services.hex.Unit.${name} == [ "sway-session.target" ]) [
+    assert builtins.elem opcode system.environment.systemPackages;
+    assert builtins.elem opcode enabled.home.packages;
+    assert !(builtins.elem opcode disabled.home.packages);
+    assert manual.systemd.user.services.opcode.Install.WantedBy == [ ];
+    assert !(disabled.systemd.user.services ? opcode);
+    assert enabled.systemd.user.services.opcode.Service.ExecStart == [ "${lib.getExe opcode} service" ];
+    assert enabled.systemd.user.services.opcode.Service.Restart == "on-failure";
+    assert enabled.systemd.user.services.opcode.Service.Type == "notify";
+    assert enabled.systemd.user.services.opcode.Service.NotifyAccess == "main";
+    assert builtins.elem "OPCODE_APPLICATION_SUPPORT_DIR=${enabled.xdg.dataHome}/opcode"
+      enabled.systemd.user.services.opcode.Service.Environment;
+    assert custom.systemd.user.services.opcode.Service.ExecStart == [ "${lib.getExe pkgs.hello} service" ];
+    assert lib.all (name: custom.systemd.user.services.opcode.Unit.${name} == [ "sway-session.target" ]) [
       "After"
       "PartOf"
     ];
-    assert custom.systemd.user.services.hex.Install.WantedBy == [ "sway-session.target" ];
-    assert !(enabled.home.activation ? hexSettings);
-    assert !(enabled.systemd.user.services ? hex-model);
+    assert custom.systemd.user.services.opcode.Install.WantedBy == [ "sway-session.target" ];
+    assert !(enabled.home.activation ? opcodeSettings);
+    assert !(enabled.systemd.user.services ? opcode-model);
     assert lib.hasInfix (builtins.unsafeDiscardStringContext "settings apply ${declaredSettings}") (
-      builtins.unsafeDiscardStringContext declared.home.activation.hexSettings.data
+      builtins.unsafeDiscardStringContext declared.home.activation.opcodeSettings.data
     );
-    assert lib.elem "reloadSystemd" declared.home.activation.hexSettings.after;
-    assert declared.systemd.user.services.hex-model.Service.Type == "exec";
-    assert declared.systemd.user.services.hex-model.Install.WantedBy == [ "default.target" ];
-    pkgs.runCommand "hex-module-check" { } ''
-      bash -n ${enabled.systemd.user.services.hex.Service.ExecStartPre}
-      bash -n ${toString declared.systemd.user.services.hex-model.Service.ExecStart}
+    assert lib.elem "reloadSystemd" declared.home.activation.opcodeSettings.after;
+    assert declared.systemd.user.services.opcode-model.Service.Type == "exec";
+    assert declared.systemd.user.services.opcode-model.Install.WantedBy == [ "default.target" ];
+    pkgs.runCommand "opcode-module-check" { } ''
+      bash -n ${enabled.systemd.user.services.opcode.Service.ExecStartPre}
+      bash -n ${toString declared.systemd.user.services.opcode-model.Service.ExecStart}
       touch "$out"
     '';
 
   session-readiness =
     let
       xprop = pkgs.writeShellScriptBin "xprop" ''
-        printf '%s\n' "''${HEX_TEST_XPROP:-}"
+        printf '%s\n' "''${OPCODE_TEST_XPROP:-}"
       '';
       sleep = pkgs.writeShellScriptBin "sleep" "exit 0";
     in
-    pkgs.runCommand "hex-session-readiness-check" { } ''
+    pkgs.runCommand "opcode-session-readiness-check" { } ''
       run() {
         env -i PATH=${
           lib.makeBinPath [
@@ -149,9 +149,9 @@ in
       }
 
       if run; then exit 1; fi
-      if run DISPLAY=:1 HEX_TEST_XPROP='_NET_SUPPORTING_WM_CHECK: not found.'; then exit 1; fi
-      if run DISPLAY=:1 HEX_TEST_XPROP='_NET_SUPPORTING_WM_CHECK(WINDOW): window id # 0x0'; then exit 1; fi
-      run DISPLAY=:1 HEX_TEST_XPROP='_NET_SUPPORTING_WM_CHECK(WINDOW): window id # 0xa00001'
+      if run DISPLAY=:1 OPCODE_TEST_XPROP='_NET_SUPPORTING_WM_CHECK: not found.'; then exit 1; fi
+      if run DISPLAY=:1 OPCODE_TEST_XPROP='_NET_SUPPORTING_WM_CHECK(WINDOW): window id # 0x0'; then exit 1; fi
+      run DISPLAY=:1 OPCODE_TEST_XPROP='_NET_SUPPORTING_WM_CHECK(WINDOW): window id # 0xa00001'
 
       if run WAYLAND_DISPLAY=wayland-test XDG_RUNTIME_DIR="$TMPDIR"; then exit 1; fi
       ${pkgs.python3}/bin/python -c \

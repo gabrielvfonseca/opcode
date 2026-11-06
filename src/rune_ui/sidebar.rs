@@ -4,48 +4,48 @@
 use super::*;
 
 static SETTINGS_ICON: Icon = Icon {
-    name: "hex-settings",
+    name: "opcode-settings",
     view: 24.0,
     body: include_str!("../../assets/icons/settings.svg"),
 };
 static MODES_ICON: Icon = Icon {
-    name: "hex-modes",
+    name: "opcode-modes",
     view: 24.0,
     body: include_str!("../../assets/icons/modes.svg"),
 };
 static OUTPUT_ICON: Icon = Icon {
-    name: "hex-output",
+    name: "opcode-output",
     view: 24.0,
     body: include_str!("../../assets/icons/output.svg"),
 };
 static HISTORY_ICON: Icon = Icon {
-    name: "hex-history",
+    name: "opcode-history",
     view: 24.0,
     body: include_str!("../../assets/icons/history.svg"),
 };
 static ACTIVITY_ICON: Icon = Icon {
-    name: "hex-activity",
+    name: "opcode-activity",
     view: 24.0,
     body: include_str!("../../assets/icons/activity.svg"),
 };
 static HUD_LAB_ICON: Icon = Icon {
-    name: "hex-hud-lab",
+    name: "opcode-hud-lab",
     view: 24.0,
     body: include_str!("../../assets/icons/hud-lab.svg"),
 };
 pub(super) static VOICE_FILTER_ICON: Icon = Icon {
-    name: "hex-voice-filter",
+    name: "opcode-voice-filter",
     view: 24.0,
     body: include_str!("../../assets/icons/voice-filter.svg"),
 };
 static MEETINGS_ICON: Icon = Icon {
-    name: "hex-meetings",
+    name: "opcode-meetings",
     view: 24.0,
     body: include_str!("../../assets/icons/meetings.svg"),
 };
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub(super) static SCRAWL_ICON: Icon = Icon {
-    name: "hex-scrawl",
+    name: "opcode-scrawl",
     view: 24.0,
     body: include_str!("../../assets/icons/scrawl.svg"),
 };
@@ -57,7 +57,7 @@ pub(super) enum Pane {
     /// Dictation, output, and application basics.
     #[default]
     General,
-    /// What Hex does to every dictation and in some apps, read-only: the
+    /// What Opcode does to every dictation and in some apps, read-only: the
     /// person's agent edits it.
     Output,
     /// The old per-app editor, kept for its scenes until it is removed.
@@ -65,12 +65,12 @@ pub(super) enum Pane {
     /// Recorded calls and their settings, or the opt-in (macOS beta).
     Meetings,
     History,
-    /// Annotate (Scrawl's captures inside Hex): the switch, shortcuts,
+    /// Annotate (Scrawl's captures inside Opcode): the switch, shortcuts,
     /// permission, transcriber, folder, retention, and Scrawl's own app.
     /// Dev builds, macOS and Linux only.
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     Annotate,
-    /// The Hex Microphone's driver, tuning, and try-it demo (macOS, while
+    /// The Opcode Microphone's driver, tuning, and try-it demo (macOS, while
     /// its Labs toggle is on).
     VoiceFilter,
     /// The dictation indicator's tuning scene (Playground only).
@@ -87,7 +87,7 @@ impl Pane {
         Pane::Modes,
         Pane::Meetings,
         Pane::History,
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         Pane::Annotate,
         Pane::VoiceFilter,
         Pane::HudLab,
@@ -101,7 +101,7 @@ impl Pane {
             Pane::Meetings => caps.meetings && meetings::available(ui),
             // On from Labs (dev builds), or while its driver is installed.
             Pane::VoiceFilter => caps.fun && fun::running(ui),
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Pane::Annotate => ui.platform.scrawl.is_some(),
             _ => true,
         }
@@ -114,7 +114,7 @@ impl Pane {
             Pane::Modes => tr("Modes"),
             Pane::History => tr("History"),
             Pane::Meetings => tr("Meetings"),
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Pane::Annotate => tr("Annotate"),
             Pane::VoiceFilter => tr("Voice Filter"),
             Pane::HudLab => "HUD Lab",
@@ -129,7 +129,7 @@ impl Pane {
             Pane::Modes => "nav-modes",
             Pane::History => "nav-history",
             Pane::Meetings => "nav-meetings",
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Pane::Annotate => "nav-annotate",
             Pane::VoiceFilter => "nav-voice-filter",
             Pane::HudLab => "nav-hud-lab",
@@ -144,7 +144,7 @@ impl Pane {
             Pane::Modes => &MODES_ICON,
             Pane::History => &HISTORY_ICON,
             Pane::Meetings => &MEETINGS_ICON,
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Pane::Annotate => &SCRAWL_ICON,
             Pane::VoiceFilter => &VOICE_FILTER_ICON,
             Pane::HudLab => &HUD_LAB_ICON,
@@ -268,7 +268,7 @@ fn footer(ui: &Ui, p: Paint) -> El {
         // (#1120); the hourly check alone never changes its words.
         Some(status @ (DesktopUpdateStatus::Current | DesktopUpdateStatus::Failed)) => {
             let words = match status {
-                DesktopUpdateStatus::Current if ui.update_asked => tr("Hex is up to date"),
+                DesktopUpdateStatus::Current if ui.update_asked => tr("Opcode is up to date"),
                 DesktopUpdateStatus::Failed if ui.update_asked => tr("Couldn't check for updates"),
                 _ => tr("Check for updates"),
             };
@@ -391,7 +391,7 @@ pub(super) enum BuildKind {
 fn build_kind() -> BuildKind {
     if crate::app_paths::is_local_build() {
         BuildKind::Local
-    } else if option_env!("HEX_TEST_BUILD") == Some("1") {
+    } else if option_env!("OPCODE_TEST_BUILD") == Some("1") {
         BuildKind::Test
     } else {
         BuildKind::Release
@@ -406,7 +406,7 @@ pub(super) const FOOTER_LINE: f32 = 20.0;
 fn version_label() -> String {
     // Goldens render a fixed version: a local build's names its commit.
     let version = if cfg!(test) { "0.0.0" } else { crate::VERSION };
-    match option_env!("HEX_COMMIT") {
+    match option_env!("OPCODE_COMMIT") {
         Some(commit) => {
             let kind = if crate::app_paths::is_local_build() {
                 "local"
@@ -492,14 +492,14 @@ fn nav_item(p: Paint, pane: Pane, on: bool) -> El {
     lists::source_item(item, on)
 }
 
-/// Linux has no tray: the window's way to stop Hex. Closing the window
-/// keeps Hex dictating.
+/// Linux has no tray: the window's way to stop Opcode. Closing the window
+/// keeps Opcode dictating.
 fn quit_item(p: Paint) -> El {
     let c = &p.k.c;
     row()
         .key("quit")
         .role("button")
-        .label(tr("Quit Hex"))
+        .label(tr("Quit Opcode"))
         .h(NAV_ROW_HEIGHT)
         .px(6.0)
         .mt(NAV_ROW_GAP)
@@ -511,7 +511,7 @@ fn quit_item(p: Paint) -> El {
         .focusable(true)
         .focus_ring(2.0, -2.0, c.border_focus)
         .child(
-            text(tr("Quit Hex"))
+            text(tr("Quit Opcode"))
                 .key("label")
                 .font(p.k.ty.ui)
                 .color(c.text_muted)

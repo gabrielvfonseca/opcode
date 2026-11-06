@@ -50,7 +50,7 @@ fn transcript_entries_coalesce_into_source_turns_without_hiding_long_pauses() {
 #[test]
 fn final_transcript_replaces_the_rolling_transcript_atomically() {
     let directory = std::env::temp_dir().join(format!(
-        "hex-meeting-transcript-{}-{}",
+        "opcode-meeting-transcript-{}-{}",
         std::process::id(),
         now_ms()
     ));
@@ -105,7 +105,7 @@ fn final_transcript_replaces_the_rolling_transcript_atomically() {
 #[test]
 fn reading_a_transcript_ignores_an_in_flight_trailing_write() {
     let path = std::env::temp_dir().join(format!(
-        "hex-transcript-tail-{}-{}.ndjson",
+        "opcode-transcript-tail-{}-{}.ndjson",
         std::process::id(),
         now_ms()
     ));
@@ -139,7 +139,7 @@ fn reading_a_transcript_ignores_an_in_flight_trailing_write() {
 #[test]
 fn capture_failures_are_persisted_instead_of_looking_interrupted() {
     let directory = std::env::temp_dir().join(format!(
-        "hex-meeting-failure-{}-{}",
+        "opcode-meeting-failure-{}-{}",
         std::process::id(),
         now_ms()
     ));
@@ -185,7 +185,7 @@ fn capture_failures_are_persisted_instead_of_looking_interrupted() {
 #[test]
 fn mid_meeting_capture_loss_proceeds_to_transcription_when_audio_was_recorded() {
     let directory = std::env::temp_dir().join(format!(
-        "hex-meeting-capture-loss-{}-{}",
+        "opcode-meeting-capture-loss-{}-{}",
         std::process::id(),
         now_ms()
     ));
@@ -289,7 +289,7 @@ fn abandoned_recording_and_finalization_are_recovered_as_interrupted() {
 #[test]
 fn meeting_lock_reports_liveness_across_file_descriptors() {
     let directory = std::env::temp_dir().join(format!(
-        "hex-meeting-lock-{}-{}",
+        "opcode-meeting-lock-{}-{}",
         std::process::id(),
         now_ms()
     ));
@@ -304,7 +304,7 @@ fn meeting_lock_reports_liveness_across_file_descriptors() {
 }
 
 fn finished_meeting(name: &str, title: &str) -> (PathBuf, PathBuf) {
-    let base = std::env::temp_dir().join(format!("hex-{name}-{}-{}", std::process::id(), now_ms()));
+    let base = std::env::temp_dir().join(format!("opcode-{name}-{}-{}", std::process::id(), now_ms()));
     let directory = base.join("1760000000000-1");
     fs::create_dir_all(&directory).unwrap();
     let export = base.join("2026-10-15 1418 Meeting.md");
@@ -625,7 +625,7 @@ fn expiry_leaves_a_markdown_copy_the_user_edited() {
         "the edited Markdown stays"
     );
 
-    // A Markdown written before Hex recorded its digest is not Hex's to move.
+    // A Markdown written before Opcode recorded its digest is not Opcode's to move.
     manifest.export_sha256 = None;
     write_manifest(&directory, &manifest).unwrap();
     trashed.clear();
@@ -639,7 +639,7 @@ fn expiry_leaves_a_markdown_copy_the_user_edited() {
 }
 
 #[test]
-fn hex_rewriting_its_markdown_keeps_it_hexs_and_a_user_edit_does_not() {
+fn opcode_rewriting_its_markdown_keeps_it_hexs_and_a_user_edit_does_not() {
     let (base, directory) = finished_meeting("digest", "Meeting — 2:18 PM");
     let mut manifest = read_manifest(&directory).unwrap();
     let export = manifest.export_path.clone().unwrap();
@@ -850,7 +850,7 @@ fn a_source_that_resumes_after_an_outage_is_padded_back_onto_the_timeline() {
 #[test]
 fn writer_fills_a_capture_gap_with_silence_and_records_it() {
     let directory = std::env::temp_dir().join(format!(
-        "hex-meeting-gap-{}-{}",
+        "opcode-meeting-gap-{}-{}",
         std::process::id(),
         now_ms()
     ));

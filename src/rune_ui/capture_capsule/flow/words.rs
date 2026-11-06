@@ -50,8 +50,8 @@ mod tests {
     fn host_errors_read_plainly_or_not_at_all() {
         for (error, plain) in [
             (
-                "Screen Recording permission is off for Hex",
-                Some("Screen Recording permission is off for Hex"),
+                "Screen Recording permission is off for Opcode",
+                Some("Screen Recording permission is off for Opcode"),
             ),
             (
                 "Could not reach server at http://127.0.0.1:4096",

@@ -212,7 +212,7 @@ mod tests {
             Some("x.com")
         );
         assert_eq!(
-            canonical_host("github.com/hex/pull/1").as_deref(),
+            canonical_host("github.com/opcode/pull/1").as_deref(),
             Some("github.com")
         );
         assert_eq!(
@@ -229,7 +229,7 @@ mod tests {
     #[test]
     fn urls_reduce_to_their_normalized_host() {
         assert_eq!(
-            host_of("https://GitHub.com./hex/pull/1").as_deref(),
+            host_of("https://GitHub.com./opcode/pull/1").as_deref(),
             Some("github.com")
         );
         assert_eq!(host_of("about:blank"), None);

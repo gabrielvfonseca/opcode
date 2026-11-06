@@ -736,7 +736,7 @@ impl ChunkModel {
         // Quitting drops the dictation engine; a model loaded now would
         // outlast the drain.
         if crate::desktop::process_exit::quitting() {
-            return Ok(Chunked::Unavailable(eyre!("Hex is quitting")));
+            return Ok(Chunked::Unavailable(eyre!("Opcode is quitting")));
         }
         if speechless(samples) {
             return Ok(Chunked::Done(Transcript::default()));
@@ -769,7 +769,7 @@ impl ChunkModel {
             )));
         }
         if crate::desktop::process_exit::quitting() {
-            return Ok(Chunked::Unavailable(eyre!("Hex is quitting")));
+            return Ok(Chunked::Unavailable(eyre!("Opcode is quitting")));
         }
         let model = match load_model(&mut self.owned, &selection) {
             Ok(model) => model,
@@ -1880,7 +1880,7 @@ fn transcribe_file(
     Ok(transcript)
 }
 
-/// Debug CLI `hex meeting echo <dir>`: replays a recording's tracks and
+/// Debug CLI `opcode meeting echo <dir>`: replays a recording's tracks and
 /// reports how many microphone lines echo suppression keeps, before (words
 /// only, one entry per model segment) and after (signal plus words, one
 /// entry per sentence). The microphone is placed `microphone_offset_ms`
@@ -2678,7 +2678,7 @@ mod tests {
     pub(super) static MODEL_LOADS: std::sync::atomic::AtomicUsize =
         std::sync::atomic::AtomicUsize::new(0);
 
-    const QUIT_CHILD: &str = "HEX_MEETING_QUIT_CHILD";
+    const QUIT_CHILD: &str = "OPCODE_MEETING_QUIT_CHILD";
 
     /// The child half of `quitting_mid_meeting_loads_no_model_and_finishes_in_time`.
     #[test]
@@ -2687,7 +2687,7 @@ mod tests {
             return;
         };
         let directory =
-            std::env::temp_dir().join(format!("hex-meeting-quit-{}", std::process::id()));
+            std::env::temp_dir().join(format!("opcode-meeting-quit-{}", std::process::id()));
         fs::create_dir_all(&directory).unwrap();
         let mut rolling = Rolling::start(directory.clone(), TranscriptionSelection::default());
         let mut feed = rolling.feed().unwrap();
@@ -2832,7 +2832,7 @@ mod tests {
     impl Call {
         fn new(name: &str) -> Self {
             let directory = std::env::temp_dir()
-                .join(format!("hex-meeting-flush-{name}-{}", std::process::id()));
+                .join(format!("opcode-meeting-flush-{name}-{}", std::process::id()));
             fs::create_dir_all(&directory).unwrap();
             Self {
                 directory,
@@ -3278,11 +3278,11 @@ mod tests {
         rolling.finish().unwrap();
     }
 
-    const COPY_QUIT_CHILD: &str = "HEX_MEETING_COPY_QUIT_CHILD";
+    const COPY_QUIT_CHILD: &str = "OPCODE_MEETING_COPY_QUIT_CHILD";
 
-    /// The child half of `a_copy_stops_waiting_when_hex_quits`.
+    /// The child half of `a_copy_stops_waiting_when_opcode_quits`.
     #[test]
-    fn a_copy_stops_waiting_when_hex_quits_child() {
+    fn a_copy_stops_waiting_when_opcode_quits_child() {
         if std::env::var_os(COPY_QUIT_CHILD).is_none() {
             return;
         }
@@ -3308,11 +3308,11 @@ mod tests {
     }
 
     #[test]
-    fn a_copy_stops_waiting_when_hex_quits() {
+    fn a_copy_stops_waiting_when_opcode_quits() {
         let output = std::process::Command::new(std::env::current_exe().unwrap())
             .args([
                 "--exact",
-                "meeting::transcript::tests::a_copy_stops_waiting_when_hex_quits_child",
+                "meeting::transcript::tests::a_copy_stops_waiting_when_opcode_quits_child",
                 "--nocapture",
             ])
             .env(COPY_QUIT_CHILD, "1")
@@ -4021,7 +4021,7 @@ mod tests {
     #[test]
     fn export_never_overwrites_and_uses_safe_names() {
         let folder = std::env::temp_dir().join(format!(
-            "hex-meeting-export-{}-{}",
+            "opcode-meeting-export-{}-{}",
             std::process::id(),
             crate::desktop::events::now_ms()
         ));

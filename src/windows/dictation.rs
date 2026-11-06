@@ -36,7 +36,7 @@ const IDLE_RELEASED_WAIT: Duration = Duration::from_millis(50);
 static LISTENER: Mutex<Option<thread::Thread>> = Mutex::new(None);
 
 /// Ends the listener's idle wait at once: the keyboard hook calls it for
-/// each shortcut event, and the tray and `hex` commands after sending one.
+/// each shortcut event, and the tray and `opcode` commands after sending one.
 pub fn wake() {
     if let Some(listener) = LISTENER
         .lock()
@@ -54,7 +54,7 @@ struct Job {
     recording: Option<crate::history::Recording>,
     /// Dictate without processing: paste the transcript as heard.
     raw: bool,
-    /// `hex dictation stop --print`: the text goes here, never pasted.
+    /// `opcode dictation stop --print`: the text goes here, never pasted.
     print: Option<PrintReply>,
 }
 
@@ -116,7 +116,7 @@ pub struct WindowsDictationConfig {
     pub commands: Option<mpsc::Receiver<ListenerCommand>>,
 }
 
-/// A request from outside the keyboard hook, from the tray or a `hex`
+/// A request from outside the keyboard hook, from the tray or a `opcode`
 /// command (`crate::control::host`), handled as its shortcut would be.
 #[derive(Debug)]
 pub enum ListenerCommand {
@@ -126,7 +126,7 @@ pub enum ListenerCommand {
         raw: bool,
     },
     PasteLast,
-    /// `hex dictation stop --print`.
+    /// `opcode dictation stop --print`.
     StopAndPrint(PrintReply),
 }
 
@@ -327,7 +327,7 @@ pub fn run(
     })?;
     emit_state(&mut events, VoiceState::Listening, &device_label)?;
     println!(
-        "Hex is ready on {}. Hold {} to dictate, release to paste; Ctrl-C stops.",
+        "Opcode is ready on {}. Hold {} to dictate, release to paste; Ctrl-C stops.",
         device_label, hotkey_label
     );
 
@@ -444,7 +444,7 @@ pub fn run(
                         Some(host) => host.control(action, &timeline),
                         None => crate::control::ControlReply::error(
                             "feature-off",
-                            "Annotate is off; turn it on with `hex settings set capture.enabled on`",
+                            "Annotate is off; turn it on with `opcode settings set capture.enabled on`",
                         ),
                     });
                     continue;
@@ -521,7 +521,7 @@ pub fn run(
                 audio_ready = false;
             }
         }
-        // A tray or `hex` command acts as its shortcut would, at once; a
+        // A tray or `opcode` command acts as its shortcut would, at once; a
         // printing stop's reply rides with the capture it finishes.
         let mut print = None;
         while finishing.is_none()
@@ -563,7 +563,7 @@ pub fn run(
                             crate::dictation::hotkey_pre_roll(while_dictating),
                         );
                         recording = true;
-                        // A toggle press or a `hex` command is deliberate, so
+                        // A toggle press or a `opcode` command is deliberate, so
                         // it streams at once.
                         recording_feedback_started = toggle_mode || deliberate;
                         if recording_feedback_started {
@@ -1088,7 +1088,7 @@ fn resolve_device_name(query: &str) -> Result<String> {
         .ok_or_else(|| eyre!("microphone is unavailable: {query}"))
 }
 
-/// The next shortcut event or `hex` command, as the action the loop takes,
+/// The next shortcut event or `opcode` command, as the action the loop takes,
 /// when it occurred, and whether it was deliberate (a command records at
 /// once, like a toggle press), and whether it skips processing. A printing
 /// stop leaves its reply in `print`.

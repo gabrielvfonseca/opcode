@@ -1,8 +1,8 @@
-# Install Hex as a managed, self-updating Windows application for the
+# Install Opcode as a managed, self-updating Windows application for the
 # current user, mirroring install-linux.sh: the app lands in
-# %APPDATA%\hex\versions\<version>\hex.exe with its console entry point
-# hex.com beside it, a Start Menu shortcut points at hex.exe, %APPDATA%\hex\bin
-# (a copy of hex.com) goes on PATH, install.json marks the install as direct,
+# %APPDATA%\opcode\versions\<version>\opcode.exe with its console entry point
+# opcode.com beside it, a Start Menu shortcut points at opcode.exe, %APPDATA%\opcode\bin
+# (a copy of opcode.com) goes on PATH, install.json marks the install as direct,
 # and the app then keeps itself current from the Anomaly release service
 # (docs/plans/release-service.md).
 #
@@ -21,22 +21,22 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$origin = if ($env:HEX_RELEASE_BASE_URL) { $env:HEX_RELEASE_BASE_URL.TrimEnd('/') } else { 'https://anoma.ly/release' }
-if (-not $origin.StartsWith('https://')) { throw 'HEX_RELEASE_BASE_URL must be an https:// URL.' }
-# HEX_INSTALL_CHANNEL=dev installs the newest dev build and keeps the
+$origin = if ($env:OPCODE_RELEASE_BASE_URL) { $env:OPCODE_RELEASE_BASE_URL.TrimEnd('/') } else { 'https://anoma.ly/release' }
+if (-not $origin.StartsWith('https://')) { throw 'OPCODE_RELEASE_BASE_URL must be an https:// URL.' }
+# OPCODE_INSTALL_CHANNEL=dev installs the newest dev build and keeps the
 # install on the Dev update channel; =stable requires the stable release.
 # Unset, it installs stable, or the newest dev build while the release
-# service has no stable Hex release yet.
-$channel = $env:HEX_INSTALL_CHANNEL
-if ($channel -and $channel -notin @('stable', 'dev')) { throw 'HEX_INSTALL_CHANNEL must be stable or dev.' }
-$support = Join-Path $env:APPDATA 'hex'
+# service has no stable Opcode release yet.
+$channel = $env:OPCODE_INSTALL_CHANNEL
+if ($channel -and $channel -notin @('stable', 'dev')) { throw 'OPCODE_INSTALL_CHANNEL must be stable or dev.' }
+$support = Join-Path $env:APPDATA 'opcode'
 $versions = Join-Path $support 'versions'
 $pointer = Join-Path $support 'current-version'
 $receipt = Join-Path $support 'install.json'
 $bin = Join-Path $support 'bin'
-$shortcut = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Hex.lnk'
+$shortcut = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Opcode.lnk'
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-$managedMark = 'Hex managed install'
+$managedMark = 'Opcode managed install'
 
 function Remove-ManagedShortcut {
     if (Test-Path $shortcut) {
@@ -48,8 +48,8 @@ function Remove-ManagedShortcut {
     }
 }
 
-# The user's PATH without (or with, once) bin, so a terminal runs `hex` as
-# hex.com, the console program that waits for hex.exe.
+# The user's PATH without (or with, once) bin, so a terminal runs `opcode` as
+# opcode.com, the console program that waits for opcode.exe.
 function Set-BinOnPath([bool]$present) {
     $environment = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment')
     $current = [string]$environment.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
@@ -59,8 +59,8 @@ function Set-BinOnPath([bool]$present) {
     if ($updated -ne $current) {
         $environment.SetValue('Path', $updated, [Microsoft.Win32.RegistryValueKind]::ExpandString)
         # SetEnvironmentVariable broadcasts the change to running programs.
-        [Environment]::SetEnvironmentVariable('HexPathRefresh', '1', 'User')
-        [Environment]::SetEnvironmentVariable('HexPathRefresh', $null, 'User')
+        [Environment]::SetEnvironmentVariable('OpcodePathRefresh', '1', 'User')
+        [Environment]::SetEnvironmentVariable('OpcodePathRefresh', $null, 'User')
     }
     $environment.Close()
 }
@@ -69,11 +69,11 @@ if ($Uninstall) {
     Remove-ManagedShortcut
     Set-BinOnPath $false
     if (Test-Path $bin) { Remove-Item $bin -Recurse -Force }
-    try { Remove-ItemProperty -Path $runKey -Name 'Hex' -ErrorAction Stop } catch {}
+    try { Remove-ItemProperty -Path $runKey -Name 'Opcode' -ErrorAction Stop } catch {}
     if (Test-Path $versions) { Remove-Item $versions -Recurse -Force }
     if (Test-Path $pointer) { Remove-Item $pointer -Force }
     if (Test-Path $receipt) { Remove-Item $receipt -Force }
-    Write-Output "Removed Hex. Logs and settings remain in $support."
+    Write-Output "Removed Opcode. Logs and settings remain in $support."
     exit 0
 }
 
@@ -82,7 +82,7 @@ $machine = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else
 $target = switch ($machine) {
     'AMD64' { 'windows-x64' }
     'ARM64' { 'windows-arm64' }
-    default { throw "Hex supports 64-bit x64 and ARM64 Windows, not $machine." }
+    default { throw "Opcode supports 64-bit x64 and ARM64 Windows, not $machine." }
 }
 if (-not $channel) {
     try {
@@ -90,7 +90,7 @@ if (-not $channel) {
         $channel = 'stable'
     } catch {
         if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) {
-            Write-Output 'Hex has no stable release yet; installing the newest dev build, which keeps updating from the Dev channel. Set HEX_INSTALL_CHANNEL=stable to require the stable release.'
+            Write-Output 'Opcode has no stable release yet; installing the newest dev build, which keeps updating from the Dev channel. Set OPCODE_INSTALL_CHANNEL=stable to require the stable release.'
             $channel = 'dev'
         } else {
             throw
@@ -101,8 +101,8 @@ $manifestUrl = "$origin/hex/desktop/$channel.json"
 Write-Output "Fetching $manifestUrl..."
 $manifest = (Invoke-WebRequest -Uri $manifestUrl -UseBasicParsing -TimeoutSec 30).Content | ConvertFrom-Json
 if ($manifest.schema -ne 1) { throw "Unsupported manifest schema $($manifest.schema)." }
-if ($manifest.app -ne 'hex' -or $manifest.artifact -ne 'desktop' -or $manifest.channel -ne $channel) {
-    throw "The manifest is not Hex desktop on the $channel channel."
+if ($manifest.app -ne 'opcode' -or $manifest.artifact -ne 'desktop' -or $manifest.channel -ne $channel) {
+    throw "The manifest is not Opcode desktop on the $channel channel."
 }
 $version = $manifest.release.version
 # Display text that names a directory; versions are never compared.
@@ -149,7 +149,7 @@ function Save-Download($entry, [string]$url, [string]$path) {
 }
 
 $fileUrl = Resolve-Download $file $target
-# hex.com, from releases that have one.
+# opcode.com, from releases that have one.
 $consoleFile = $manifest.release.targets."$target-cli"
 $consoleUrl = if ($consoleFile) { Resolve-Download $consoleFile "$target-cli" }
 
@@ -158,7 +158,7 @@ $executable = Join-Path $versionDir 'hex.exe'
 New-Item -ItemType Directory -Force $versionDir | Out-Null
 
 $console = Join-Path $versionDir 'hex.com'
-Write-Output "Downloading Hex $version..."
+Write-Output "Downloading Opcode $version..."
 Save-Download $file $fileUrl $executable
 if ($consoleUrl) { Save-Download $consoleFile $consoleUrl $console }
 # The version probe runs the staged files and removes them again on a
@@ -174,7 +174,7 @@ if ($consoleUrl) {
 if ($reported -ne $version) {
     Remove-Item $executable -Force
     if (Test-Path $console) { Remove-Item $console -Force }
-    throw "The downloaded Hex reports version $reported, expected $version."
+    throw "The downloaded Opcode reports version $reported, expected $version."
 }
 
 $pointerPartial = Join-Path $support 'current-version.partial'
@@ -201,8 +201,8 @@ if ($consoleUrl) {
     Set-BinOnPath $true
 }
 
-Write-Output "Installed Hex $version."
+Write-Output "Installed Opcode $version."
 Write-Output "  Executable: $executable"
-Write-Output "  Start Menu: Hex"
-if ($consoleUrl) { Write-Output "  Terminal: hex (open a new terminal; $bin is on PATH)" }
-Write-Output 'Launch at login can be enabled inside Hex Settings.'
+Write-Output "  Start Menu: Opcode"
+if ($consoleUrl) { Write-Output "  Terminal: opcode (open a new terminal; $bin is on PATH)" }
+Write-Output 'Launch at login can be enabled inside Opcode Settings.'

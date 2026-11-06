@@ -1,6 +1,6 @@
 //! Microphone users on Linux: PipeWire's running capture streams, watched
 //! through one long-running `pw-dump --monitor`. Streams that capture an
-//! output's monitor (`stream.capture.sink`), such as Hex's own meeting
+//! output's monitor (`stream.capture.sink`), such as Opcode's own meeting
 //! system audio, are not microphone users. Only stream metadata is read;
 //! no audio is captured.
 
@@ -257,11 +257,11 @@ mod tests {
                 json!({"media.class": "Stream/Output/Audio", "application.process.binary": "spotify",
                        "application.process.id": 44}),
             ),
-            // Hex itself.
+            // Opcode itself.
             node(
                 5,
                 "running",
-                json!({"media.class": "Stream/Input/Audio", "application.process.binary": "hex",
+                json!({"media.class": "Stream/Input/Audio", "application.process.binary": "opcode",
                        "application.process.id": 7}),
             ),
             // Properties only on the client.

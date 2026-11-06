@@ -30,7 +30,7 @@ const MAX_UNICODE_UNITS: usize = 20;
 const EVENT_SOURCE_USER_DATA: u32 = 42;
 /// A hole in the virtual key codes, between keypad `*` (0x43) and keypad `+`
 /// (0x45): no keyboard sends it, and of the 264 layouts macOS ships only
-/// Unicode Hex Input maps it (to U+0000, never with Option alone). Unlike
+/// Unicode Opcode Input maps it (to U+0000, never with Option alone). Unlike
 /// F13–F20 or the JIS keys it has no system action and nothing binds it.
 pub const CHORD_BREAKER_KEY_CODE: u16 = 0x44;
 pub const SYNTHETIC_EVENT_MARKER: i64 = 0x0056_4f49_4345;
@@ -185,7 +185,7 @@ fn resolve_key_code(character: char, command: bool) -> Result<u16> {
 /// The character `code` types with Command held on the active layout, read
 /// from the published snapshot only (never TIS): a capture's key log names
 /// keys with it.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub fn command_character(code: u16) -> Option<char> {
     let codes = KEY_CODES.get()?;
     codes
@@ -359,7 +359,7 @@ fn typing_strokes(text: &str) -> Vec<Stroke> {
 /// now, so other apps' modifier-tap detectors read the hold as a chord, as
 /// they do for any key pressed while the modifier is down. It is posted at
 /// the HID tap, so HID and session taps and NSEvent global monitors see it;
-/// Hex's annotated-session tap then drops it before the focused app, which
+/// Opcode's annotated-session tap then drops it before the focused app, which
 /// would otherwise beep at an unhandled key.
 pub fn post_chord_breaker(flags: u64) -> Result<()> {
     let events = chord_breaker_event_specs(flags)
@@ -524,7 +524,7 @@ mod tests {
     const CONTROL_KEY_CODE: u16 = 59;
     const CONTROL_FLAG: u64 = 1 << 18;
 
-    /// Hex's taps let its own keystrokes through by this mark, so a posted
+    /// Opcode's taps let its own keystrokes through by this mark, so a posted
     /// shortcut (the capture hand-off's ⌘V included) never reads as the
     /// user's chord.
     #[test]

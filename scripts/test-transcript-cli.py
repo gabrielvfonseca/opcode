@@ -13,7 +13,7 @@ import tempfile
 binary = str(Path(sys.argv[1]).resolve())
 repo = Path(__file__).resolve().parent.parent
 
-with tempfile.TemporaryDirectory(prefix="hex-transcript-cli-") as directory:
+with tempfile.TemporaryDirectory(prefix="opcode-transcript-cli-") as directory:
     root = Path(directory)
     shutil.copy(repo / "tests/fixtures/history.json", root / "history.json")
     shutil.copytree(repo / "tests/fixtures/meetings", root / "meetings")
@@ -28,7 +28,7 @@ with tempfile.TemporaryDirectory(prefix="hex-transcript-cli-") as directory:
         }
 
     before = snapshot()
-    env = {**os.environ, "HEX_APPLICATION_SUPPORT_DIR": str(root), "HEX_EXPERIMENTAL_MIC": "1"}
+    env = {**os.environ, "OPCODE_APPLICATION_SUPPORT_DIR": str(root), "OPCODE_EXPERIMENTAL_MIC": "1"}
 
     def run(*args):
         result = subprocess.run([binary, *args], env=env, capture_output=True, text=True, timeout=10)

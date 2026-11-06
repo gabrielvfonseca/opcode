@@ -170,7 +170,7 @@ private func writeError(
 
 /// 0 available, 1 device not eligible, 2 Apple Intelligence off,
 /// 3 model not ready, 4 unsupported macOS, 5 unknown reason.
-@_cdecl("hex_apple_intelligence_availability")
+@_cdecl("opcode_apple_intelligence_availability")
 public func hexAppleIntelligenceAvailability() -> Int32 {
     #if canImport(FoundationModels)
     guard #available(macOS 26.0, *) else { return 4 }
@@ -191,7 +191,7 @@ public func hexAppleIntelligenceAvailability() -> Int32 {
     #endif
 }
 
-@_cdecl("hex_apple_intelligence_context_size")
+@_cdecl("opcode_apple_intelligence_context_size")
 public func hexAppleIntelligenceContextSize() -> Int {
     #if canImport(FoundationModels)
     guard #available(macOS 26.0, *) else { return 0 }
@@ -201,7 +201,7 @@ public func hexAppleIntelligenceContextSize() -> Int {
     #endif
 }
 
-@_cdecl("hex_apple_intelligence_notes")
+@_cdecl("opcode_apple_intelligence_notes")
 public func hexAppleIntelligenceNotes(
     _ instructions: UnsafePointer<CChar>?,
     _ prompt: UnsafePointer<CChar>?,
@@ -270,7 +270,7 @@ private func bridgeCall<Value: Encodable & Sendable>(
     }
 }
 
-@_cdecl("hex_apple_intelligence_chapter")
+@_cdecl("opcode_apple_intelligence_chapter")
 public func hexAppleIntelligenceChapter(
     _ instructions: UnsafePointer<CChar>?,
     _ prompt: UnsafePointer<CChar>?,
@@ -301,7 +301,7 @@ public func hexAppleIntelligenceChapter(
     #endif
 }
 
-@_cdecl("hex_apple_intelligence_chapter_lines")
+@_cdecl("opcode_apple_intelligence_chapter_lines")
 public func hexAppleIntelligenceChapterLines(
     _ instructions: UnsafePointer<CChar>?,
     _ prompt: UnsafePointer<CChar>?,
@@ -328,7 +328,7 @@ public func hexAppleIntelligenceChapterLines(
     #endif
 }
 
-@_cdecl("hex_apple_intelligence_free_string")
+@_cdecl("opcode_apple_intelligence_free_string")
 public func hexAppleIntelligenceFreeString(_ string: UnsafeMutablePointer<CChar>?) {
     free(string)
 }

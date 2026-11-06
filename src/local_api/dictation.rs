@@ -1,6 +1,6 @@
 //! Running-app dictation (`/dictations`): a host starts, finishes, cancels
 //! and observes a dictation the app records. The macOS recognition loop and
-//! the Linux listener drive it; without a capture loop (Windows, `hex
+//! the Linux listener drive it; without a capture loop (Windows, `opcode
 //! service`) the routes answer `service-capture-unavailable` and
 //! `/capabilities` reports `serviceCapture: false`.
 

@@ -1,10 +1,10 @@
-//! Annotate's capture settings and their live values (`cfg(hex_capture)`).
+//! Annotate's capture settings and their live values (`cfg(opcode_capture)`).
 
 use super::*;
 
-/// Annotate: Scrawl's captures inside Hex, on macOS, Linux, and Windows
+/// Annotate: Scrawl's captures inside Opcode, on macOS, Linux, and Windows
 /// (`capture_host`). On by default; off means no capture work at all.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default)]
 pub struct CaptureSettings {
@@ -26,7 +26,7 @@ pub struct CaptureSettings {
     /// Where a written capture is sent among OpenCode sessions: Scrawl's
     /// router settings, imported once from Scrawl.
     pub routing: CaptureRouting,
-    /// Lets screen recordings, Hex's own captures included, show Hex's
+    /// Lets screen recordings, Opcode's own captures included, show Opcode's
     /// overlays: the capture capsule, picker, and ink, the dictation HUD,
     /// and the meeting capsules. Off keeps them out (`capture_host`).
     pub show_overlays_in_recordings: bool,
@@ -36,7 +36,7 @@ pub struct CaptureSettings {
 }
 
 /// The capsule's flow after a capture stops, one of five prototypes.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CapsuleFlow {
@@ -46,7 +46,7 @@ pub enum CapsuleFlow {
     /// (b) One quiet line, "Send to SEER ⏎"; ⇥ moves to the next guess.
     Toast,
     /// (c) A short hint of the guesses in the capsule, which then folds
-    /// into Hex's menu-bar item.
+    /// into Opcode's menu-bar item.
     MenuBar,
     /// (d) The guesses in a small card at the pointer.
     Cursor,
@@ -55,7 +55,7 @@ pub enum CapsuleFlow {
     Notch,
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 impl CapsuleFlow {
     pub const ALL: [Self; 5] = [
         Self::List,
@@ -66,7 +66,7 @@ impl CapsuleFlow {
     ];
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 impl Default for CaptureSettings {
     fn default() -> Self {
         let week = scrawl_capture::retention::Preset::Week.policy();
@@ -87,9 +87,9 @@ impl Default for CaptureSettings {
 
 /// Scrawl's router settings (`scrawl_capture::RouterConfig`, its
 /// camelCase JSON). Never holds a Jev key: Jev is called with
-/// `$OPENCODE_API_KEY` or OpenCode's own credential, so `hex settings`
+/// `$OPENCODE_API_KEY` or OpenCode's own credential, so `opcode settings`
 /// never shows one.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(
     from = "scrawl_capture::RouterConfig",
@@ -98,10 +98,10 @@ impl Default for CaptureSettings {
 pub struct CaptureRouting(scrawl_capture::RouterConfig);
 
 // The config's only non-`Eq` field is a JSON value, which compares totally.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 impl Eq for CaptureRouting {}
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 impl From<scrawl_capture::RouterConfig> for CaptureRouting {
     fn from(mut config: scrawl_capture::RouterConfig) -> Self {
         config.jev_api_key = None;
@@ -109,21 +109,21 @@ impl From<scrawl_capture::RouterConfig> for CaptureRouting {
     }
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 impl From<CaptureRouting> for scrawl_capture::RouterConfig {
     fn from(routing: CaptureRouting) -> Self {
         routing.0
     }
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 impl CaptureRouting {
     pub fn config(&self) -> &scrawl_capture::RouterConfig {
         &self.0
     }
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 impl CaptureSettings {
     /// The folder new captures go to.
     pub fn captures_dir(&self) -> PathBuf {
@@ -146,24 +146,24 @@ impl CaptureSettings {
 }
 
 /// What turns a capture's narration into words.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CaptureTranscriber {
-    /// The dictation model Hex already has loaded, with word times.
+    /// The dictation model Opcode already has loaded, with word times.
     #[default]
     Parakeet,
     /// Apple's speech recognizer, as Scrawl uses by default.
     Apple,
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 impl CaptureTranscriber {
     pub const ALL: [Self; 2] = [Self::Parakeet, Self::Apple];
 }
 
-/// The saved capture settings (`cfg(hex_capture)` builds).
-#[cfg(hex_capture)]
+/// The saved capture settings (`cfg(opcode_capture)` builds).
+#[cfg(opcode_capture)]
 pub fn capture_settings() -> CaptureSettings {
     CAPTURE_SETTINGS
         .get_or_init(Default::default)
@@ -174,7 +174,7 @@ pub fn capture_settings() -> CaptureSettings {
 
 /// The capture shortcut's keycaps (`capture.hotkey`), without cloning the
 /// capture settings.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub fn capture_hotkey_keycaps() -> Vec<String> {
     CAPTURE_SETTINGS
         .get_or_init(Default::default)
@@ -185,7 +185,7 @@ pub fn capture_hotkey_keycaps() -> Vec<String> {
 }
 
 /// The saved [`CapsuleFlow`], without cloning the capture settings.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub fn capsule_flow() -> CapsuleFlow {
     CapsuleFlow::ALL
         .get(usize::from(CAPSULE_FLOW.load(Ordering::Acquire)))
@@ -194,19 +194,19 @@ pub fn capsule_flow() -> CapsuleFlow {
 }
 
 /// Annotate is on (`capture.enabled`).
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub fn capture_on() -> bool {
     CAPTURE_ON.load(Ordering::Acquire)
 }
 
-/// Scrawl's own app is running, so it owns the capture shortcut and Hex
+/// Scrawl's own app is running, so it owns the capture shortcut and Opcode
 /// doesn't match it.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub fn scrawl_app_running() -> bool {
     SCRAWL_APP_RUNNING.load(Ordering::Acquire)
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub fn set_scrawl_app_running(running: bool) {
     SCRAWL_APP_RUNNING.store(running, Ordering::Release);
 }

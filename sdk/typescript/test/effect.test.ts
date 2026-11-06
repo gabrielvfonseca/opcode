@@ -3,7 +3,7 @@ import { watch } from "node:fs"
 import { readFile, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
-import * as Hex from "../src/effect.js"
+import * as Opcode from "../src/effect.js"
 import { options, processIsAlive, withTempDir } from "./support.js"
 
 describe("Effect client", () => {
@@ -11,7 +11,7 @@ describe("Effect client", () => {
     let pid = 0
     const progress: string[] = []
     const result = await Effect.runPromise(Effect.scoped(Effect.gen(function* () {
-      const transcriber = yield* Hex.create({
+      const transcriber = yield* Opcode.create({
         ...options(), model: "parakeet_v2", language: "en",
         onProgress: (event) => { progress.push(event.type) },
       })
@@ -19,20 +19,20 @@ describe("Effect client", () => {
       expect(transcriber.language).toBe("en")
       return yield* transcriber.transcribe(new Uint8Array([1, 2, 3]))
     })))
-    expect(result.transcript).toBe("hello from hex")
+    expect(result.transcript).toBe("hello from opcode")
     expect(progress).toEqual(["downloading", "verifying", "loading"])
     expect(processIsAlive(pid)).toBe(false)
   })
 
   it("interrupts model preparation and waits for helper cleanup", async () => {
-    await withTempDir("hex-effect-ready-", async (directory) => {
+    await withTempDir("opcode-effect-ready-", async (directory) => {
       const pidPath = join(directory, "pid")
       let markStarted = () => {}
       const started = new Promise<void>((resolve) => { markStarted = resolve })
       await Effect.runPromise(Effect.scoped(Effect.gen(function* () {
-        const fiber = yield* Hex.create({
+        const fiber = yield* Opcode.create({
           ...options(), model: "parakeet_v2",
-          env: { HEX_FAKE_PID_PATH: pidPath, HEX_FAKE_PREPARE_HANG: "1" },
+          env: { OPCODE_FAKE_PID_PATH: pidPath, OPCODE_FAKE_PREPARE_HANG: "1" },
           shutdownTimeoutMs: 100,
           onProgress: markStarted,
         }).pipe(Effect.forkScoped)
@@ -48,9 +48,9 @@ describe("Effect client", () => {
     let markStarted = () => {}
     const started = new Promise<void>((resolve) => { markStarted = resolve })
     await Effect.runPromise(Effect.scoped(Effect.gen(function* () {
-      const transcriber = yield* Hex.create({
+      const transcriber = yield* Opcode.create({
         ...options(), model: "parakeet_v2", shutdownTimeoutMs: 100,
-        env: { HEX_FAKE_TRANSCRIBE_HANG: "1" },
+        env: { OPCODE_FAKE_TRANSCRIBE_HANG: "1" },
         fetch: async (url, init) => {
           const response = await fetch(url, init)
           if (String(url).includes("/transcriptions")) markStarted()
@@ -65,7 +65,7 @@ describe("Effect client", () => {
   })
 
   it("cleans up pending startup interruption before returning to an open parent scope", async () => {
-    await withTempDir("hex-effect-start-", async (directory) => {
+    await withTempDir("opcode-effect-start-", async (directory) => {
       const pidPath = join(directory, "pid")
       const gate = join(directory, "handshake")
       const watcher = watch(directory)
@@ -76,9 +76,9 @@ describe("Effect client", () => {
       })
       try {
         await Effect.runPromise(Effect.scoped(Effect.gen(function* () {
-          const fiber = yield* Hex.create({
+          const fiber = yield* Opcode.create({
             ...options(), model: "parakeet_v2",
-            env: { HEX_FAKE_PID_PATH: pidPath, HEX_FAKE_HANDSHAKE_GATE: gate },
+            env: { OPCODE_FAKE_PID_PATH: pidPath, OPCODE_FAKE_HANDSHAKE_GATE: gate },
           }).pipe(Effect.forkScoped)
           yield* Effect.promise(() => started)
           fiber.interruptUnsafe()
@@ -94,16 +94,16 @@ describe("Effect client", () => {
   })
 
   it.each([
-    Hex.StartupError,
-    Hex.ProtocolError,
-    Hex.RequestError,
-    Hex.ModelPreparationError,
-    Hex.CancellationError,
+    Opcode.StartupError,
+    Opcode.ProtocolError,
+    Opcode.RequestError,
+    Opcode.ModelPreparationError,
+    Opcode.CancellationError,
   ])("preserves tagged error fields and yieldable failures for %s", async (ErrorClass) => {
     const cause = new Error("underlying failure")
     const error = new ErrorClass({ code: "test-failure", message: "operation failed", cause })
     expect(error).toBeInstanceOf(Error)
-    expect(error._tag).toBe(`Hex.${ErrorClass.name}`)
+    expect(error._tag).toBe(`Opcode.${ErrorClass.name}`)
     expect(error.message).toBe("operation failed")
     expect(error.cause).toBe(cause)
     const failure = await Effect.runPromise(Effect.gen(function* () {
@@ -115,7 +115,7 @@ describe("Effect client", () => {
   it("scopes the helper and exposes Effect and Stream operations", async () => {
     let pid = 0
     const result = await Effect.runPromise(Effect.scoped(Effect.gen(function* () {
-      const host = yield* Hex.create(options())
+      const host = yield* Opcode.create(options())
       pid = host.pid
       const health = yield* host.client.health()
       const progress = yield* host.client.models.prepare("parakeet_v2", { language: "en" }).pipe(
@@ -131,7 +131,7 @@ describe("Effect client", () => {
     expect(result).toEqual({
       health: { version: "test", apiVersion: "2" },
       progress: ["downloading", "verifying", "loading"],
-      transcript: { transcript: "hello from hex", durationMs: 750 },
+      transcript: { transcript: "hello from opcode", durationMs: 750 },
     })
     expect(processIsAlive(pid)).toBe(false)
   })
@@ -139,9 +139,9 @@ describe("Effect client", () => {
   it("provides the client as a scoped service layer", async () => {
     const health = await Effect.runPromise(
       Effect.gen(function* () {
-        const hex = yield* Hex.Service
-        return yield* hex.health()
-      }).pipe(Effect.provide(Hex.layer(options()))),
+        const opcode = yield* Opcode.Service
+        return yield* opcode.health()
+      }).pipe(Effect.provide(Opcode.layer(options()))),
     )
 
     expect(health.version).toBe("test")
@@ -151,9 +151,9 @@ describe("Effect client", () => {
     let pid = 0
     let requestSignal: AbortSignal | null | undefined
     await Effect.runPromise(Effect.scoped(Effect.gen(function* () {
-      const host = yield* Hex.create({
+      const host = yield* Opcode.create({
         ...options(),
-        env: { HEX_FAKE_PREPARE_HANG: "1" },
+        env: { OPCODE_FAKE_PREPARE_HANG: "1" },
         fetch: (url, init) => {
           if (String(url).includes("/prepare")) requestSignal = init?.signal
           return fetch(url, init)
@@ -178,10 +178,10 @@ describe("Effect client", () => {
 
   it("preserves typed preparation failures through the progress stream", async () => {
     await Effect.runPromise(Effect.scoped(Effect.gen(function* () {
-      const host = yield* Hex.create({ ...options(), env: { HEX_FAKE_PREPARE_ERROR: "1" } })
+      const host = yield* Opcode.create({ ...options(), env: { OPCODE_FAKE_PREPARE_ERROR: "1" } })
       const error = yield* host.client.models.prepare("parakeet_v2").pipe(Stream.runDrain, Effect.flip)
       expect(error).toMatchObject({
-        _tag: "Hex.ModelPreparationError", code: "model-prepare-failed", remoteCode: "load-failed",
+        _tag: "Opcode.ModelPreparationError", code: "model-prepare-failed", remoteCode: "load-failed",
       })
       expect(processIsAlive(host.pid)).toBe(true)
     })))

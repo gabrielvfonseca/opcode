@@ -1,6 +1,6 @@
 # scrawl-router
 
-Where a capture or dictation goes among OpenCode sessions, sending it there, and taking it back. Scrawl's `scrawl router …` commands and Hex call the same code: Scrawl through its CLI and app, Hex in-process through `Router`.
+Where a capture or dictation goes among OpenCode sessions, sending it there, and taking it back. Scrawl's `scrawl router …` commands and Opcode call the same code: Scrawl through its CLI and app, Opcode in-process through `Router`.
 
 The host owns the settings and the folders. The library never reads Scrawl's `~/.config/scrawl/config.json` and never picks a folder of its own. It builds without gpui, ScreenCaptureKit, the Swift helper, cpal or objc2: its dependencies are `anyhow`, `dirs`, `libc`, `serde` and `serde_json`.
 
@@ -52,7 +52,7 @@ impl Router {
 - **`deliver`** (`router deliver --decision <id> --to <session>`): sends the decision's text (dictation) or bundle (capture). `Delivered` is `{"ok", "state": "sent" | "queued", "session", "offer_rule"?}`, plus `delivery_id`, `message_id`, `delivery` (`steer` or `queue`) and `was_idle` once sent. A send OpenCode didn't take is queued in the outbox; call `retry_outbox` every few seconds to retry it (Scrawl's ingest server does this for its own outbox). `deliver_request` takes the caller's `item_id` instead of a decision, or new text.
 - **`undo`** (`router undo <id> --json`): `UndoReport` is `{"undone", "session", "message_id"}`, where `undone` is `withdrawn` (removed before it was read), `reverted` (its turn interrupted and the session reverted to before it, committed, so the send and its turn are deleted; files go back only if the turn's edit tools changed them), `disowned` (the session was told to ignore it, also when anything arrived while the revert was staged or the commit failed, after clearing the staged revert), `gone` (the send or its session no longer exists), `too-old` (past `undo_window_sec`; nothing done, not an error) or `unfinished` (a staged revert could be neither committed nor cleared, so the session's next prompt would apply it; not saved, so the undo can be tried again). It errors only for a malformed ID, a server that can't be reached, or the deadline; a busy session is retried only until the deadline.
 - **`correct`** (`router correct --decision <id> --action <cancel|redirect|paste|edit> [--to <session>]`): logs that a decision was corrected, joined to it in the log. A redirect names where the item went instead. Picks are counted toward a rule offer by `deliver`, not here.
-- **`log_correction`** (`router log`): one correction line in Hex's spelling, joined to its decision.
+- **`log_correction`** (`router log`): one correction line in Opcode's spelling, joined to its decision.
 - **`eval`** (`router eval`): replays past captures and the items in `dirs.eval` through Jev and prints the accuracy.
 - **`run`** runs any module function (`routing::…`) with this router's settings. **`install_as_fallback`** makes them what the modules use outside a call, for a host that calls the modules directly.
 

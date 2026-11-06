@@ -1,5 +1,5 @@
 //! Linux dictation shortcuts: the one state machine every input feeds, the
-//! X11 key grabs, the Wayland shortcuts portal, and the `hex` commands a
+//! X11 key grabs, the Wayland shortcuts portal, and the `opcode` commands a
 //! desktop keybinding runs. Dictation sees only [`HotkeyEvent`]s.
 
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -142,7 +142,7 @@ impl LinuxHotkey {
     pub(crate) fn portal_trigger(&self) -> Result<String> {
         if mouse_button(&self.key).is_some() {
             return Err(eyre!(
-                "Wayland's shortcuts portal cannot request mouse buttons; bind the hex commands in the desktop settings"
+                "Wayland's shortcuts portal cannot request mouse buttons; bind the opcode commands in the desktop settings"
             ));
         }
         let key = keysym_name(&self.key)?;
@@ -256,10 +256,10 @@ const KEY_REPEAT_GAP: Duration = Duration::from_secs(1);
 /// or a release is settling.
 const POLL_INTERVAL: Duration = Duration::from_millis(5);
 /// How long a listening portal waits for the desktop's next signal: a press
-/// wakes it at once, and this only bounds how long a queued `hex` command
+/// wakes it at once, and this only bounds how long a queued `opcode` command
 /// waits behind it.
 const PORTAL_WAIT: Duration = Duration::from_millis(50);
-/// How long a monitor without a portal sleeps: a `hex` command wakes it, and
+/// How long a monitor without a portal sleeps: a `opcode` command wakes it, and
 /// its next portal check is due much later than this.
 const COMMAND_WAIT: Duration = Duration::from_millis(250);
 /// Binding through the portal can wait for the user to approve a dialog.
@@ -272,7 +272,7 @@ pub(crate) enum HotkeyEvent {
         raw: bool,
     },
     Finish,
-    /// `hex dictation stop --print` finished the dictation: its transcript
+    /// `opcode dictation stop --print` finished the dictation: its transcript
     /// goes to the reply instead of being pasted.
     FinishPrinting(crate::control::PrintReply),
     Cancel,
@@ -284,22 +284,22 @@ pub(crate) enum HotkeyEvent {
     CaptureUp,
 }
 
-/// What a `hex` command asks of the running listener. Each one is
+/// What a `opcode` command asks of the running listener. Each one is
 /// idempotent: starting while recording or stopping while idle does nothing.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub(crate) enum ShortcutCommand {
     DictationStart,
     DictationStop,
     DictationToggle,
-    /// `hex dictation cancel`: discards whatever records, in any mode.
+    /// `opcode dictation cancel`: discards whatever records, in any mode.
     DictationCancel,
     PasteLast,
-    /// `hex dictation start --raw` and `toggle --raw`.
+    /// `opcode dictation start --raw` and `toggle --raw`.
     DictationStartRaw,
     DictationToggleRaw,
 }
 
-/// What the listener's command queue carries: a `hex` command, or a
+/// What the listener's command queue carries: a `opcode` command, or a
 /// printing stop with the reply only its own connection waits on.
 #[derive(Debug, Eq, PartialEq)]
 pub(crate) enum ListenerCommand {
@@ -330,16 +330,16 @@ pub(crate) struct HotkeyOptions {
     /// Annotate's one key, while Annotate is on: tap to start and stop,
     /// hold to draw.
     pub(crate) capture: Option<LinuxHotkey>,
-    /// Toggle mode's cancel shortcut, which Hex takes only while a
+    /// Toggle mode's cancel shortcut, which Opcode takes only while a
     /// recording runs; `None` in Hold mode, which has no cancel.
     pub(crate) cancel: Option<LinuxHotkey>,
 }
 
-/// Whether Annotate draws now, so Escape is Hex's (it stops drawing).
+/// Whether Annotate draws now, so Escape is Opcode's (it stops drawing).
 fn annotate_drawing() -> bool {
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     return crate::capture_host::drawing();
-    #[cfg(not(hex_capture))]
+    #[cfg(not(opcode_capture))]
     false
 }
 
@@ -351,7 +351,7 @@ pub(crate) struct HotkeyStatus {
     configurable: Arc<AtomicBool>,
     /// Settings asked for that dialog.
     configure: Arc<AtomicBool>,
-    /// The person disabled Hex: clear its shortcuts from the desktop's list
+    /// The person disabled Opcode: clear its shortcuts from the desktop's list
     /// when the listener stops.
     forget: Arc<AtomicBool>,
     keys: ShortcutKeys,
@@ -374,12 +374,12 @@ impl HotkeyStatus {
         self.configurable.load(Ordering::Acquire)
     }
 
-    /// Opens the desktop's dialog for Hex's shortcuts, when it has one.
+    /// Opens the desktop's dialog for Opcode's shortcuts, when it has one.
     pub(crate) fn configure(&self) {
         self.configure.store(true, Ordering::Release);
     }
 
-    /// Clears Hex's shortcuts from the desktop's list once the listener
+    /// Clears Opcode's shortcuts from the desktop's list once the listener
     /// stops, as Disable does; a restart for a settings change keeps them.
     pub(crate) fn forget_on_stop(&self) {
         self.forget.store(true, Ordering::Release);
@@ -394,18 +394,18 @@ impl HotkeyStatus {
 }
 
 /// How long after a Wayland shortcut's last event its modifiers may still be
-/// down. Hex cannot see them there, so this is the bounded estimate.
+/// down. Opcode cannot see them there, so this is the bounded estimate.
 const MODIFIER_GRACE: Duration = Duration::from_millis(250);
 /// The longest a press without its release holds a paste back, for desktops
 /// that drop the release.
 const HELD_LIMIT: Duration = Duration::from_secs(2);
 
-/// When the keys of a Hex shortcut may still be down. Some Wayland
+/// When the keys of a Opcode shortcut may still be down. Some Wayland
 /// compositors (Hyprland) add every held physical modifier to virtual
-/// keyboard input, turning a paste's Ctrl+V into Ctrl+Alt+V. Hex reads no
+/// keyboard input, turning a paste's Ctrl+V into Ctrl+Alt+V. Opcode reads no
 /// input devices, so the paste waits on the shortcut's own events: until a
 /// modifier shortcut's release (portal Deactivated) plus [`MODIFIER_GRACE`],
-/// and [`MODIFIER_GRACE`] after a `hex` command, whose keybinding is unknown.
+/// and [`MODIFIER_GRACE`] after a `opcode` command, whose keybinding is unknown.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct ShortcutKeys(Arc<Mutex<HeldKeys>>);
 
@@ -456,7 +456,7 @@ impl ShortcutKeys {
             .held = 0;
     }
 
-    /// Whether a Hex shortcut is down now (pressed without its release), so
+    /// Whether a Opcode shortcut is down now (pressed without its release), so
     /// a newer capture owns the modifiers a paste sees held.
     pub(crate) fn any_held(&self) -> bool {
         self.0
@@ -488,7 +488,7 @@ impl ShortcutKeys {
 }
 
 /// Whether a portal trigger holds modifiers: the one the desktop granted,
-/// else the one Hex asked for.
+/// else the one Opcode asked for.
 fn trigger_has_modifiers(granted: Option<&str>, requested: &LinuxHotkey) -> bool {
     match granted.map(str::trim).filter(|trigger| !trigger.is_empty()) {
         Some(trigger) => crate::linux::portal::readable_trigger(trigger).contains('+'),
@@ -498,14 +498,14 @@ fn trigger_has_modifiers(granted: Option<&str>, requested: &LinuxHotkey) -> bool
 
 /// The portal id of a shortcut asking for `trigger`. A desktop keeps the
 /// trigger it stored for an id and ignores a later `preferred_trigger`
-/// (GNOME, KDE), so a shortcut changed in Hex gets a new id, which the
+/// (GNOME, KDE), so a shortcut changed in Opcode gets a new id, which the
 /// desktop binds to the new trigger (#575). An unchanged shortcut keeps its
 /// id, and with it any trigger the user assigned in the desktop.
 ///
 /// With `desktop_assigns` (Hyprland), the desktop ignores the trigger and
 /// the user binds the id by name in its config, so the id is the bare
-/// `base`: recording another key in Hex must not leave that bind pointing
-/// at a name Hex no longer listens to (#1376).
+/// `base`: recording another key in Opcode must not leave that bind pointing
+/// at a name Opcode no longer listens to (#1376).
 fn portal_shortcut_id(base: &str, trigger: &str, desktop_assigns: bool) -> String {
     if desktop_assigns {
         return base.to_string();
@@ -513,7 +513,7 @@ fn portal_shortcut_id(base: &str, trigger: &str, desktop_assigns: bool) -> Strin
     format!("{base}-{}", trigger.replace('+', "-"))
 }
 
-/// The trigger the desktop granted a shortcut, by the id Hex bound it under.
+/// The trigger the desktop granted a shortcut, by the id Opcode bound it under.
 fn granted_trigger<'a>(
     granted: &'a std::collections::HashMap<String, Option<String>>,
     ids: &[Option<String>; Shortcut::ALL.len()],
@@ -525,7 +525,7 @@ fn granted_trigger<'a>(
         .and_then(Option::as_deref)
 }
 
-/// What the desktop granted, as Settings shows it: each shortcut Hex asked
+/// What the desktop granted, as Settings shows it: each shortcut Opcode asked
 /// for. With `desktop_assigns` (Hyprland), a shortcut without a trigger is
 /// unconfirmed rather than refused.
 fn project_grants(
@@ -587,7 +587,7 @@ enum Input {
     Released(Shortcut),
     /// Escape, which only stops Annotate's drawing (#786).
     Escape,
-    /// The cancel shortcut, pressed while Hex held it.
+    /// The cancel shortcut, pressed while Opcode held it.
     Cancel,
     /// The backend can no longer tell which keys are down.
     Lost,
@@ -654,7 +654,7 @@ impl ShortcutState {
         matches!(self.capture, Capture::Idle | Capture::Armed)
     }
 
-    /// Whether the cancel shortcut is Hex's now: only in Toggle mode, and
+    /// Whether the cancel shortcut is Opcode's now: only in Toggle mode, and
     /// only while something records, so the key stays with every app
     /// otherwise.
     fn wants_cancel(&self) -> bool {
@@ -738,7 +738,7 @@ impl ShortcutState {
             // Escape while Annotate draws stops drawing, never the recording,
             // and it ends no dictation (#786).
             Input::Escape => {
-                #[cfg(hex_capture)]
+                #[cfg(opcode_capture)]
                 crate::capture_host::exit_drawing();
                 None
             }
@@ -857,7 +857,7 @@ impl ShortcutState {
     }
 }
 
-/// `hex` commands for whichever monitor runs now. The listener keeps one
+/// `opcode` commands for whichever monitor runs now. The listener keeps one
 /// queue while it registers its shortcuts again after a settings change.
 #[derive(Clone)]
 pub(crate) struct CommandQueue(Arc<Mutex<Receiver<ListenerCommand>>>);
@@ -918,9 +918,9 @@ impl Dispatcher {
         self.pending.extend(event);
     }
 
-    /// Feeds every queued `hex` command.
+    /// Feeds every queued `opcode` command.
     fn commands(&mut self) {
-        // Without a sender (`hex dictate`), only shortcuts remain.
+        // Without a sender (`opcode dictate`), only shortcuts remain.
         let commands = self
             .commands
             .0
@@ -933,7 +933,7 @@ impl Dispatcher {
         }
     }
 
-    /// Waits up to `timeout` for a `hex` command, so a monitor with no
+    /// Waits up to `timeout` for a `opcode` command, so a monitor with no
     /// shortcuts to watch sleeps until one arrives, then feeds it and any
     /// others already queued.
     fn wait_for_commands(&mut self, timeout: Duration) {
@@ -1101,7 +1101,7 @@ impl Backend {
         self.run_portal(portal, dispatcher, binding, options)
     }
 
-    /// Serves `hex` commands, and with `probe` looks for the shortcuts
+    /// Serves `opcode` commands, and with `probe` looks for the shortcuts
     /// portal again from time to time: a portal started before the desktop's
     /// session environment exposes none until it is restarted (#875).
     /// Returns the portal once it appears, or `None` when the listener stops.
@@ -1113,7 +1113,7 @@ impl Backend {
         self.mark_ready(DesktopShortcuts::Commands);
         let mut probe = probe.then(|| crate::linux::portal::PortalProbe::new(self.stop.clone()));
         while !self.stopping() {
-            // No portal: `hex` commands are the only input, so wait on their
+            // No portal: `opcode` commands are the only input, so wait on their
             // queue; the probe is due far less often than this.
             dispatcher.wait_for_commands(COMMAND_WAIT);
             if !dispatcher.flush()? {
@@ -1177,10 +1177,10 @@ impl Backend {
         if let Err(error) = portal.forget_legacy_kde_shortcuts(&keep) {
             tracing::warn!(
                 error = format!("{error:#}"),
-                "could not remove Hex's old shortcuts from KDE"
+                "could not remove Opcode's old shortcuts from KDE"
             );
         }
-        // GNOME asks for approval whenever Hex binds shortcuts it hasn't
+        // GNOME asks for approval whenever Opcode binds shortcuts it hasn't
         // approved, as after a shortcut change; dismissing that dialog fails
         // the bind (#723), and Enable binds again, so the dialog returns.
         let granted = match portal.bind(&shortcuts, &self.stop) {
@@ -1195,7 +1195,7 @@ impl Backend {
                 tracing::warn!(
                     error = format!("{error:#}"),
                     desktop = std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default(),
-                    "the shortcuts portal's backend could not bind Hex's shortcuts; dictation follows the hex commands"
+                    "the shortcuts portal's backend could not bind Opcode's shortcuts; dictation follows the opcode commands"
                 );
                 drop(portal);
                 self.wait_for_portal(&mut dispatcher, false)?;
@@ -1203,7 +1203,7 @@ impl Backend {
             }
             Err(error) => {
                 return Err(error.wrap_err(
-                    "the desktop did not approve Hex's shortcuts; choose Enable to ask again",
+                    "the desktop did not approve Opcode's shortcuts; choose Enable to ask again",
                 ));
             }
         };
@@ -1225,13 +1225,13 @@ impl Backend {
                 None if shortcut.unconfirmed => {
                     tracing::info!(
                         name = %shortcut.name,
-                        "the desktop assigns this Hex shortcut's key itself; Hex cannot confirm it"
+                        "the desktop assigns this Opcode shortcut's key itself; Opcode cannot confirm it"
                     );
                 }
                 None => {
                     tracing::warn!(
                         name = %shortcut.name,
-                        "the desktop did not grant a Hex shortcut"
+                        "the desktop did not grant a Opcode shortcut"
                     );
                 }
                 Some(_) => {}
@@ -1249,7 +1249,7 @@ impl Backend {
         };
         while !self.stopping() {
             // Wakes on the desktop's signals; the timeout only lets queued
-            // `hex` commands through while nothing is pressed.
+            // `opcode` commands through while nothing is pressed.
             for event in portal.wait_events(PORTAL_WAIT) {
                 let input = match event {
                     crate::linux::portal::Event::Pressed(id) => match shortcut_for(&id) {
@@ -1280,7 +1280,7 @@ impl Backend {
                         dispatcher.keys.released_all();
                         dispatcher.input(Input::Lost);
                         let _ = dispatcher.flush();
-                        return Err(eyre!("the desktop closed Hex's shortcuts portal session"));
+                        return Err(eyre!("the desktop closed Opcode's shortcuts portal session"));
                     }
                 };
                 dispatcher.input(input);
@@ -1309,7 +1309,7 @@ impl Backend {
         {
             tracing::warn!(
                 error = format!("{error:#}"),
-                "could not clear Hex's shortcuts from the desktop"
+                "could not clear Opcode's shortcuts from the desktop"
             );
         }
         Ok(())
@@ -1411,7 +1411,7 @@ mod tests {
         assert_eq!(test.events, [RAW, Finish, START, Finish, RAW, Finish]);
     }
 
-    /// #786: only the shortcuts Hex asked for show; a key the desktop still
+    /// #786: only the shortcuts Opcode asked for show; a key the desktop still
     /// keeps for the removed Cancel dictation stays out.
     #[test]
     fn only_requested_shortcuts_are_shown() {
@@ -1779,8 +1779,8 @@ mod tests {
         assert_eq!(granted_trigger(&granted, &ids, Shortcut::PasteLast), None);
     }
 
-    /// #1376: Hyprland binds Hex's shortcuts by name in its config and
-    /// ignores the trigger, so a key recorded in Hex keeps the same name.
+    /// #1376: Hyprland binds Opcode's shortcuts by name in its config and
+    /// ignores the trigger, so a key recorded in Opcode keeps the same name.
     #[test]
     fn a_desktop_that_assigns_keys_keeps_one_shortcut_id() {
         let id = |shortcut: Shortcut, trigger: &str| {
@@ -2183,7 +2183,7 @@ mod tests {
         assert_eq!(test.events, [START, Cancel, START, Cancel, START, Finish]);
     }
 
-    /// Hold mode has no cancel: the key is never Hex's, even while a
+    /// Hold mode has no cancel: the key is never Opcode's, even while a
     /// recording runs, and a press of it ends nothing.
     #[test]
     fn cancel_is_ignored_in_hold_mode() {
@@ -2205,7 +2205,7 @@ mod tests {
         assert!(test.events.iter().all(|event| *event != Cancel));
     }
 
-    /// While nothing records, Hex doesn't take the cancel key, so it stays
+    /// While nothing records, Opcode doesn't take the cancel key, so it stays
     /// with the app in front.
     #[test]
     fn cancel_is_not_taken_while_idle() {
@@ -2667,7 +2667,7 @@ mod tests {
     }
 
     #[test]
-    fn an_idle_monitor_wakes_at_once_for_a_hex_command() {
+    fn an_idle_monitor_wakes_at_once_for_a_opcode_command() {
         let (sender, events) = mpsc::sync_channel(4);
         let (commands, receiver) = mpsc::sync_channel(4);
         let mut dispatcher = Dispatcher::new(

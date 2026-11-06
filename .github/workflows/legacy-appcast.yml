@@ -1,9 +1,9 @@
 name: Legacy appcast
 
-# Replaces the frozen 2.3.1 appcast (https://anoma.ly/hex/files/appcast.xml,
+# Replaces the frozen 2.3.1 appcast (https://anoma.ly/opcode/files/appcast.xml,
 # which Kit-era Macs read through Kit's redirect) with
 # packaging/macos/legacy-appcast.xml: one informational item, with no
-# enclosure, that points those installs at https://anoma.ly/hex. Run it when
+# enclosure, that points those installs at https://anoma.ly/opcode. Run it when
 # that item changes (docs/releasing.md, "Old clients").
 # The job holds the R2 key, so it checks out only .github/release/ and the
 # appcast, which it treats as data, and uploads with .github/release/r2-put.sh.
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     environment: release
     env:
-      HEX_RELEASE_BUCKET: hex-production-files
+      OPCODE_RELEASE_BUCKET: opcode-production-files
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -32,8 +32,8 @@ jobs:
           appcast=packaging/macos/legacy-appcast.xml
           python3 -c 'import sys, xml.dom.minidom; xml.dom.minidom.parse(sys.argv[1])' "$appcast"
           grep -Fq '<sparkle:informationalUpdate' "$appcast"
-          grep -Fq 'https://anoma.ly/hex' "$appcast"
-          curl -fsS https://anoma.ly/hex/files/appcast.xml -o live.xml
+          grep -Fq 'https://anoma.ly/opcode' "$appcast"
+          curl -fsS https://anoma.ly/opcode/files/appcast.xml -o live.xml
           { echo '### Live → new appcast'; echo '```diff'; diff -u live.xml "$appcast" || true; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload it
         env:
@@ -41,5 +41,5 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: |
           sh .github/release/r2-put.sh appcast.xml packaging/macos/legacy-appcast.xml application/xml no-cache
-          curl -fsS -H 'Cache-Control: no-cache' "https://anoma.ly/hex/files/appcast.xml?check=$(date +%s)" \
+          curl -fsS -H 'Cache-Control: no-cache' "https://anoma.ly/opcode/files/appcast.xml?check=$(date +%s)" \
             | cmp - packaging/macos/legacy-appcast.xml

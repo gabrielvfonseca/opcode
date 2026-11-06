@@ -21,8 +21,8 @@ pub mod handoff;
 #[cfg_attr(target_os = "windows", path = "win/helper.rs")]
 #[cfg_attr(target_os = "linux", path = "linux/helper.rs")]
 pub mod helper;
-#[cfg(feature = "hex-client")]
-pub mod hex;
+#[cfg(feature = "opcode-client")]
+pub mod opcode;
 pub mod hosted_input;
 pub mod ingest_http;
 pub mod keyframes;

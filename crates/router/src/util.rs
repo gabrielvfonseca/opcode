@@ -31,7 +31,7 @@ pub fn percent_decode(raw: &str) -> String {
             && i + 2 < bytes.len()
             && let Some(byte) = std::str::from_utf8(&bytes[i + 1..i + 3])
                 .ok()
-                .and_then(|hex| u8::from_str_radix(hex, 16).ok())
+                .and_then(|opcode| u8::from_str_radix(opcode, 16).ok())
         {
             out.push(byte);
             i += 3;

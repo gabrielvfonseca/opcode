@@ -6,13 +6,13 @@ such. **Update 2026-10-28:** a vocabulary boost is now implemented as
 post-decode rescoring rather than a decode-loop bonus; see
 [`vocabulary-boost-results.md`](vocabulary-boost-results.md).
 
-**Question (Kit):** People want voice replacements and vocabulary, and Hex's
+**Question (Kit):** People want voice replacements and vocabulary, and Opcode's
 default model, Parakeet, has no hints. Can we build something ourselves,
 including training or modifying the model?
 
 **Short answer:** Yes, and most of it is cheaper than training.
 
-- The model is not the obstacle. Hex's Parakeet decode loop runs on the host
+- The model is not the obstacle. Opcode's Parakeet decode loop runs on the host
   CPU, one token at a time, over a plain logits array (see
   [Why Parakeet can be biased at all](#why-parakeet-can-be-biased-at-all)).
   Adding a vocabulary boost is a small change to that loop. It is not a model
@@ -24,21 +24,21 @@ including training or modifying the model?
 
 ## 1. What users ask for
 
-### Hex's own issues
+### Opcode's own issues
 
 Both repos were read in full through the issue list on 2026-10-22.
-`kitlangton/Hex` is the legacy Swift app; `anomalyco/hex` is this repo.
+`kitlangton/Opcode` is the legacy Swift app; `anomalyco/opcode` is this repo.
 
 | Issue | Ask | Notes |
 |---|---|---|
-| kitlangton/Hex #154 (Jan 2026) | "Custom Dictionary or Default Dictionary" | Parakeet turns `Context7 MCP` into `Contact7 MCP`, and `Oxfmt`/`Oxlint` into other words. The reporter keeps hand-written replacements and says they work "8/10 times". They also point at Aqua's Avalon model as the thing that fixes this properly. |
-| kitlangton/Hex #118 (Nov 2025) | "Add dictionaries for transcription" | Closed as "already exists" (Word Remappings). The answer given was that Parakeet "doesn't support custom dictionaries at the transcription level". |
-| kitlangton/Hex #160 | Bulk import/export of remappings (CSV) | Workaround is hand-editing `hex_settings.json`. |
-| kitlangton/Hex #187 (Mar 2026) | Screen-aware context: OCR or Accessibility text fed to the recognizer | Same problem class as #154. The reporter notes Parakeet has no prompt API, so this only helps Whisper. They claim Wispr Flow works this way. |
-| anomalyco/hex #129 (Oct 2026) | Recognition hints for Qwen3-ASR | The reporter dictates English and French with many product names, and the names come out wrong. They found that transcribe-cpp 0.4.0 added generic `vocabulary` and `prompt` run options, and that Qwen3-ASR supports them. They have a working patch outline. A second user (China, English loanwords like "issue" and "token") asked for the same. |
-| anomalyco/hex #177, #139 | Replacement matching bugs | CJK text never matches, and an overlapping phrase is skipped. These bugs block replacements from being the main vocabulary tool. |
-| anomalyco/hex #97 | Filler-word removal | Wants regex-style matching, which the current Corrections can only approximate. |
-| anomalyco/hex #15 | Suggest vocabulary corrections from the user's explicit edits | Closed "not planned" on 2026-07-25. There is no suggestion code in `src/`. |
+| kitlangton/Opcode #154 (Jan 2026) | "Custom Dictionary or Default Dictionary" | Parakeet turns `Context7 MCP` into `Contact7 MCP`, and `Oxfmt`/`Oxlint` into other words. The reporter keeps hand-written replacements and says they work "8/10 times". They also point at Aqua's Avalon model as the thing that fixes this properly. |
+| kitlangton/Opcode #118 (Nov 2025) | "Add dictionaries for transcription" | Closed as "already exists" (Word Remappings). The answer given was that Parakeet "doesn't support custom dictionaries at the transcription level". |
+| kitlangton/Opcode #160 | Bulk import/export of remappings (CSV) | Workaround is hand-editing `opcode_settings.json`. |
+| kitlangton/Opcode #187 (Mar 2026) | Screen-aware context: OCR or Accessibility text fed to the recognizer | Same problem class as #154. The reporter notes Parakeet has no prompt API, so this only helps Whisper. They claim Wispr Flow works this way. |
+| anomalyco/opcode #129 (Oct 2026) | Recognition hints for Qwen3-ASR | The reporter dictates English and French with many product names, and the names come out wrong. They found that transcribe-cpp 0.4.0 added generic `vocabulary` and `prompt` run options, and that Qwen3-ASR supports them. They have a working patch outline. A second user (China, English loanwords like "issue" and "token") asked for the same. |
+| anomalyco/opcode #177, #139 | Replacement matching bugs | CJK text never matches, and an overlapping phrase is skipped. These bugs block replacements from being the main vocabulary tool. |
+| anomalyco/opcode #97 | Filler-word removal | Wants regex-style matching, which the current Corrections can only approximate. |
+| anomalyco/opcode #15 | Suggest vocabulary corrections from the user's explicit edits | Closed "not planned" on 2026-07-25. There is no suggestion code in `src/`. |
 
 Nothing I found asks for training. Every request is "make my words come out
 right", and the reporters assume a list of terms.
@@ -56,10 +56,10 @@ All claims below are from each product's own docs unless noted.
 | Aqua Voice | Custom dictionary, plus its own model | Its Avalon model was trained on data for how people talk to AI tools. Its blog reports 97.4% key-term accuracy on its own AISpeak-10 benchmark, against 51.5% for Canary 1B and 65.1% for Whisper Large v3. That is a vendor-run benchmark. The blog says outright that models like Parakeet "make very silly and obvious mistakes in real-world testing". |
 | TypeWhisper (Mac) | Terms plus corrections | Terms can be passed to engines that accept them. For Parakeet it offers an opt-in "vocabulary boosting" that "rescores" Parakeet's first result against dictionary terms on device, with Precise/Balanced/Strong similarity thresholds. It also learns corrections from edits, shows "Saved to Dictionary: wrong -> right" with Undo, and skips sentence rewrites, deletions and ambiguous edits. |
 | MacParakeet, FluidAudio, Chirp | Open-source Parakeet apps and libraries | Three different mechanisms: CTC rescoring (FluidAudio and MacParakeet), beam search with hotwords (Chirp via sherpa-onnx), and plain regex fixups (stefanlindqvist/parakeet-dictation). |
-| Apple | `AnalysisContext.contextualStrings`, about 100 short phrases | Documented for `DictationTranscriber` only. Posts I found say `SpeechTranscriber`, which Hex's `apple_speech` adapter uses, has no equivalent. I did not confirm that in Apple's docs. `SFCustomLanguageModelData` allows custom pronunciations. |
+| Apple | `AnalysisContext.contextualStrings`, about 100 short phrases | Documented for `DictationTranscriber` only. Posts I found say `SpeechTranscriber`, which Opcode's `apple_speech` adapter uses, has no equivalent. I did not confirm that in Apple's docs. `SFCustomLanguageModelData` allows custom pronunciations. |
 | Willow | Not found | Aqua's comparison page says Willow does not disclose its model. |
 
-I found no Reddit or X threads that were specifically about Hex and vocabulary.
+I found no Reddit or X threads that were specifically about Opcode and vocabulary.
 The search tools I had returned almost none. The user signal above comes from
 the issue trackers.
 
@@ -77,7 +77,7 @@ the issue trackers.
 
 ### Why Parakeet can be biased at all
 
-I read the pinned `transcribe-cpp-sys` 0.2.4 source (Hex's version) and the
+I read the pinned `transcribe-cpp-sys` 0.2.4 source (Opcode's version) and the
 upstream repo head (`handy-computer/transcribe.cpp`, 2026-10-22, release
 0.4.1).
 
@@ -92,7 +92,7 @@ upstream repo head (`handy-computer/transcribe.cpp`, 2026-10-22, release
 - So adding a bias to selected token logits before the argmax is a few lines
   in a loop that already exists. A per-token confidence is already computed
   (`token_confidence`, entropy-based), and the public API returns it as
-  `Token::p`, along with word and token timestamps. Hex already calls
+  `Token::p`, along with word and token timestamps. Opcode already calls
   `transcribe_segments` and reads `transcript.words`; it does not read
   `tokens` or `p` today.
 - Upstream's `docs/prompting.md` defines generic `vocabulary` and `prompt`
@@ -129,8 +129,8 @@ hints). It feeds:
    #139 and #177 fixes first.
 
 Limits: an LLM can over-correct and add latency, and hints can induce Whisper
-hallucination. Hex already has reports of Whisper inventing text on silence
-(anomalyco/hex #193 and #108, kitlangton/Hex #206). Superwhisper's own docs say the same
+hallucination. Opcode already has reports of Whisper inventing text on silence
+(anomalyco/opcode #193 and #108, kitlangton/Opcode #206). Superwhisper's own docs say the same
 about long vocabularies. Keep hint lists short and cap them.
 
 #### B. Confidence-gated phonetic snap (about 1 to 2 weeks)
@@ -139,11 +139,11 @@ A pure-Rust pass after recognition. For each 1-3 word span of the transcript,
 compare it to each vocabulary term phonetically (a grapheme-to-phoneme
 edit-distance or a Double Metaphone key, with a letter-similarity check as a
 second signal). Replace when the match is close and the span is not a
-high-confidence common word, using `Token::p` and the word timestamps Hex
+high-confidence common word, using `Token::p` and the word timestamps Opcode
 already has.
 
 - It runs on every model, and it needs no model change.
-- "Hex" and "Hanks" are close in sound (`hɛks` and `hæŋks`), and so are
+- "Opcode" and "Hanks" are close in sound (`hɛks` and `hæŋks`), and so are
   "Cappuccino" and "Capuchin". The weak spot is the second case: Parakeet is likely
   to be **confident** about "Capuchin", since it is a common word. A confidence
   gate would then skip the exact miss Kit reported. I have not measured this.
@@ -166,7 +166,7 @@ items)". sherpa-onnx implements the same thing as an Aho-Corasick automaton over
 tokenized hotwords, boosting every matched prefix token and cancelling the boost
 if the path fails to complete.
 
-For Hex:
+For Opcode:
 
 1. Implement SentencePiece encoding for Parakeet. Parakeet emits cased text, and
    NeMo's docs say key phrases must be capitalized in advance, so use several
@@ -178,7 +178,7 @@ For Hex:
    boosted token is within some margin of the best token, and cap the total
    boost per term.
 4. Expose it as the unfilled `vocabulary` run option for Parakeet, and send
-   upstream, or carry a fork. Hex pins `transcribe-cpp =0.2.4`, and upstream is
+   upstream, or carry a fork. Opcode pins `transcribe-cpp =0.2.4`, and upstream is
    at 0.4.1.
 
 Unknowns I would settle with the spike before committing:
@@ -198,19 +198,19 @@ Unknowns I would settle with the spike before committing:
 
 #### D. Learn terms from the user's explicit edits (about 2 weeks, depends on A or B)
 
-Wispr and TypeWhisper both do this, and anomalyco/hex #15 specified a careful
-version (repeated, bounded evidence tied to Hex output; confirmation; no
+Wispr and TypeWhisper both do this, and anomalyco/opcode #15 specified a careful
+version (repeated, bounded evidence tied to Opcode output; confirmation; no
 keylogging). It was closed "not planned", so this is a product decision to
 reopen. The input is the raw text, the final text, and a user edit after paste.
-Hex's History stores raw and final text but not the user's edit. The Accessibility
+Opcode's History stores raw and final text but not the user's edit. The Accessibility
 adapter can read the focused field, but that is a privacy-sensitive surface and
 needs the same limits as #15. The output is a vocabulary term plus a "heard as"
 alias.
 
 Cheaper first step with no new surface: let the user add a miss from History
-("Hex was heard as Hanks"), one click, which creates a term plus alias.
+("Opcode was heard as Hanks"), one click, which creates a term plus alias.
 
-#### E. CTC word spotting and rescoring (validated by others, bigger lift for Hex)
+#### E. CTC word spotting and rescoring (validated by others, bigger lift for Opcode)
 
 This is NVIDIA's CTC-WS (arXiv 2406.07096) as shipped by FluidAudio. A separate
 CTC model scores the audio against a context graph, and its detections replace
@@ -228,11 +228,11 @@ terms, FluidAudio 0.15.4):
 
 The same note found throughput dropping from 103 RTFx to 31 RTFx, and found the
 Unified model unsupported: the CTC sidecar detected terms, but the library had
-no hook to apply them, so recall stayed at 13/50. Two points matter for Hex:
+no hook to apply them, so recall stayed at 13/50. Two points matter for Opcode:
 the gate threshold decides everything (false replacements hit WER hard), and
-Hex's default model is Unified.
+Opcode's default model is Unified.
 
-What it would need in Hex: a CTC log-prob API from transcribe.cpp, which does
+What it would need in Opcode: a CTC log-prob API from transcribe.cpp, which does
 not exist (the public header exposes token `p` only); a second encoder pass
 through a CTC model; and the DP and rescoring code. It is more work than C for a
 similar result. Treat it as the fallback if the decoder spike disappoints.
@@ -242,7 +242,7 @@ similar result. Treat it as the fallback if the decoder spike disappoints.
 Already covered under A.2. Apple's FoundationModels is a possible local
 alternative to OpenCode. The Show HN post for `sayline.app` reports the Apple
 model's content filter "blocked nearly every useful request" in a
-dictation-rewrite setting (anecdotal, one author). anomalyco/hex #167 already
+dictation-rewrite setting (anecdotal, one author). anomalyco/opcode #167 already
 tracks Foundation Model support for Voice Action.
 
 #### G. Personalization and training (not recommended per user)
@@ -253,15 +253,15 @@ tracks Foundation Model support for Voice Action.
   useful to adapt the LM on an in-domain text corpus". One user's retained
   dictation is minutes to a few hours, mostly their normal speech. That risks
   forgetting and gives little signal for the dozen terms that matter.
-- **Edits as training pairs.** Hex's history stores raw and final text pairs and
-  can keep WAVs only under `HEX_RETAIN_DICTATION_AUDIO` (explicit, bounded,
+- **Edits as training pairs.** Opcode's history stores raw and final text pairs and
+  can keep WAVs only under `OPCODE_RETAIN_DICTATION_AUDIO` (explicit, bounded,
   owner-only). The pairs are useful to mine for terms and aliases (D), and as a
   private eval set. They are too few and too noisy to train on.
 - **Text-only adaptation exists.** NeMo has a hybrid ASR-TTS model that
   fine-tunes an ASR model on text alone by routing text through a frozen
   FastPitch text-to-mel generator, which lets you mix text-only data with audio.
   It supports CTC and RNN-T BPE models. Synthetic speech for rare terms is the
-  other route, and Hex's dictation-corpus branch already generates synthetic
+  other route, and Opcode's dictation-corpus branch already generates synthetic
   clips with macOS `say` and ElevenLabs.
 - **No Mac path, no adapter path.** NeMo is a PyTorch and CUDA toolkit, and I
   found no Mac-supported training recipe (not verified). transcribe.cpp has no
@@ -282,9 +282,9 @@ tracks Foundation Model support for Voice Action.
 
 ### Build first (about 2 to 3 weeks total)
 
-1. **One vocabulary list per Hex, with import/export.** Terms, optional "heard
+1. **One vocabulary list per Opcode, with import/export.** Terms, optional "heard
    as" aliases, optional per-mode scope. Fix #139 and #177. Add CSV or text
-   bulk import (kitlangton/Hex #160). One-click "add from History".
+   bulk import (kitlangton/Opcode #160). One-click "add from History".
 2. **Feed it to what exists:** Whisper hints (cap the list), the OpenCode
    rewrite prompt for modes that have rewriting on, and deterministic
    replacements for aliases. Bump transcribe-cpp to 0.4.x for Qwen3-ASR hints
@@ -314,18 +314,18 @@ candidate word, and it needs no second model.
   no Mac path, and no adapter format in transcribe.cpp.
 - Hot-swapping the default to a different Parakeet variant just for vocabulary.
   Variants differ in speed and accuracy, and none has a CTC head in the GGUF.
-- Screen OCR for context (kitlangton/Hex #187) as a first step. Permission cost
+- Screen OCR for context (kitlangton/Opcode #187) as a first step. Permission cost
   is high, and Parakeet cannot take a prompt anyway. Revisit when a boosting
   list exists, since on-screen terms are just a dynamic vocabulary.
-- Blind replacements for real words. "Hanks to Hex" and "Capuchin to Cappuccino"
+- Blind replacements for real words. "Hanks to Opcode" and "Capuchin to Cappuccino"
   corrupt legitimate uses. Keep them behind a mode, a context, or an alias that
   only exists after a confident phonetic match.
 
 ## 4. How to measure
 
-Hex already has most of the pieces:
+Opcode already has most of the pieces:
 
-- `hex benchmark-transcription <manifest.json>` runs a corpus of
+- `opcode benchmark-transcription <manifest.json>` runs a corpus of
   `{id, audio, expected}` clips through the production `transcribe.cpp` path
   and reports WER and RTF. It is documented in
   `docs/research/transcription-benchmark.md`.
@@ -338,7 +338,7 @@ Add:
 
 1. **A term corpus.** Text only to start: about 100 sentences, each containing
    one or more target terms (OpenCode, Rune, Scrawl, Effect, Anomaly,
-   Cappuccino, Hex, plus real names). Render with several `say` voices, at least
+   Cappuccino, Opcode, plus real names). Render with several `say` voices, at least
    one ElevenLabs voice, and a handful of Kit's own recordings, including the
    meeting clips where "Hanks" and "Capuchin" occurred. Real clips matter more
    than synthetic ones: MacParakeet's note itself says synthetic `say` audio is
@@ -360,14 +360,14 @@ option to `benchmark-transcription` so every approach runs through one harness.
 
 ## Sources
 
-- Hex: `src/parakeet.rs` (hints are Whisper-only), `src/transcription_models.rs`
+- Opcode: `src/parakeet.rs` (hints are Whisper-only), `src/transcription_models.rs`
   (`supports_recognition_hints`), `src/dictation/text_replacements.rs`,
   `src/dictation_processor.rs`, `src/history.rs`, and the issues above.
 - transcribe.cpp:
   `handy-computer/transcribe.cpp` at `4d7c1cc` (`docs/prompting.md`,
   `include/transcribe.h`, `src/arch/parakeet/decoder.cpp`, `decoder.h`,
   `docs/models/parakeet-tdt_ctc-110m.md`), and `transcribe-cpp-sys` 0.2.4 as
-  vendored by Hex.
+  vendored by Opcode.
 - NVIDIA NeMo: Word Boosting
   (`docs.nvidia.com/nemo-framework/.../asr_customization/word_boosting.html`);
   GPU-PB, arXiv 2508.07014; CTC-WS, arXiv 2406.07096; the NIM customization

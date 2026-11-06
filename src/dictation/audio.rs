@@ -47,7 +47,7 @@ impl Drop for RecognitionAudio {
     }
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 use crate::capture_host::{CaptureAudio, CaptureSink, CaptureSinkClosed};
 
 pub enum DictationAudioEvent {
@@ -140,13 +140,13 @@ enum Command {
     InvalidateRecognition {
         reply: SyncSender<u64>,
     },
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     OpenCaptureSink {
         sink: SyncSender<CaptureAudio>,
         since: CaptureInstant,
         reply: SyncSender<()>,
     },
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     CloseCaptureSink {
         through: CaptureInstant,
         reply: SyncSender<Option<CaptureSinkClosed>>,
@@ -178,7 +178,7 @@ struct Owner {
     discontinuity_at: Option<Instant>,
     /// The `capture` experiment's sink. While set, the microphone stays open
     /// even with release-while-idle and switches only once it closes.
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     capture_sink: Option<CaptureSink>,
 }
 
@@ -328,7 +328,7 @@ impl DictationAudio {
     }
 
     /// Counts the active capture as intentional now, without a hold: a
-    /// `hex dictation start` has no shortcut press to judge. True when the
+    /// `opcode dictation start` has no shortcut press to judge. True when the
     /// open capture just became intentional; a capture still waiting for the
     /// microphone becomes intentional when it opens and reports
     /// `ReadyIntentional`.
@@ -350,7 +350,7 @@ impl DictationAudio {
         self.call(|reply| Command::Cancel { reply })
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     /// Copies the timeline's audio from `since` into `sink`, replacing any
     /// sink already open. The sink is bounded: audio it has no room for is
     /// dropped and reported as a gap, never waited on.
@@ -362,7 +362,7 @@ impl DictationAudio {
         self.call(|reply| Command::OpenCaptureSink { sink, since, reply })
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     /// Closes the sink once audio through `through` arrived (bounded wait),
     /// dropping its sender. `None` when no sink was open.
     pub fn close_capture_sink(&self, through: CaptureInstant) -> Result<Option<CaptureSinkClosed>> {
@@ -537,7 +537,7 @@ impl Owner {
             keep_on_loss: false,
             stream_opened_at,
             discontinuity_at: None,
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             capture_sink: None,
         };
         let audio = DictationAudio {
@@ -681,7 +681,7 @@ impl Owner {
             Command::InvalidateRecognition { reply } => {
                 let _ = reply.send(self.next_recognition_generation());
             }
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Command::OpenCaptureSink { sink, since, reply } => {
                 self.capture_sink = Some(CaptureSink::new(sink, since));
                 if !self.input.is_active() {
@@ -689,7 +689,7 @@ impl Owner {
                 }
                 let _ = reply.send(());
             }
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Command::CloseCaptureSink { through, reply } => {
                 if self.capture_sink.is_some() && self.input.is_open() {
                     self.drain_through(through);
@@ -792,9 +792,9 @@ impl Owner {
     }
 
     fn capture_sink_open(&self) -> bool {
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         return self.capture_sink.is_some();
-        #[cfg(not(hex_capture))]
+        #[cfg(not(opcode_capture))]
         false
     }
 
@@ -863,7 +863,7 @@ impl Owner {
                     self.capture.begin_stream(engine);
                 }
                 self.capture.report_live_text();
-                #[cfg(hex_capture)]
+                #[cfg(opcode_capture)]
                 {
                     let sample_rate = self.sample_rate();
                     if let Some(sink) = &mut self.capture_sink
@@ -1830,7 +1830,7 @@ mod tests {
 
     #[test]
     fn startup_microphone_failure_keeps_audio_owner_alive() {
-        let device = "Hex nonexistent microphone for startup recovery test";
+        let device = "Opcode nonexistent microphone for startup recovery test";
         let input = DictationAudio::with_input(
             RecoveringAudioInput::failed_for_test(device),
             device.into(),
@@ -2238,7 +2238,7 @@ mod tests {
         );
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     fn chunk_at(owner: &mut Owner, through: CaptureInstant) {
         owner.handle_input(RecoveringAudioInputEvent::Chunk {
             samples: vec![0.25; 480],
@@ -2246,7 +2246,7 @@ mod tests {
         });
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     fn open_sink(
         owner: &mut Owner,
         capacity: usize,
@@ -2263,7 +2263,7 @@ mod tests {
 
     /// Drains the events; a hold reports readiness and nothing reads
     /// recognition here, but dictation must see no failure or gap.
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     fn assert_no_capture_failure(input: &DictationAudio) {
         while let Some(event) = input.try_recv_event() {
             assert!(
@@ -2278,7 +2278,7 @@ mod tests {
         }
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     fn sample_frames(
         audio: &Receiver<CaptureAudio>,
     ) -> (usize, Vec<(CaptureInstant, CaptureInstant)>) {
@@ -2300,7 +2300,7 @@ mod tests {
         (frames, gaps)
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     #[test]
     fn capture_sink_keeps_every_frame_through_timestamp_jitter() {
         let since = capture_time();
@@ -2326,7 +2326,7 @@ mod tests {
         assert_eq!(closed.accounted_through, since + Duration::from_millis(40));
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     #[test]
     fn capture_sink_shares_the_timeline_with_dictation() {
         let (mut owner, input, _samples) = owner_for_test(true);
@@ -2383,7 +2383,7 @@ mod tests {
         );
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     #[test]
     fn a_full_capture_sink_drops_audio_as_a_gap_and_never_stalls_dictation() {
         let (mut owner, input, _samples) = owner_for_test(true);
@@ -2439,7 +2439,7 @@ mod tests {
         assert_no_capture_failure(&input);
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     #[test]
     fn capture_sink_records_microphone_gaps() {
         let (mut owner, _input, _samples) = owner_for_test(true);
@@ -2460,7 +2460,7 @@ mod tests {
         );
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     #[test]
     fn capture_sink_holds_a_released_microphone_open_until_it_closes() {
         let (mut owner, _input, _samples) = owner_for_test(true);
@@ -2489,7 +2489,7 @@ mod tests {
         assert!(!owner.input.is_active(), "released once the capture ends");
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     #[test]
     fn a_dropped_capture_receiver_closes_the_sink() {
         let (mut owner, _input, _samples) = owner_for_test(true);

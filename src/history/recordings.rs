@@ -170,7 +170,7 @@ mod tests {
     #[test]
     fn transcribe_again_returns_once_the_run_ends() {
         let directory = std::env::temp_dir().join(format!(
-            "hex-retranscribe-{}-{}",
+            "opcode-retranscribe-{}-{}",
             std::process::id(),
             crate::history::now_ms()
         ));

@@ -2,10 +2,10 @@
 //! playground stories (only with Labs; the shipping
 //! tour in [`onboarding`](super::onboarding) doesn't use them yet).
 //!
-//! - [`gpu_stage`] & [`hud_stage`]: flat Rune UI + Hex's real `Dot scope`
+//! - [`gpu_stage`] & [`hud_stage`]: flat Rune UI + Opcode's real `Dot scope`
 //!   phosphor dot-matrix HUD (`IndicatorModel` + `rune_hud::Painter` on
 //!   `rune_hud.wgsl`).
-//! - [`hex_meter`], [`pill`]: the thin single-hexagon progress ring (`t573`
+//! - [`opcode_meter`], [`pill`]: the thin single-hexagon progress ring (`t573`
 //!   Hairline), subtle Ready outline glow, download pill, and language capsule.
 //! - [`cards`]: example macOS notifications to answer, drawn on theme tokens.
 //! - [`field_text`]: a reply laid out by hand, for a caret mid-line and
@@ -15,12 +15,12 @@
 //! - [`keyboard`]: 14.5u constant-pitch 2D Apple Magic Keyboard with slow
 //!   arrival and smooth transitions, and [`typing`], the CEO typo script.
 //! - [`permissions`]: calm permission grants and the escaping Accessibility
-//!   helper panel that detaches from Hex's card and parks under System Settings.
+//!   helper panel that detaches from Opcode's card and parks under System Settings.
 //! - [`sfx`]: four auditionable typing sound candidates (`Taptic tick`,
 //!   `Muted felt`, `Soft warm`, `Silent typing`), shortcut keycap clicks,
-//!   motion cues, and Hex's `#292` `feedback` tones.
+//!   motion cues, and Opcode's `#292` `feedback` tones.
 //! - [`mic`] & [`mic_line`]: microphone level bars and selector capsule.
-//! - [`landing`]: shared typography, zero-bounce transitions, and `"Hex is ready"`.
+//! - [`landing`]: shared typography, zero-bounce transitions, and `"Opcode is ready"`.
 
 mod cards;
 mod dictated;
@@ -32,7 +32,7 @@ mod flows;
 mod game;
 pub(crate) mod game_fx;
 pub(crate) mod gpu_stage;
-mod hex_meter;
+mod opcode_meter;
 mod hud_stage;
 mod keyboard;
 mod landing;

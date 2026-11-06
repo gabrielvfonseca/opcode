@@ -1,8 +1,8 @@
-//! Whether macOS's own screenshot shortcuts would take Hex's.
+//! Whether macOS's own screenshot shortcuts would take Opcode's.
 //!
 //! macOS matches its symbolic hot keys (Keyboard › Keyboard Shortcuts ›
 //! Screenshots) in the WindowServer, before any session tap sees the key,
-//! so while one of them is on with Hex's chord, the system screenshot wins.
+//! so while one of them is on with Opcode's chord, the system screenshot wins.
 //! They live in `com.apple.symbolichotkeys`'s `AppleSymbolicHotKeys`, one
 //! entry per ID; an ID with no entry is on with its default chord.
 

@@ -1,8 +1,8 @@
 // `node:child_process` for scripts: Node's `execFile` and `exec`, with
-// their callbacks, errors, and `util.promisify` forms. Hex adds one option,
-// `input`, written to the program's stdin. `hex.d.ts` types the subset.
+// their callbacks, errors, and `util.promisify` forms. Opcode adds one option,
+// `input`, written to the program's stdin. `opcode.d.ts` types the subset.
 
-import io from "hex:io"
+import io from "opcode:io"
 
 const CUSTOM = Symbol.for("nodejs.util.promisify.custom")
 

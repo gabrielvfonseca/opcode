@@ -1,7 +1,7 @@
-name: HEXMobile
+name: OPCODEMobile
 options:
   minimumXcodeGenVersion: 2.46.0
-  bundleIdPrefix: com.kitlangton.hex
+  bundleIdPrefix: com.kitlangton.opcode
   deploymentTarget:
     iOS: "18.0"
   xcodeVersion: "2660"
@@ -14,35 +14,35 @@ settings:
     DEVELOPMENT_TEAM: QC99C9JE59
     SWIFT_VERSION: 6.0
 targets:
-  HEXMobile:
+  OPCODEMobile:
     type: application
     platform: iOS
     sources:
-      - HEXMobile
-      - HEXShared
-      - HEXActivity
+      - OPCODEMobile
+      - OPCODEShared
+      - OPCODEActivity
       - path: ../app/AppIcon.icon
         buildPhase: resources
     dependencies:
       - package: FluidAudio
-      - target: HEXKeyboard
+      - target: OPCODEKeyboard
         embed: true
-      - target: HEXWidgets
+      - target: OPCODEWidgets
         embed: true
     info:
-      path: HEXMobile/Info.plist
+      path: OPCODEMobile/Info.plist
       properties:
-        CFBundleDisplayName: Hex
+        CFBundleDisplayName: Opcode
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CADisableMinimumFrameDurationOnPhone: true
         CFBundleURLTypes:
           - CFBundleTypeRole: Editor
-            CFBundleURLName: com.kitlangton.hex.mobile.keyboard-session
+            CFBundleURLName: com.kitlangton.opcode.mobile.keyboard-session
             CFBundleURLSchemes:
-              - hex-dictation
-        NSMicrophoneUsageDescription: Hex records only while you dictate and transcribes locally on this iPhone.
-        NSSpeechRecognitionUsageDescription: Hex uses Apple's on-device SpeechTranscriber to turn your recording into text.
+              - opcode-dictation
+        NSMicrophoneUsageDescription: Opcode records only while you dictate and transcribes locally on this iPhone.
+        NSSpeechRecognitionUsageDescription: Opcode uses Apple's on-device SpeechTranscriber to turn your recording into text.
         NSSupportsLiveActivities: true
         ITSAppUsesNonExemptEncryption: false
         UIBackgroundModes:
@@ -63,26 +63,26 @@ targets:
         ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME: AccentColor
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
-        CODE_SIGN_ENTITLEMENTS: HEXMobile/HEXMobile.entitlements
+        CODE_SIGN_ENTITLEMENTS: OPCODEMobile/OPCODEMobile.entitlements
         CURRENT_PROJECT_VERSION: 1
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: 0.2.0
-        PRODUCT_BUNDLE_IDENTIFIER: com.kitlangton.hex.mobile
-        PRODUCT_NAME: HEX
+        PRODUCT_BUNDLE_IDENTIFIER: com.kitlangton.opcode.mobile
+        PRODUCT_NAME: OPCODE
     scheme:
       gatherCoverageData: false
       testTargets:
-        - HEXMobileTests
-  HEXKeyboard:
+        - OPCODEMobileTests
+  OPCODEKeyboard:
     type: app-extension
     platform: iOS
     sources:
-      - HEXKeyboard
-      - HEXShared
+      - OPCODEKeyboard
+      - OPCODEShared
     info:
-      path: HEXKeyboard/Info.plist
+      path: OPCODEKeyboard/Info.plist
       properties:
-        CFBundleDisplayName: Hex Keyboard
+        CFBundleDisplayName: Opcode Keyboard
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
@@ -96,25 +96,25 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: YES
-        CODE_SIGN_ENTITLEMENTS: HEXKeyboard/HEXKeyboard.entitlements
+        CODE_SIGN_ENTITLEMENTS: OPCODEKeyboard/OPCODEKeyboard.entitlements
         CODE_SIGN_STYLE: Automatic
         CURRENT_PROJECT_VERSION: 1
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: 0.2.0
-        PRODUCT_BUNDLE_IDENTIFIER: com.kitlangton.hex.mobile.keyboard
-        PRODUCT_NAME: HEXKeyboard
+        PRODUCT_BUNDLE_IDENTIFIER: com.kitlangton.opcode.mobile.keyboard
+        PRODUCT_NAME: OPCODEKeyboard
         SKIP_INSTALL: YES
-  HEXWidgets:
+  OPCODEWidgets:
     type: app-extension
     platform: iOS
     sources:
-      - HEXWidgets
-      - HEXActivity
-      - HEXShared/HexTheme.swift
+      - OPCODEWidgets
+      - OPCODEActivity
+      - OPCODEShared/OpcodeTheme.swift
     info:
-      path: HEXWidgets/Info.plist
+      path: OPCODEWidgets/Info.plist
       properties:
-        CFBundleDisplayName: Hex
+        CFBundleDisplayName: Opcode
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
@@ -126,22 +126,22 @@ targets:
         CURRENT_PROJECT_VERSION: 1
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: 0.2.0
-        PRODUCT_BUNDLE_IDENTIFIER: com.kitlangton.hex.mobile.widgets
-        PRODUCT_NAME: HEXWidgets
+        PRODUCT_BUNDLE_IDENTIFIER: com.kitlangton.opcode.mobile.widgets
+        PRODUCT_NAME: OPCODEWidgets
         SKIP_INSTALL: YES
-  HEXMobileTests:
+  OPCODEMobileTests:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - HEXMobileTests
-      - path: ../tests/fixtures/vocabulary/audio/term-hex-1.wav
+      - OPCODEMobileTests
+      - path: ../tests/fixtures/vocabulary/audio/term-opcode-1.wav
         buildPhase: resources
     dependencies:
-      - target: HEXMobile
+      - target: OPCODEMobile
     settings:
       base:
         BUNDLE_LOADER: $(TEST_HOST)
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: com.kitlangton.hex.mobile.tests
-        TEST_HOST: $(BUILT_PRODUCTS_DIR)/HEX.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HEX
+        PRODUCT_BUNDLE_IDENTIFIER: com.kitlangton.opcode.mobile.tests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/OPCODE.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OPCODE

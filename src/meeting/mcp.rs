@@ -1,4 +1,4 @@
-//! `hex mcp`: a read-only MCP stdio server over recorded meetings. A thin
+//! `opcode mcp`: a read-only MCP stdio server over recorded meetings. A thin
 //! adapter; queries and output live in `meeting::query`.
 
 use std::path::PathBuf;
@@ -21,9 +21,9 @@ use serde::Deserialize;
 use crate::desktop::events::now_ms;
 use crate::meeting::query::{Library, ListQuery, OffsetRange, SearchQuery, TranscriptQuery};
 
-const RESOURCE_SCHEME: &str = "hex-meeting://";
+const RESOURCE_SCHEME: &str = "opcode-meeting://";
 
-const INSTRUCTIONS: &str = "Kit's locally recorded Hex meetings (calls captured on his Mac). \
+const INSTRUCTIONS: &str = "Kit's locally recorded Opcode meetings (calls captured on his Mac). \
 Speakers are `You` (Kit, his microphone) and `Them` (everyone else, system audio); individual \
 remote speakers are not separated. Transcripts come from local speech recognition and contain \
 misheard words, so search is stemmed and fuzzy by default. Typical flow: list_meetings or \
@@ -305,7 +305,7 @@ impl ServerHandler for MeetingServer {
                 .build(),
         )
         .with_server_info(
-            Implementation::new("hex-meetings", crate::VERSION).with_title("Hex Meetings"),
+            Implementation::new("opcode-meetings", crate::VERSION).with_title("Opcode Meetings"),
         )
         .with_instructions(INSTRUCTIONS)
     }

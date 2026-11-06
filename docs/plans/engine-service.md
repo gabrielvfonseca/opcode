@@ -1,4 +1,4 @@
-# Shared Transcription Engine Service (`hex engine`)
+# Shared Transcription Engine Service (`opcode engine`)
 
 **Status:** Measured spike on `engine-service`; plan ready.
 
@@ -10,7 +10,7 @@
 
 ## Sharing the Engine and the Models: the Guide
 
-There are two ways for Hex, Seer, Rune Desktop and OpenCode Desktop to share
+There are two ways for Opcode, Seer, Rune Desktop and OpenCode Desktop to share
 speech recognition. Either each app links the engine as a library, or one
 engine process serves them all.
 
@@ -26,25 +26,25 @@ library in every app                    one engine process
 The library route can't keep dictation first, because priority only exists
 inside one process. **One engine process is the right shape.** It's how macOS
 runs its own speech service and how Ollama serves local models. Each app links
-only a thin client (`@kitlangton/hex`, Seer's `hex-client`).
+only a thin client (`@kitlangton/opcode`, Seer's `opcode-client`).
 
 **Who owns what**
 
-- **Hex.app ships the engine.** The `hex engine` binary exists once, inside
-  `Hex.app`, signed and updated with it. Other apps don't bundle a copy: they
-  find Hex by its bundle id `anomaly.hex`, and without it they say "Install
-  Hex for transcription" (Seer already falls back like this). Bundling copies
+- **Opcode.app ships the engine.** The `opcode engine` binary exists once, inside
+  `Opcode.app`, signed and updated with it. Other apps don't bundle a copy: they
+  find Opcode by its bundle id `anomaly.opcode`, and without it they say "Install
+  Opcode for transcription" (Seer already falls back like this). Bundling copies
   in every app means four signatures, version handoffs and newest-wins rules;
   revisit only if a Seer-only install becomes a real need.
 - **The engine owns the models.** One folder,
-  `~/Library/Application Support/hex/models/`, checksum-pinned. Only the engine
+  `~/Library/Application Support/opcode/models/`, checksum-pinned. Only the engine
   downloads, verifies, loads or deletes models. Apps never open model files;
   they ask (`GET /models`, `POST /models/:id/prepare`) and send audio.
 - **Each app owns its microphone, permissions and UI.** The engine records
   nothing, so it never asks for a permission.
 
 **Which model runs:** the engine keeps one model loaded, the one the user
-picked in Hex. A request that names no model uses it. A request that names
+picked in Opcode. A request that names no model uses it. A request that names
 another model waits until the engine is idle, loads it beside the current one,
 then switches (the `ModelSwap` that Linux and Windows already use). Dictation
 always uses the user's pick.
@@ -58,14 +58,14 @@ asserts the engine isn't background, and `/health` reports it, so a regression
 shows up immediately.
 
 **Starting it:** the first app that needs the engine launches
-`Hex.app/Contents/MacOS/hex engine`. The engine takes `engine.lock`, so a
+`Opcode.app/Contents/MacOS/opcode engine`. The engine takes `engine.lock`, so a
 second launch exits, then writes `local-api.json`. Every app reads that file
-to find the port and token. Hex.app starts it at launch, so it's normally
+to find the port and token. Opcode.app starts it at launch, so it's normally
 already running. There's no login item and no "Background item added" notice.
 
 ## Measured Spike (Mac Studio M5 Max, 36 GiB, `parakeet-unified-en-0.6b-Q8_0.gguf`)
 
-Fixtures: `term-hex-3.wav` (**2.64 s**, 84.5 KB) and 5 concatenated vocabulary clips (**13.08 s**, 418.6 KB).
+Fixtures: `term-opcode-3.wav` (**2.64 s**, 84.5 KB) and 5 concatenated vocabulary clips (**13.08 s**, 418.6 KB).
 
 | Metric | Measured | Notes |
 | --- | --- | --- |
@@ -73,7 +73,7 @@ Fixtures: `term-hex-3.wav` (**2.64 s**, 84.5 KB) and 5 concatenated vocabulary c
 | Process memory with Parakeet 0.6B loaded & warm | **249.3–252.7 MiB** `phys_footprint` (**199.3–203.0 MiB** RSS) | 697 MiB of the 731 MB GGUF is clean read-only `mmap` wrapped via `MTLBuffer` (`bytesNoCopy`, **0 KiB** dirty); dirty footprint is **117.1 MiB** Metal driver/pipelines + **31.4 MiB** fused BN weights + **50 MiB** malloc cache |
 | In-process model unload (`*model = WarmTranscriber::default()`) | **0.84 ms**; drops to **213.3–222.4 MiB** `phys_footprint` (**153.7–167.3 MiB** RSS) | Unmaps the 697 MiB GGUF + frees 31 MiB BN buffers; `ggml-metal`'s process-global `g_device` (**117 MiB**) stays resident until process exit |
 | Cold load (first run of a new build, cold Metal shader cache) | **3,665–4,483 ms** (`3,322–3,453 ms` Metal init + `76–501 ms` prewarm + `267–528 ms` stream probe) | `MTLCompilerService` compiles `ggml-metal` kernels once into the Darwin user shader cache |
-| Cold process start (warm OS Metal shader cache) | **386.5–585.0 ms** (`178 ms` Metal load + `89 ms` offline prewarm + `317 ms` stream probe) | Fresh child `hex engine` from `fork/exec` to HTTP ready |
+| Cold process start (warm OS Metal shader cache) | **386.5–585.0 ms** (`178 ms` Metal load + `89 ms` offline prewarm + `317 ms` stream probe) | Fresh child `opcode engine` from `fork/exec` to HTTP ready |
 | Warm in-process reload (after idle unload) | **301–308 ms** total (**19–25 ms** `load_from` + **33–39 ms** offline prewarm + **247 ms** stream probe) | **52–64 ms** ready for offline inference; `ggml-metal` pipelines stay compiled in `g_device` |
 | `GET /health` over loopback HTTP | **122.3 µs** median (**145.0 µs** p95) | Was **12,522.5 µs (12.5 ms)** before replacing `thread::sleep(10ms)` with `libc::poll` in `LocalApi::serve` |
 | `POST /transcriptions` — 2.64 s WAV | **46.46 ms** in-proc vs **47.83 ms** HTTP (**+1.37 ms**) | Includes TCP connect, Bearer auth, WAV parse, JSON reply |
@@ -89,40 +89,40 @@ Fixtures: `term-hex-3.wav` (**2.64 s**, 84.5 KB) and 5 concatenated vocabulary c
 
 | Option | Pros | Cons |
 | --- | --- | --- |
-| **`SMAppService.agent(plistName:)`** in `Hex.app/Contents/Library/LaunchAgents/` | `launchd` supervises crashes (`KeepAlive.SuccessfulExit = false`) and applies `ProcessType = Interactive` + `LimitLoadToSessionType = Aqua`. | Verified via `sfltool dumpbtm`: macOS posts a **"Background Items Added"** notification (`Disposition: [enabled, allowed, notified]`) and adds a separate toggle in System Settings that breaks transcription if turned off (`RequiresApproval`). Also requires `Hex.app` to be installed, failing in Seer-only / Rune-only installs. |
-| **`SMAppService.mainApp` Login Item** | Already used by `Hex.app` for Launch at Login. | Starts the full `Hex.app` menu-bar app, not a headless engine for Seer-only users. |
-| **On-demand user-session daemon (`hex engine`) coordinated by `engine.lock` + `local-api.json` (Recommended)** | Zero BTM "Background Items Added" notifications; works identically whether the user has `Hex.app`, only Seer, only OpenCode Desktop, or all four; inherits foreground interactive task policy when spawned by a GUI app. | Client SDK/host helper respawns the daemon on connection failure instead of `launchd` `KeepAlive`. |
+| **`SMAppService.agent(plistName:)`** in `Opcode.app/Contents/Library/LaunchAgents/` | `launchd` supervises crashes (`KeepAlive.SuccessfulExit = false`) and applies `ProcessType = Interactive` + `LimitLoadToSessionType = Aqua`. | Verified via `sfltool dumpbtm`: macOS posts a **"Background Items Added"** notification (`Disposition: [enabled, allowed, notified]`) and adds a separate toggle in System Settings that breaks transcription if turned off (`RequiresApproval`). Also requires `Opcode.app` to be installed, failing in Seer-only / Rune-only installs. |
+| **`SMAppService.mainApp` Login Item** | Already used by `Opcode.app` for Launch at Login. | Starts the full `Opcode.app` menu-bar app, not a headless engine for Seer-only users. |
+| **On-demand user-session daemon (`opcode engine`) coordinated by `engine.lock` + `local-api.json` (Recommended)** | Zero BTM "Background Items Added" notifications; works identically whether the user has `Opcode.app`, only Seer, only OpenCode Desktop, or all four; inherits foreground interactive task policy when spawned by a GUI app. | Client SDK/host helper respawns the daemon on connection failure instead of `launchd` `KeepAlive`. |
 
-**Recommendation:** Use an **on-demand detached user daemon (`hex engine`)** coordinated through `~/Library/Application Support/hex/engine.lock` and `local-api.json`, while `Hex.app` keeps its existing `SMAppService.mainApp` Login Item.
+**Recommendation:** Use an **on-demand detached user daemon (`opcode engine`)** coordinated through `~/Library/Application Support/opcode/engine.lock` and `local-api.json`, while `Opcode.app` keeps its existing `SMAppService.mainApp` Login Item.
 
 ```ts
 client.connectOrStartEngine()
-├── read ~/Library/Application Support/hex/local-api.json -> GET /health (150 ms)
+├── read ~/Library/Application Support/opcode/local-api.json -> GET /health (150 ms)
 │   └── 200 OK & compatible apiVersion -> return endpoint
 └── missing, stale, or refused
-    ├── spawn `<bundled-or-installed-hex> engine` detached (setsid, stdio -> /dev/null)
+    ├── spawn `<bundled-or-installed-opcode> engine` detached (setsid, stdio -> /dev/null)
     ├── engine acquires flock(engine.lock, LOCK_EX | LOCK_NB) (losers exit 0)
     ├── engine binds 127.0.0.1:0, writes 0600 local-api.json atomically, serves
     └── client polls local-api.json until healthy (budget: 2 s)
 ```
 
-- **Seer-only / non-Hex installs:** for now the engine ships only in `Hex.app` (see the guide above); other apps launch it from there and fall back to "Install Hex" without it. If a Seer-only install becomes a real need, the same lock and discovery let an app bundle its own `hex engine`: whichever app starts first becomes the single engine for the user session, and `Hex.app` shares it when it launches later.
-- **`RENAME_SWAP` self-updates:** On macOS, `renamex_np(RENAME_SWAP)` swaps the directory entry of `Hex.app` while the running engine's open executable inode and `mmap`ed GGUF file descriptor remain valid. `local-api.json` carries `engineVersion` (crate version + git SHA); when an updated `Hex.app` launches and sees an older `engineVersion` in `/health`, it posts `POST /control {"command":"shutdown-when-idle"}` (which drains any in-flight `/streams` or `/transcriptions` job and exits 0) and spawns its newer bundled `hex engine`.
+- **Seer-only / non-Opcode installs:** for now the engine ships only in `Opcode.app` (see the guide above); other apps launch it from there and fall back to "Install Opcode" without it. If a Seer-only install becomes a real need, the same lock and discovery let an app bundle its own `opcode engine`: whichever app starts first becomes the single engine for the user session, and `Opcode.app` shares it when it launches later.
+- **`RENAME_SWAP` self-updates:** On macOS, `renamex_np(RENAME_SWAP)` swaps the directory entry of `Opcode.app` while the running engine's open executable inode and `mmap`ed GGUF file descriptor remain valid. `local-api.json` carries `engineVersion` (crate version + git SHA); when an updated `Opcode.app` launches and sees an older `engineVersion` in `/health`, it posts `POST /control {"command":"shutdown-when-idle"}` (which drains any in-flight `/streams` or `/transcriptions` job and exits 0) and spawns its newer bundled `opcode engine`.
 
 ## 2. Transport and Authentication
 
 **Recommendation:** Keep **authenticated loopback HTTP (`127.0.0.1:<ephemeral-port>`)** with `0600` `local-api.json` discovery and random 256-bit Bearer token, and ship the 12-line `libc::poll` accept fix in `src/local_api.rs` (plus HTTP/1.1 keep-alive for `/streams/:id/audio` connection reuse).
 
 - With `libc::poll` on `listener.as_raw_fd()`, loopback HTTP takes **0.12 ms** per control call, **0.28 ms** per 100 ms audio chunk, and **0.39 ms** for SSE partials—over **40× below** human perceptual thresholds (~15 ms).
-- A Unix domain socket saves ~40 µs per call while breaking standard `fetch`/`EventSource` in TypeScript clients (`@kitlangton/hex`, Seer, OpenCode Desktop).
+- A Unix domain socket saves ~40 µs per call while breaking standard `fetch`/`EventSource` in TypeScript clients (`@kitlangton/opcode`, Seer, OpenCode Desktop).
 
 ## 3. Process Priority, QoS, and Metal Access
 
-**Recommendation:** Enforce **interactive task + thread QoS** and an **App Nap activity assertion** inside `hex engine`:
+**Recommendation:** Enforce **interactive task + thread QoS** and an **App Nap activity assertion** inside `opcode engine`:
 
-1. **Task policy:** Never run `hex engine` under `TASK_BACKGROUND_APPLICATION`. At startup, `hex engine` calls `setpriority(PRIO_DARWIN_PROCESS, 0, 0)` to clear `PRIO_DARWIN_BG` if inherited, and holds an `NSProcessInfo.processInfo.beginActivity(options: [.userInitiatedAllowingIdleSystemSleep], reason: "Hex speech transcription engine")` token for the life of the process. This prevents App Nap timer/CPU throttling while still allowing the Mac to sleep when idle.
+1. **Task policy:** Never run `opcode engine` under `TASK_BACKGROUND_APPLICATION`. At startup, `opcode engine` calls `setpriority(PRIO_DARWIN_PROCESS, 0, 0)` to clear `PRIO_DARWIN_BG` if inherited, and holds an `NSProcessInfo.processInfo.beginActivity(options: [.userInitiatedAllowingIdleSystemSleep], reason: "Opcode speech transcription engine")` token for the life of the process. This prevents App Nap timer/CPU throttling while still allowing the Mac to sleep when idle.
 2. **Thread QoS:** The `TranscriptionEngine` worker thread calls `prioritize_inference_thread()` (`pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0)`), keeping the single-threaded Parakeet CPU token decoder on P-cores.
-3. **Metal in user session:** Because `hex engine` is spawned by a GUI client inside the user's `Aqua` login session (or under `LimitLoadToSessionType = Aqua`), `MTLCreateSystemDefaultDevice()` has full hardware GPU access. During active inference (which already yields to dictation), meeting/background chunks continue to lower thread QoS to `QOS_CLASS_UTILITY` and restore `QOS_CLASS_USER_INTERACTIVE` immediately afterward.
+3. **Metal in user session:** Because `opcode engine` is spawned by a GUI client inside the user's `Aqua` login session (or under `LimitLoadToSessionType = Aqua`), `MTLCreateSystemDefaultDevice()` has full hardware GPU access. During active inference (which already yields to dictation), meeting/background chunks continue to lower thread QoS to `QOS_CLASS_UTILITY` and restore `QOS_CLASS_USER_INTERACTIVE` immediately afterward.
 
 ## 4. Memory and Model Residency
 
@@ -130,23 +130,23 @@ client.connectOrStartEngine()
 
 - **Why:** Parakeet 0.6B Q8_0 (`731 MB` GGUF) uses only **249–253 MiB** dirty `phys_footprint` while loaded because `transcribe.cpp` wraps 697 MiB of clean `mmap` file pages directly in an `MTLBuffer` (`bytesNoCopy`). Dropping `WarmTranscriber` unmaps the 697 MiB file and releases `ggml-metal`'s 3-minute `MTLResidencySet` + 31 MiB of fused BatchNorm buffers in **0.84 ms** while keeping `ggml-metal`'s compiled pipeline cache warm in-process.
 - **Warm reload latency:** Reloading `Parakeet` in-process takes **19–25 ms** (`load_from`) + **33–39 ms** (offline prewarm) = **52–64 ms** (or **301 ms** with the 8 s streaming probe), vs **387–585 ms** to cold-start a new process.
-- **Zero-latency dictation after idle:** When the user presses the dictation shortcut in `Hex.app`, `Hex.app` immediately fires `POST /warm` (or opens its speculative `POST /streams` session) at key-down (`t = 0 ms`). Because `Hex.app`'s intentional-hold threshold is **300 ms** plus speech duration and the **200 ms** post-release tail, an unloaded model reloads in **52–301 ms** before the user finishes their first word.
+- **Zero-latency dictation after idle:** When the user presses the dictation shortcut in `Opcode.app`, `Opcode.app` immediately fires `POST /warm` (or opens its speculative `POST /streams` session) at key-down (`t = 0 ms`). Because `Opcode.app`'s intentional-hold threshold is **300 ms** plus speech duration and the **200 ms** post-release tail, an unloaded model reloads in **52–301 ms** before the user finishes their first word.
 
 ## 5. Crash, Hang, and Restart Behavior
 
-**Recommendation:** Stateless fail-fast recovery with **retained-audio fallback in `Hex.app`**.
+**Recommendation:** Stateless fail-fast recovery with **retained-audio fallback in `Opcode.app`**.
 
-- **In-flight `/streams` and `/transcriptions`:** If `hex engine` crashes or hangs past the client's deadline, the socket closes (`EOF` / `ECONNRESET`). External SDK clients (`Seer`, `OpenCode`) receive a typed `EngineDisconnected` error on that stream, call `connectOrStartEngine()`, and reconnect within **~390–585 ms** on the next utterance.
-- **`Hex.app` dictation resilience:** `Hex.app` retains the authoritative 16 kHz PCM capture buffer in its own memory (`dictation_audio`) until paste completes. If the speculative `/streams` session to `hex engine` drops mid-capture or times out at `/finish`, `Hex.app` respawns `hex engine` and submits the retained whole clip via `POST /transcriptions` (the exact same speculative-stream-to-whole-clip fallback `TranscriptionEngine::finish_with` performs today). No dictated speech is ever lost to an engine crash.
+- **In-flight `/streams` and `/transcriptions`:** If `opcode engine` crashes or hangs past the client's deadline, the socket closes (`EOF` / `ECONNRESET`). External SDK clients (`Seer`, `OpenCode`) receive a typed `EngineDisconnected` error on that stream, call `connectOrStartEngine()`, and reconnect within **~390–585 ms** on the next utterance.
+- **`Opcode.app` dictation resilience:** `Opcode.app` retains the authoritative 16 kHz PCM capture buffer in its own memory (`dictation_audio`) until paste completes. If the speculative `/streams` session to `opcode engine` drops mid-capture or times out at `/finish`, `Opcode.app` respawns `opcode engine` and submits the retained whole clip via `POST /transcriptions` (the exact same speculative-stream-to-whole-clip fallback `TranscriptionEngine::finish_with` performs today). No dictated speech is ever lost to an engine crash.
 - **Crash loop throttle:** Clients track engine spawn timestamps in-process and cap restarts at **3 attempts per 30 seconds** (with `100 ms → 1 s → 5 s` backoff) before surfacing `EngineUnavailable`.
 
 ## 6. Priority and Preemption Across Processes (Dictation First)
 
-**Recommendation:** Tag requests with a `priority` tier (`dictation` vs `interactiveStream` vs `background`) and keep the existing `dictation_busy` atomic preemption gate inside `hex engine`.
+**Recommendation:** Tag requests with a `priority` tier (`dictation` vs `interactiveStream` vs `background`) and keep the existing `dictation_busy` atomic preemption gate inside `opcode engine`.
 
 ```ts
 POST /streams { priority: "dictation" | "stream" }
-├── priority: "dictation" (Hex.app hotkey / Voice Action)
+├── priority: "dictation" (Opcode.app hotkey / Voice Action)
 │   ├── increments dictation_busy in engine -> immediately closes any active YieldingStream (Seer/OpenCode)
 │   ├── claims exclusive LiveStream on TranscriptionEngine
 │   └── any competing /streams push buffers in its 30 s backlog and catches up via offline window after dictation finishes
@@ -154,7 +154,7 @@ POST /streams { priority: "dictation" | "stream" }
     └── engine queue orders: dictation > stream window > normal batch > background meeting chunk
 ```
 
-- **IPC latency budget for `Hex.app` dictation:**
+- **IPC latency budget for `Opcode.app` dictation:**
   - Shortcut press → `POST /streams` (`priority: "dictation"`): **0.31 ms** (runs during the 300 ms hold threshold; **0 ms** added to post-release latency).
   - During speech → `POST /streams/:id/audio` every 100 ms: **0.28 ms** per 6.4 KB chunk off the audio thread (**0 ms** added to post-release latency).
   - Shortcut release (+200 ms tail) → `POST /streams/:id/finish` with final tail samples: **44.0 ms** total (of which **< 0.5 ms** is loopback HTTP framing/serialization).
@@ -165,32 +165,32 @@ POST /streams { priority: "dictation" | "stream" }
 
 - `local-api.json` and `GET /health` report `apiVersion: "2"`, `engineVersion: "2.3.1+sha"`, `pid`, and `capabilities: ["transcriptions", "streams", "warm", "priority-dictation"]`.
 - **Additive evolution:** New fields in JSON requests/replies default cleanly (`#[serde(default)]`). Incompatible breaking changes increment `apiVersion`.
-- **Version replacement rule:** When `Hex.app` or a newer SDK client starts and sees a running engine whose `engineVersion` is older than its own bundled engine binary, it requests a graceful handoff (`POST /control {"command":"shutdown-when-idle"}`) so the newest installed engine binary always serves the session without breaking older v2 clients.
+- **Version replacement rule:** When `Opcode.app` or a newer SDK client starts and sees a running engine whose `engineVersion` is older than its own bundled engine binary, it requests a graceful handoff (`POST /control {"command":"shutdown-when-idle"}`) so the newest installed engine binary always serves the session without breaking older v2 clients.
 
 ## 8. Security and Privacy ("Is It Dangerous?")
 
 **Recommendation:** Keep the engine privilege-free, loopback-only, and storage-free.
 
-- **Zero TCC surface:** `hex engine` never links or opens CoreAudio input, `CGEventTap`, `AXUIElement`, `ScreenCaptureKit`, or `NSPasteboard`. It cannot record the user or read keys/screens; macOS never prompts for permissions on its behalf.
-- **Loopback + `0600` token auth:** Binds strictly to `127.0.0.1:0` (never `0.0.0.0` or `::`). `local-api.json` is created with `mode(0o600)` inside `0700` `~/Library/Application Support/hex/`. Every route requires `Authorization: Bearer <token>` (checked before reading bodies), and each `/streams/:id` session requires its per-stream `X-Hex-Stream-Token`.
+- **Zero TCC surface:** `opcode engine` never links or opens CoreAudio input, `CGEventTap`, `AXUIElement`, `ScreenCaptureKit`, or `NSPasteboard`. It cannot record the user or read keys/screens; macOS never prompts for permissions on its behalf.
+- **Loopback + `0600` token auth:** Binds strictly to `127.0.0.1:0` (never `0.0.0.0` or `::`). `local-api.json` is created with `mode(0o600)` inside `0700` `~/Library/Application Support/opcode/`. Every route requires `Authorization: Bearer <token>` (checked before reading bodies), and each `/streams/:id` session requires its per-stream `X-Opcode-Stream-Token`.
 - **Hard resource bounds (already enforced in `local_api.rs` / `streams.rs`):** 4 HTTP workers, connection queue 16, 16 KiB header cap, 2 s header deadline, 64 MiB WAV upload cap, 1 concurrent stream upload, 256 KiB stream audio chunk cap, 30 s stream backlog cap, and 15 s stream lease timeout.
-- **No retained user data:** `hex engine` writes no transcripts, no `history.json`, and no WAV files; `Hex.app` continues to own `history.json` and meeting artifacts in its own process.
+- **No retained user data:** `opcode engine` writes no transcripts, no `history.json`, and no WAV files; `Opcode.app` continues to own `history.json` and meeting artifacts in its own process.
 
-## 9. How `Hex.app` Talks to It & Incremental PR Plan
+## 9. How `Opcode.app` Talks to It & Incremental PR Plan
 
-`Hex.app` keeps **all** macOS-specific desktop responsibilities in-process: `dictation_audio` (CoreAudio mic + pre-roll), `suppression` (event taps + shortcut state machine), `dictation_indicator` (Metal HUD), `audio/recording_environment` (mute/media pause/sleep), `dictation_processor` (corrections, OpenCode rewrite, transformations), `paste`, `history`, `recognition` (Moonshine voice commands), `meeting_capture`, and the Rune settings window. Only `TranscriptionEngine` (Parakeet/Cohere/Whisper GGUF + Apple Speech) moves behind an `EngineClient` seam that speaks to `hex engine` over `local-api.json`:
+`Opcode.app` keeps **all** macOS-specific desktop responsibilities in-process: `dictation_audio` (CoreAudio mic + pre-roll), `suppression` (event taps + shortcut state machine), `dictation_indicator` (Metal HUD), `audio/recording_environment` (mute/media pause/sleep), `dictation_processor` (corrections, OpenCode rewrite, transformations), `paste`, `history`, `recognition` (Moonshine voice commands), `meeting_capture`, and the Rune settings window. Only `TranscriptionEngine` (Parakeet/Cohere/Whisper GGUF + Apple Speech) moves behind an `EngineClient` seam that speaks to `opcode engine` over `local-api.json`:
 
 1. **PR 1 — `LocalApi::serve` `poll(2)` accept + HTTP keep-alive:** Land the 12-line `libc::poll` fix in `src/local_api.rs` (dropping loopback latency from 12.5 ms to **0.12 ms**) and `POST /warm`.
-2. **PR 2 — Standalone `hex engine` command & lock/discovery lifecycle:** Promote `hex service` / `hex engine` to start and share `TranscriptionEngine` with interactive QoS, App Nap assertion, 10-minute idle model unload, and `shutdown-when-idle`.
-3. **PR 3 — Priority dictation stream & meeting-chunk routes:** Add `priority: "dictation"` preemption on `/streams` and background priority on `/transcriptions` so external clients yield to `Hex.app` hotkey dictation just as in-process `YieldingStream` does today.
-4. **PR 4 — `Hex.app` as an engine client + `@kitlangton/hex` auto-start:** Switch `Hex.app`'s dictation and meeting workers to `connectOrStartEngine()` (retaining the PCM clip in `Hex.app` for crash-safe whole-clip retry) and update `@kitlangton/hex` to auto-spawn `hex engine` when `local-api.json` is absent.
+2. **PR 2 — Standalone `opcode engine` command & lock/discovery lifecycle:** Promote `opcode service` / `opcode engine` to start and share `TranscriptionEngine` with interactive QoS, App Nap assertion, 10-minute idle model unload, and `shutdown-when-idle`.
+3. **PR 3 — Priority dictation stream & meeting-chunk routes:** Add `priority: "dictation"` preemption on `/streams` and background priority on `/transcriptions` so external clients yield to `Opcode.app` hotkey dictation just as in-process `YieldingStream` does today.
+4. **PR 4 — `Opcode.app` as an engine client + `@kitlangton/opcode` auto-start:** Switch `Opcode.app`'s dictation and meeting workers to `connectOrStartEngine()` (retaining the PCM clip in `Opcode.app` for crash-safe whole-clip retry) and update `@kitlangton/opcode` to auto-spawn `opcode engine` when `local-api.json` is absent.
 
 ## 10. Linux and Windows Counterparts
 
-- **Linux:** The existing `hex.service` per-user `systemd` unit (`Type=notify`, `PartOf=graphical-session.target`, `Restart=on-failure`) already runs a single long-lived process per user and data root (`docs/plans/single-process.md`). Sharing `TranscriptionEngine` in `LocalApi` on Linux exposes the exact same `local-api.json` + `/streams` + `/transcriptions` contract on `127.0.0.1`, with non-systemd desktops using the same `engine.lock` + detached `hex engine` spawn.
-- **Windows:** `WindowsDesktopHost` (or a headless `hex.exe engine` spawned with `CREATE_NO_WINDOW | DETACHED_PROCESS` and coordinated by a named mutex + `%APPDATA%\hex\local-api.json` with owner-only DACL) serves the same loopback HTTP API, using `SetProcessInformation(..., ProcessPowerThrottling)` to disable EcoQoS throttling so Vulkan/CPU inference stays at full speed.
+- **Linux:** The existing `opcode.service` per-user `systemd` unit (`Type=notify`, `PartOf=graphical-session.target`, `Restart=on-failure`) already runs a single long-lived process per user and data root (`docs/plans/single-process.md`). Sharing `TranscriptionEngine` in `LocalApi` on Linux exposes the exact same `local-api.json` + `/streams` + `/transcriptions` contract on `127.0.0.1`, with non-systemd desktops using the same `engine.lock` + detached `opcode engine` spawn.
+- **Windows:** `WindowsDesktopHost` (or a headless `opcode.exe engine` spawned with `CREATE_NO_WINDOW | DETACHED_PROCESS` and coordinated by a named mutex + `%APPDATA%\opcode\local-api.json` with owner-only DACL) serves the same loopback HTTP API, using `SetProcessInformation(..., ProcessPowerThrottling)` to disable EcoQoS throttling so Vulkan/CPU inference stays at full speed.
 
 ## What the Spike Did Not Prove
 
 - **Multi-hour macOS memory pressure / sleep-wake cycles:** We measured explicit in-process unload (`0.84 ms`, **52–301 ms** reload) and `taskpolicy -b` vs `Interactive`, but did not run a 24-hour soak across macOS display sleep/hibernation (`darkwake`).
-- **Simultaneous 4-app contention trace:** We verified `/streams` + `/transcriptions` over loopback HTTP and 12-thread CPU contention, but the `priority: "dictation"` preemption route across two separate OS processes (`Hex.app` preempting an active `Seer` `/streams` session) is planned for PR 3 (today `YieldingStream` preemption is exercised by unit tests against the in-process `TranscriptionEngine`).
+- **Simultaneous 4-app contention trace:** We verified `/streams` + `/transcriptions` over loopback HTTP and 12-thread CPU contention, but the `priority: "dictation"` preemption route across two separate OS processes (`Opcode.app` preempting an active `Seer` `/streams` session) is planned for PR 3 (today `YieldingStream` preemption is exercised by unit tests against the in-process `TranscriptionEngine`).

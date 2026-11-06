@@ -1,19 +1,19 @@
 //! The download pill and the inline language capsule button.
 //!
 //! [`pill`] carries [`PILL`] as a shared element, so the centerpiece loader on
-//! `"Setting up Hex"` flies smoothly up to the top bar during the demo and
-//! permissions, then back to centre stage for `"Hex is ready"`.
+//! `"Setting up Opcode"` flies smoothly up to the top bar during the demo and
+//! permissions, then back to centre stage for `"Opcode is ready"`.
 
 use crate::desktop::i18n::tr;
 use rune::{Align, El, Spring, Transition, el, icon, row, text};
 
 use super::super::controls::Paint;
 use super::fixture::{Download, Language};
-use super::hex_meter::hex_meter;
+use super::opcode_meter::opcode_meter;
 
 /// Shared-element id carried by the thin single-hexagon mark from the top-bar
 /// pill to the Ready landing.
-pub(crate) const PILL: &str = "hex-mark";
+pub(crate) const PILL: &str = "opcode-mark";
 /// Shared-element id of the download capsule itself, so the centred progress
 /// capsule and the top-bar pill are one shape that moves and widens.
 pub(crate) const CAPSULE: &str = "download-capsule";
@@ -84,7 +84,7 @@ pub(crate) fn pill(p: Paint, download: Download, closed: f32) -> El {
                 .size(16.0, 16.0)
                 .matched(PILL)
                 .motion(FLY)
-                .child(hex_meter(p, "meter", 16.0, download.fraction(), closed)),
+                .child(opcode_meter(p, "meter", 16.0, download.fraction(), closed)),
         )
         .child(
             text(language_label(download.language))

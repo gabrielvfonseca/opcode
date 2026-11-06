@@ -27,7 +27,7 @@ function speak(path: string): boolean {
   } else if (process.platform === "darwin") {
     Bun.spawnSync(["say", "-o", path, "--file-format=WAVE", "--data-format=LEI16@48000", TEXT])
   } else if (Bun.which("espeak-ng")) {
-    // 22.05 kHz: espeak-ng's own rate; Hex resamples any rate.
+    // 22.05 kHz: espeak-ng's own rate; Opcode resamples any rate.
     Bun.spawnSync(["espeak-ng", "-w", path, TEXT])
   }
   return existsSync(path)

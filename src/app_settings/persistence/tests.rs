@@ -12,7 +12,7 @@ impl SettingsFile {
     fn new(data: &[u8]) -> Self {
         let sequence = crate::app_settings::SETTINGS_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
         let directory = std::env::temp_dir().join(format!(
-            "hex-settings-recovery-{}-{sequence}",
+            "opcode-settings-recovery-{}-{sequence}",
             std::process::id()
         ));
         fs::create_dir_all(&directory).unwrap();
@@ -42,7 +42,7 @@ impl Drop for SettingsFile {
 }
 
 #[test]
-fn unset_retention_saves_a_shape_older_hex_can_read() {
+fn unset_retention_saves_a_shape_older_opcode_can_read() {
     // The meeting field in 46c3c762 was non-optional, defaulting to Forever.
     #[derive(Deserialize)]
     struct OldMeetings {

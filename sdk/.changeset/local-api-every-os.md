@@ -1,5 +1,5 @@
 ---
-"@kitlangton/hex": patch
+"@kitlangton/opcode": patch
 ---
 
-`connect()` finds the running Hex on Linux (`$XDG_DATA_HOME/hex`) and Windows (`%APPDATA%\hex`) as well as macOS.
+`connect()` finds the running Opcode on Linux (`$XDG_DATA_HOME/opcode`) and Windows (`%APPDATA%\opcode`) as well as macOS.

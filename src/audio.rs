@@ -3,7 +3,7 @@ pub(crate) mod browser_media;
 mod call_input;
 mod fixture;
 #[cfg_attr(any(target_os = "linux", target_os = "windows"), allow(dead_code))]
-pub(crate) mod hex_microphone;
+pub(crate) mod opcode_microphone;
 pub(crate) mod idle_sleep;
 mod input_format;
 pub(crate) mod input_level;
@@ -31,7 +31,7 @@ static INPUT_ROUTE_GENERATION: AtomicU64 = AtomicU64::new(0);
 static STREAM_GLITCHED_AT: Mutex<Option<Instant>> = Mutex::new(None);
 static AVOID_BLUETOOTH_MICROPHONE: AtomicBool = AtomicBool::new(true);
 
-/// Whether `HEX_AUDIO_FIXTURE` names a WAV file that stands in for every
+/// Whether `OPCODE_AUDIO_FIXTURE` names a WAV file that stands in for every
 /// microphone (benchmarks and tests; see `audio/fixture.rs`).
 pub fn uses_fixture() -> bool {
     fixture::path().is_some()
@@ -221,7 +221,7 @@ pub struct AudioInput {
     stream_errors: Receiver<String>,
     watch_service_restarts: bool,
     restart_generation: u64,
-    hex_microphone: crate::audio::hex_microphone::CaptureFeedSwitch,
+    opcode_microphone: crate::audio::opcode_microphone::CaptureFeedSwitch,
     /// How long the stream may go without delivering audio before it counts
     /// as failed; `None` for test inputs fed by hand.
     stall_after: Option<Duration>,
@@ -452,7 +452,7 @@ impl AudioInput {
                 selection: Selection::InUse,
                 watch_service_restarts: false,
                 restart_generation: audio_service_restart_generation(),
-                hex_microphone: crate::audio::hex_microphone::capture_feed(48_000).1,
+                opcode_microphone: crate::audio::opcode_microphone::capture_feed(48_000).1,
                 stall_after: None,
                 last_delivery: Mutex::new(Instant::now()),
             },
@@ -476,7 +476,7 @@ impl AudioInput {
     }
 
     /// The OS's default input, or a real one standing in when the default is
-    /// Hex Microphone or missing.
+    /// Opcode Microphone or missing.
     #[cfg(target_os = "windows")]
     pub fn open_system_default() -> Result<Self> {
         match open_configured_input(&OpenRequest {
@@ -526,17 +526,17 @@ impl AudioInput {
             stream_errors: started.stream_errors,
             watch_service_restarts: true,
             restart_generation,
-            hex_microphone: started.hex_microphone,
+            opcode_microphone: started.opcode_microphone,
             stall_after: Some(STREAM_STALL_TIMEOUT),
             last_delivery: Mutex::new(Instant::now()),
         })
     }
 
-    /// Whether this stream's audio feeds Hex Microphone. Only the dictation
+    /// Whether this stream's audio feeds Opcode Microphone. Only the dictation
     /// listener's current input does; a meeting's second stream on the same
     /// microphone must not.
-    pub fn feed_hex_microphone(&self, on: bool) {
-        self.hex_microphone.set(on);
+    pub fn feed_opcode_microphone(&self, on: bool) {
+        self.opcode_microphone.set(on);
     }
 
     pub fn recv_timeout(&self, timeout: Duration) -> AudioInputEvent {
@@ -682,7 +682,7 @@ impl RecoveringAudioInput {
     #[cfg(test)]
     pub fn pending_for_test() -> (Self, Sender<InputOpenResult>) {
         let mut input = Self::closed(
-            Some("Hex nonexistent microphone for pending open test"),
+            Some("Opcode nonexistent microphone for pending open test"),
             0,
             None,
         );
@@ -706,20 +706,20 @@ impl RecoveringAudioInput {
     }
 
     /// Makes `input` the listener's microphone and the only stream feeding
-    /// Hex Microphone, stopping the previous stream first.
+    /// Opcode Microphone, stopping the previous stream first.
     fn install(&mut self, input: AudioInput) {
         if let Some(previous) = self.input.take() {
-            previous.feed_hex_microphone(false);
+            previous.feed_opcode_microphone(false);
             drop(previous);
         }
-        input.feed_hex_microphone(true);
+        input.feed_opcode_microphone(true);
         self.input = Some(input);
         self.outage = None;
     }
 
     pub fn close(&mut self) {
         if let Some(previous) = self.input.take() {
-            previous.feed_hex_microphone(false);
+            previous.feed_opcode_microphone(false);
         }
         self.replacement = None;
         self.recovery.recovered();
@@ -944,7 +944,7 @@ enum InputTarget {
     Named(usize),
     /// The OS's default input.
     SystemDefault,
-    /// A real input standing in for a default that is Hex Microphone, the
+    /// A real input standing in for a default that is Opcode Microphone, the
     /// built-in microphone with the lid closed, a passed-over Bluetooth
     /// headset, or missing: the built-in microphone while the lid is open,
     /// else the first usable one listed, never a virtual input or an
@@ -970,9 +970,9 @@ struct InputPlan {
     selection: Selection,
 }
 
-/// Resolves the input Hex captures from: `--device` exactly as named, else
-/// the saved microphone while it is listed, else the system default. Hex
-/// never captures from its own virtual microphone, so a default that is Hex
+/// Resolves the input Opcode captures from: `--device` exactly as named, else
+/// the saved microphone while it is listed, else the system default. Opcode
+/// never captures from its own virtual microphone, so a default that is Opcode
 /// Microphone (or none) falls back to a real input. With the lid closed, the
 /// built-in microphone is switched off in hardware though still listed, so
 /// it is passed over the same way. With `avoid_bluetooth`, a Bluetooth
@@ -989,15 +989,15 @@ fn resolve_input(
     transport: impl Fn(usize) -> Transport,
     route: Route,
 ) -> std::result::Result<InputPlan, String> {
-    let is_hex = crate::audio::hex_microphone::is_hex_virtual_device_name;
+    let is_opcode = crate::audio::opcode_microphone::is_opcode_virtual_device_name;
     let position = |name: &str| names.iter().position(|listed| listed == name);
     let is_built_in = |index: usize| transport(index) == Transport::BuiltIn;
     let avoided = |index: usize| route.avoid_bluetooth && transport(index) == Transport::Bluetooth;
     let off = |index: usize| route.lid_closed && is_built_in(index);
     if let Some(name) = device_override {
-        if is_hex(name) {
+        if is_opcode(name) {
             return Err(format!(
-                "Hex cannot capture from its own virtual microphone: {name}"
+                "Opcode cannot capture from its own virtual microphone: {name}"
             ));
         }
         return position(name)
@@ -1007,7 +1007,7 @@ fn resolve_input(
             })
             .ok_or_else(|| format!("microphone is unavailable: {name}"));
     }
-    let selection = match selected.filter(|name| !is_hex(name)) {
+    let selection = match selected.filter(|name| !is_opcode(name)) {
         Some(name) => match position(name) {
             Some(index) if off(index) => Selection::LidClosed,
             Some(index) => {
@@ -1022,7 +1022,7 @@ fn resolve_input(
     };
     // ALSA names a default even with no devices listed.
     let default_usable = !names.is_empty()
-        && default.is_some_and(|name| !is_hex(name) && !position(name).is_some_and(off));
+        && default.is_some_and(|name| !is_opcode(name) && !position(name).is_some_and(off));
     let default_avoided = default.and_then(position).is_some_and(avoided);
     if default_usable && !default_avoided {
         return Ok(InputPlan {
@@ -1035,7 +1035,7 @@ fn resolve_input(
     // silence while its app is idle, and the iPhone prompts and can fail.
     let usable = || {
         (0..names.len()).filter(|&index| {
-            !is_hex(&names[index])
+            !is_opcode(&names[index])
                 && !off(index)
                 && !matches!(transport(index), Transport::Virtual | Transport::Continuity)
         })
@@ -1167,7 +1167,7 @@ fn open_configured_input(request: &OpenRequest) -> Result<Opened> {
                 using = %name,
                 lid_closed = route.lid_closed,
                 avoid_bluetooth = route.avoid_bluetooth,
-                "the system default input is Hex Microphone, off with the lid closed, Bluetooth, or missing; using another microphone"
+                "the system default input is Opcode Microphone, off with the lid closed, Bluetooth, or missing; using another microphone"
             );
         }
         match plan.selection {
@@ -1275,7 +1275,7 @@ fn open_selected<T>(
     open_default()
 }
 
-/// The inputs Settings offers, without Hex Microphone, and what System
+/// The inputs Settings offers, without Opcode Microphone, and what System
 /// default currently resolves to.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct InputDevices {
@@ -1283,8 +1283,8 @@ pub struct InputDevices {
     /// The input System default captures from. Linux's ALSA default has no
     /// useful name, so it is `None` there.
     pub system_default: Option<String>,
-    /// The OS default is Hex Microphone, so `system_default` stands in.
-    pub default_is_hex_microphone: bool,
+    /// The OS default is Opcode Microphone, so `system_default` stands in.
+    pub default_is_opcode_microphone: bool,
     /// The internal microphone, listed but off because the lid is closed. A
     /// headphone-jack microphone stays usable and is never named here.
     pub off_with_lid_closed: Option<String>,
@@ -1301,9 +1301,9 @@ pub fn input_devices() -> Result<InputDevices> {
     let host = cpal::default_host();
     let (devices, listed) = input_devices_of(&host)?;
     let default = default_input_of(&host).map(|(_, name)| name);
-    let default_is_hex_microphone = default
+    let default_is_opcode_microphone = default
         .as_deref()
-        .is_some_and(crate::audio::hex_microphone::is_hex_virtual_device_name);
+        .is_some_and(crate::audio::opcode_microphone::is_opcode_virtual_device_name);
     let transports = devices.iter().map(transport).collect::<Vec<_>>();
     let route = current_route();
     let off_with_lid_closed = (0..devices.len())
@@ -1348,14 +1348,14 @@ pub fn input_devices() -> Result<InputDevices> {
     };
     let mut names = listed
         .into_iter()
-        .filter(|name| !crate::audio::hex_microphone::is_hex_virtual_device_name(name))
+        .filter(|name| !crate::audio::opcode_microphone::is_opcode_virtual_device_name(name))
         .collect::<Vec<_>>();
     names.sort_by_key(|name| name.to_lowercase());
     names.dedup();
     Ok(InputDevices {
         names,
         system_default,
-        default_is_hex_microphone,
+        default_is_opcode_microphone,
         off_with_lid_closed,
         default_is_off_with_lid_closed,
         bluetooth_default_passed_over,
@@ -1386,7 +1386,7 @@ struct StreamErrorReporter {
 impl StreamErrorReporter {
     fn report(&self, error: cpal::Error) {
         // WASAPI reports a default-input change as invalidation, yet the
-        // stream keeps capturing the old device. Hex switches once capture is
+        // stream keeps capturing the old device. Opcode switches once capture is
         // idle rather than failing a recording.
         #[cfg(target_os = "windows")]
         if error.kind() == cpal::ErrorKind::StreamInvalidated
@@ -1430,7 +1430,7 @@ fn build_stream<T: SizedSample>(
     channels: usize,
     sender: Sender<(Vec<f32>, CaptureInstant)>,
     reporter: StreamErrorReporter,
-    mut feed: crate::audio::hex_microphone::CaptureFeed,
+    mut feed: crate::audio::opcode_microphone::CaptureFeed,
     convert: impl Fn(T) -> f32 + Send + 'static,
 ) -> Result<Stream> {
     let sample_rate = config.sample_rate;
@@ -1537,7 +1537,7 @@ mod tests {
         use InputTarget::{Named, StandIn, SystemDefault};
         use Transport::{Bluetooth, BuiltIn, Other};
         let names = listed(&[
-            "Hex Microphone",
+            "Opcode Microphone",
             "AirPods Pro",
             "MacBook Pro Microphone",
             "USB Mic",
@@ -1598,15 +1598,15 @@ mod tests {
             plan(None, Some("AirPods Pro"), closed),
             found(StandIn(3), Selection::InUse)
         );
-        // A Hex Microphone default prefers a wired input to Bluetooth too.
-        let no_built_in = listed(&["Hex Microphone", "AirPods Pro", "USB Mic"]);
+        // A Opcode Microphone default prefers a wired input to Bluetooth too.
+        let no_built_in = listed(&["Opcode Microphone", "AirPods Pro", "USB Mic"]);
         let no_built_in_transports = [Other, Bluetooth, Other];
         assert_eq!(
             resolve_input(
                 None,
                 None,
                 &no_built_in,
-                Some("Hex Microphone"),
+                Some("Opcode Microphone"),
                 |index| no_built_in_transports[index],
                 avoid
             ),
@@ -1662,7 +1662,7 @@ mod tests {
             })
         };
 
-        let only_bluetooth = listed(&["Hex Microphone", "AirPods Pro", "Beats"]);
+        let only_bluetooth = listed(&["Opcode Microphone", "AirPods Pro", "Beats"]);
         let bluetooth = |index: usize| [Other, Bluetooth, Bluetooth][index];
         assert_eq!(
             resolve_input(
@@ -1746,15 +1746,15 @@ mod tests {
             ),
             found(SystemDefault, Selection::InUse)
         );
-        // Only Hex Microphone and a virtual input: nothing to record from.
-        let virtual_only = listed(&["Hex Microphone", "Microsoft Teams Audio"]);
+        // Only Opcode Microphone and a virtual input: nothing to record from.
+        let virtual_only = listed(&["Opcode Microphone", "Microsoft Teams Audio"]);
         let virtual_transports = |index: usize| [Virtual, Virtual][index];
         assert_eq!(
             resolve_input(
                 None,
                 None,
                 &virtual_only,
-                Some("Hex Microphone"),
+                Some("Opcode Microphone"),
                 virtual_transports,
                 OPEN
             ),
@@ -1907,7 +1907,7 @@ mod tests {
     fn inputs_resolve_to_the_selection_then_the_system_default() {
         use InputTarget::{Named, StandIn, SystemDefault};
         let names = listed(&[
-            "Hex Microphone",
+            "Opcode Microphone",
             "KIT PODS",
             "MacBook Pro Microphone",
             "USB Mic",
@@ -1932,22 +1932,22 @@ mod tests {
             plan(Some("Studio Display Microphone"), Some("KIT PODS")),
             found(SystemDefault, Selection::Unlisted)
         );
-        // A Hex Microphone default never loops back: the built-in mic stands in.
+        // A Opcode Microphone default never loops back: the built-in mic stands in.
         assert_eq!(
-            plan(None, Some("Hex Microphone")),
+            plan(None, Some("Opcode Microphone")),
             found(StandIn(2), Selection::InUse)
         );
         assert_eq!(
-            plan(Some("Gone"), Some("Hex Microphone")),
+            plan(Some("Gone"), Some("Opcode Microphone")),
             found(StandIn(2), Selection::Unlisted)
         );
         // Without a built-in mic or any default, the first real input stands in.
-        let no_built_in = resolve_input(None, None, &names, Some("Hex Microphone"), other, OPEN);
+        let no_built_in = resolve_input(None, None, &names, Some("Opcode Microphone"), other, OPEN);
         assert_eq!(no_built_in, found(StandIn(1), Selection::InUse));
         assert_eq!(plan(None, None), found(StandIn(2), Selection::InUse));
-        // A saved Hex Microphone is never captured from.
+        // A saved Opcode Microphone is never captured from.
         assert_eq!(
-            plan(Some("Hex Microphone"), Some("KIT PODS")),
+            plan(Some("Opcode Microphone"), Some("KIT PODS")),
             found(SystemDefault, Selection::InUse)
         );
         // No real inputs at all.
@@ -1955,8 +1955,8 @@ mod tests {
             resolve_input(
                 None,
                 None,
-                &listed(&["Hex Microphone"]),
-                Some("Hex Microphone"),
+                &listed(&["Opcode Microphone"]),
+                Some("Opcode Microphone"),
                 &built_in,
                 OPEN
             ),
@@ -1983,7 +1983,7 @@ mod tests {
     fn a_closed_lid_passes_over_the_built_in_microphone() {
         use InputTarget::{Named, StandIn, SystemDefault};
         let names = listed(&[
-            "Hex Microphone",
+            "Opcode Microphone",
             "MacBook Pro Microphone",
             "Studio Display Microphone",
             "USB Mic",
@@ -1998,9 +1998,9 @@ mod tests {
             closed(None, Some("MacBook Pro Microphone")),
             found(StandIn(2), Selection::InUse)
         );
-        // So does a Hex Microphone or missing default: never the built-in.
+        // So does a Opcode Microphone or missing default: never the built-in.
         assert_eq!(
-            closed(None, Some("Hex Microphone")),
+            closed(None, Some("Opcode Microphone")),
             found(StandIn(2), Selection::InUse)
         );
         assert_eq!(closed(None, None), found(StandIn(2), Selection::InUse));
@@ -2039,8 +2039,8 @@ mod tests {
             found(SystemDefault, Selection::InUse)
         );
         // With nothing else to use, say why rather than record silence.
-        let only_built_in = listed(&["Hex Microphone", "MacBook Pro Microphone"]);
-        for default in [Some("MacBook Pro Microphone"), Some("Hex Microphone"), None] {
+        let only_built_in = listed(&["Opcode Microphone", "MacBook Pro Microphone"]);
+        for default in [Some("MacBook Pro Microphone"), Some("Opcode Microphone"), None] {
             assert_eq!(
                 resolve_input(None, None, &only_built_in, default, &built_in, CLOSED),
                 Err(LID_CLOSED_ERROR.into())
@@ -2061,7 +2061,7 @@ mod tests {
 
     #[test]
     fn device_override_wins_and_never_falls_back() {
-        let names = listed(&["Hex Microphone", "KIT PODS", "USB Mic"]);
+        let names = listed(&["Opcode Microphone", "KIT PODS", "USB Mic"]);
         let plan = |device_override| {
             resolve_input(
                 device_override,
@@ -2085,7 +2085,7 @@ mod tests {
             Err("microphone is unavailable: Missing Mic".into())
         );
         assert!(
-            plan(Some("Hex Microphone"))
+            plan(Some("Opcode Microphone"))
                 .unwrap_err()
                 .contains("its own virtual microphone")
         );
@@ -2399,17 +2399,17 @@ mod tests {
     }
 
     #[test]
-    fn only_the_listeners_current_input_feeds_hex_microphone() {
+    fn only_the_listeners_current_input_feeds_opcode_microphone() {
         let (meeting, _) = AudioInput::channel_for_test();
         let (first, _) = AudioInput::channel_for_test();
         let (replacement, _) = AudioInput::channel_for_test();
-        let first_feed = first.hex_microphone.clone();
-        let replacement_feed = replacement.hex_microphone.clone();
+        let first_feed = first.opcode_microphone.clone();
+        let replacement_feed = replacement.opcode_microphone.clone();
 
         let mut input = RecoveringAudioInput::closed(None, 3, Some("Test microphone"));
         input.finish_initial_open(Ok(first), Instant::now());
         assert!(first_feed.is_on());
-        assert!(!meeting.hex_microphone.is_on());
+        assert!(!meeting.opcode_microphone.is_on());
 
         let (sender, receiver) = mpsc::channel();
         input.replacement = Some(receiver);
@@ -2459,7 +2459,7 @@ mod tests {
     #[test]
     fn startup_recovery_opens_even_when_a_capture_is_pending() {
         let mut input = RecoveringAudioInput::closed(
-            Some("Hex nonexistent microphone for pending recovery test"),
+            Some("Opcode nonexistent microphone for pending recovery test"),
             3,
             None,
         );

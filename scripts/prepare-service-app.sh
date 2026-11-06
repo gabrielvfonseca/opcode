@@ -3,12 +3,12 @@ set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 . "$root/scripts/macos-signing.sh"
-: "${HEX_NOTARY_PROFILE:?Set HEX_NOTARY_PROFILE to the matching notarization profile}"
+: "${OPCODE_NOTARY_PROFILE:?Set OPCODE_NOTARY_PROFILE to the matching notarization profile}"
 version=$(hex_version "$root")
 arch=$(uname -m)
 dist="$root/dist/service"
-artifact="$dist/HEX-Service-$version-$arch.zip"
-submission="$dist/HEX-Service-$version-$arch.notarization.zip"
+artifact="$dist/opcode-service-$version-$arch.zip"
+submission="$dist/opcode-service-$version-$arch.notarization.zip"
 
 bundle=$("$root/scripts/build-service-app.sh")
 rm -rf "$dist"

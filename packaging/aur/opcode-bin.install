@@ -1,0 +1,5 @@
+post_install() {
+  echo 'Open Opcode from your launcher or run `opcode`; the first run downloads a speech model.'
+  echo 'Start Opcode at login: systemctl --user enable opcode.service'
+  echo 'Updates come from pacman; Opcode never replaces this package itself.'
+}

@@ -161,7 +161,7 @@ pub(super) fn deliver(out: &Out, png: &[u8]) -> anyhow::Result<()> {
             save::write(&folder, png).map(|_| ())
         }
         Out::Send(dest) => {
-            let folder = std::env::temp_dir().join("hex-screenshots");
+            let folder = std::env::temp_dir().join("opcode-screenshots");
             let path = save::write(&folder, png)?;
             crate::capture_host::send_image(&dest.session, SEND_TEXT, &path)
         }
@@ -179,7 +179,7 @@ pub(super) fn load_sessions(overlay: Option<OverlayHandle<Editor>>) {
         return;
     };
     let spawned = std::thread::Builder::new()
-        .name("hex-screenshot-sessions".into())
+        .name("opcode-screenshot-sessions".into())
         .spawn(move || {
             let sessions = match recent_sessions() {
                 Ok(dests) => Sessions::Ready(dests),

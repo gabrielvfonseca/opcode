@@ -1,6 +1,6 @@
-# Ship Hex Transcription Inside Another Desktop App
+# Ship Opcode Transcription Inside Another Desktop App
 
-**Status:** Updated 2026-09-01. `@kitlangton/hex@0.3.0` is published, and local
+**Status:** Updated 2026-09-01. `@kitlangton/opcode@0.3.0` is published, and local
 Electron capture-to-transcript testing works on Apple Silicon macOS. The native
 helper package is still unpublished; embedding currently requires an explicit
 helper command. The remaining native distribution work below is a plan, not a
@@ -13,8 +13,8 @@ not yet exist.
 ## Deliver a runtime, not another app to install
 
 Desktop consumers need local transcription without requiring their users to
-install Hex or visit Hex settings. Mobile integration is outside this plan.
-Hex remains a full dictation app. The embedded offering exposes the reusable
+install Opcode or visit Opcode settings. Mobile integration is outside this plan.
+Opcode remains a full dictation app. The embedded offering exposes the reusable
 model and inference machinery, not the desktop UI, hotkeys, or paste behavior.
 
 Ship a native helper inside the consuming app, controlled through a small SDK.
@@ -26,13 +26,13 @@ process, not an in-process library or an independently running daemon.
 Their desktop app
 |-- Microphone permission, recording, and recording UI  // host-owned
 |-- Model/language preference and transcript insertion // host-owned
-`-- Hex SDK -> bundled native helper                   // host-owned lifetime
+`-- Opcode SDK -> bundled native helper                   // host-owned lifetime
     |-- Model download, verification, and preparation
     `-- Completed audio -> raw transcript
 ```
 
 Success means a signed consumer app can perform first-run model setup and local
-transcription on a clean supported Mac with no Hex installation, repository,
+transcription on a clean supported Mac with no Opcode installation, repository,
 developer toolchain, or manually configured executable path.
 
 ## Start with one supported consumer and platform
@@ -56,8 +56,8 @@ partials are separate engineering work, not packaging checkboxes.
 
 ## Reuse the implemented core, but verify the distribution claims
 
-The SDK implementation merged in [PR #57](https://github.com/anomalyco/hex/pull/57),
-and [PR #58](https://github.com/anomalyco/hex/pull/58) released version `0.3.0`.
+The SDK implementation merged in [PR #57](https://github.com/anomalyco/opcode/pull/57),
+and [PR #58](https://github.com/anomalyco/opcode/pull/58) released version `0.3.0`.
 Validation on 2026-08-31 covered:
 
 - SDK type checking, 45 tests, a locked native release build, and packed-package
@@ -81,7 +81,7 @@ artifacts or public integration commitments.
 | Model/inference operations | `src/local_api.rs`, `src/transcription_service.rs`, and `src/transcription_models.rs` implement authenticated preparation and bounded host-audio transcription. Apple Speech is currently unavailable despite its retained SDK identifier. | Consumer-specific real-model acceptance and concurrent-process validation. |
 | SDK | Published `0.3.0` adds model-bound `create({ model })`, raw-WAV transcription, and awaited cancellation cleanup in Promise and Effect. | Preserve low-level `create()`, `connect()`, and explicit-command use while completing native distribution. |
 | Native package | `sdk/service-darwin-arm64` is private at `0.0.0`; the client has no native optional dependency. | Publishable artifact, consumer bundling, and compatible client/helper release. |
-| Build | `scripts/build-service-app.sh` copies `target/release/hex` into a service bundle. | A transcription-only executable, not a renamed full desktop executable. |
+| Build | `scripts/build-service-app.sh` copies `target/release/opcode` into a service bundle. | A transcription-only executable, not a renamed full desktop executable. |
 | Coupling | `local_api` references recognition/developer control; `transcription` and `parakeet` also contain desktop paths; `build.rs` compiles UI/permission resources. | Make the helper build independent of desktop-only code without duplicating inference. |
 | Platform | `local_api` and `transcription_service` are macOS-gated in `src/main.rs`. | Linux desktop support does not provide embedded service parity. |
 | Validation | `scripts/smoke-embedded-service.sh` and `scripts/smoke-service-app.sh` check API `2`. | Exercise consumer packaging and clean-machine distribution. |
@@ -99,10 +99,10 @@ settings-control interface. An explicit command is currently required. Omitting
 it is a target of native packaging, not a working clean-install promise.
 
 ```ts
-import { create } from "@kitlangton/hex"
+import { create } from "@kitlangton/opcode"
 
 const transcriber = await create({
-  command: ["/path/to/hex-service", "service", "--embedded"],
+  command: ["/path/to/opcode-service", "service", "--embedded"],
   model: "parakeet_unified_en",
   language: "en",
   onProgress: renderModelProgress,
@@ -153,9 +153,9 @@ lifecycle does not establish that every existing native path satisfies them.
   supported catalog unless its separate OS/runtime behavior is explicitly validated.
 - Share only verified model artifacts through revision-safe storage. The current
   filename-based cache is not sufficient for independently versioned helpers.
-  Preserve locking, cancellation, and atomic publication, and leave legacy Hex
+  Preserve locking, cancellation, and atomic publication, and leave legacy Opcode
   files untouched. No model-deletion interface in the first release.
-- Never read or mutate Hex desktop preferences, history, clipboard, or capture
+- Never read or mutate Opcode desktop preferences, history, clipboard, or capture
   state. Embedded diagnostics must not persist audio, audio-derived tensors,
   transcripts, or tokens. Use bounded host-consumable diagnostics rather than
   uncontrolled shared logs.
@@ -184,7 +184,7 @@ malicious process already running as the same user.
 
 ## Establish viability before committing to extraction
 
-Before slice 1, name the Hex and consumer integration owners and agree a go/no-go
+Before slice 1, name the Opcode and consumer integration owners and agree a go/no-go
 decision gate before the consumer's dependency decision deadline.
 
 Run the existing explicit-command path on consumer-approved representative audio
@@ -230,7 +230,7 @@ writer may modify a partial file reused by a retry after its lock is released.
 Replace unconditional desktop log initialization with bounded, host-consumable
 embedded diagnostics. Define the allowed embedded environment, disable native
 dump flags such as `TRANSCRIBE_DUMP_DIR`, and test an external dump destination,
-not just Hex's support directory. Persistent debug dumping is not an embedded
+not just Opcode's support directory. Persistent debug dumping is not an embedded
 feature, even when inherited from the parent environment.
 
 Inspect the binary's dynamic dependencies and resources. Package everything it
@@ -260,7 +260,7 @@ before distributing this pilot.
 
 **Exit:** a signed consumer app on a clean supported Apple Silicon Mac captures
 under its own microphone identity, prepares a model, and returns a real transcript
-without Hex installed. It starts offline with an already prepared model. Record
+without Opcode installed. It starts offline with an already prepared model. Record
 startup, cold/warm transcription latency, binary size, and memory on named
 hardware. Meet the agreed quality and workload criteria as well as performance;
 a transcript appearing on screen is not sufficient. Measure largest accepted
@@ -278,12 +278,12 @@ download UI. Enforce an embedded supported-model policy in list, prepare, and
 transcribe, not only UI filtering; do not narrow the shared desktop catalog.
 Record each supported revision/hash, architecture, languages, license obligations,
 and tested runtime combination. Include required native/model notices in the
-artifact and consumer redistribution guide; Hex's MIT license is not a blanket
+artifact and consumer redistribution guide; Opcode's MIT license is not a blanket
 license for every model or dependency.
 
-The host saves model/language selection separately from Hex. Make permission
+The host saves model/language selection separately from Opcode. Make permission
 denial, no network, insufficient disk, cancelled download, checksum failure,
-unsupported language/hardware, and busy inference actionable without opening Hex.
+unsupported language/hardware, and busy inference actionable without opening Opcode.
 Choose another model only on explicit user action, not silent substitution.
 
 Implement revision-safe shared storage here, not as a testing-only task. Address
@@ -347,14 +347,14 @@ tests. Exercise the following matrix with the final helper, not only a fake chil
 | Model preparation fails or is cancelled before activation | Previous warm model remains usable; no late candidate commit. |
 | Two hosts prepare the same artifact; one crashes | No corrupt final artifact, lost lock, or cancellation of the other host. |
 | Two catalogs pin different hashes under the same historical filename | Interleaved verification/publication/cold load uses immutable identity; neither invalidates the other's ready/warm model. |
-| Old/new helpers and Hex desktop run together | Legacy files remain intact; independent settings, endpoints, and lifetime. |
+| Old/new helpers and Opcode desktop run together | Legacy files remain intact; independent settings, endpoints, and lifetime. |
 | Oversized/chunked download, redirect, slow transfer, stderr pressure, disk full | Bounded bytes/time/output; released lock and successful later preparation. |
 | Largest admitted WAV and active-plus-candidate model switch on minimum hardware | Peak memory stays within supported bounds or refusal preserves the old usable model. |
 | Two hosts load large models | Measure aggregate memory and document limits; no claim of shared GPU residency. |
 | Untrusted renderer or unrelated local request | No token disclosure, arbitrary spawning, or unauthenticated model/audio operation. |
 | Repeated launches with external `TRANSCRIBE_DUMP_DIR`, success/cancel/forced exit | No audio/tensor/transcript dumps or unbounded shared log accumulation. |
 
-Also smoke-test ordinary Hex dictation, desktop `connect()` capture, and the
+Also smoke-test ordinary Opcode dictation, desktop `connect()` capture, and the
 existing explicit-command SDK path after extracting the helper. This is shared
 code; a successful helper must not regress the existing app or published client.
 
@@ -364,7 +364,7 @@ results for the matrix. Tests that were not run remain explicitly unverified.
 ### 4. Publish artifacts consumers can actually ship
 
 Finalize the platform package name under the existing SDK release policy. Keep
-the current `@kitlangton/hex` entrypoints; the private `@hex-ai/service-darwin-arm64`
+the current `@kitlangton/opcode` entrypoints; the private `@opcode-ai/service-darwin-arm64`
 name is not a public compatibility commitment. Resolve the native artifact
 automatically; no postinstall execution, runtime helper download, or user path
 configuration. Missing optional dependencies and unsupported targets must fail
@@ -418,7 +418,7 @@ The minimum clean-consumer release matrix is explicit:
 | Actual packaged framework, native arm64 process | First-run preparation/inference without a repository, developer tools, shell initialization, or pre-existing model cache. |
 | Same installed app after preparation, network off | Startup and transcription reuse the prepared artifact. |
 | Missing optional package or Rosetta/x64 process | Actionable unsupported/missing-helper failure; no implicit install or architecture guess. |
-| Separate installed-Hex environment | Desktop `connect()` and supported old/new pairs still work. |
+| Separate installed-Opcode environment | Desktop `connect()` and supported old/new pairs still work. |
 
 **Exit:** the first consumer reproduces the signed pilot using release artifacts,
 not workspace links or command overrides. Publish the support matrix, OS floor,
@@ -433,7 +433,7 @@ behavior. Only then describe embedding as generally available for that matrix.
   resumable jobs unless the consumer makes one a launch requirement.
 - No shared daemon, service election, cross-host inference scheduler, or warm
   model broker.
-- No Hex desktop settings interface, UI embedding, global hotkeys, paste,
+- No Opcode desktop settings interface, UI embedding, global hotkeys, paste,
   rewriting, history, or command execution in the helper.
 - No browser-only bootstrap, public Rust ABI, plugin framework, or generic
   cross-platform architecture created ahead of an actual second adapter.

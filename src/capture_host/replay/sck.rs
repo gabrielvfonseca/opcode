@@ -151,8 +151,8 @@ fn format_ns_error(error: *const NSError) -> String {
 fn delegate_class() -> &'static AnyClass {
     static CLASS: OnceLock<&'static AnyClass> = OnceLock::new();
     CLASS.get_or_init(|| {
-        let mut builder = ClassBuilder::new(c"HexClipBufferingDelegate", NSObject::class())
-            .expect("HexClipBufferingDelegate registered once");
+        let mut builder = ClassBuilder::new(c"OpcodeClipBufferingDelegate", NSObject::class())
+            .expect("OpcodeClipBufferingDelegate registered once");
         builder.add_ivar::<*mut c_void>(c"_state");
         if let Some(proto) = AnyProtocol::get(c"SCClipBufferingOutputDelegate") {
             builder.add_protocol(proto);
@@ -162,7 +162,7 @@ fn delegate_class() -> &'static AnyClass {
         }
 
         unsafe extern "C-unwind" fn dealloc(this: *mut AnyObject, _cmd: Sel) {
-            if let Some(cls) = AnyClass::get(c"HexClipBufferingDelegate")
+            if let Some(cls) = AnyClass::get(c"OpcodeClipBufferingDelegate")
                 && let Some(ivar) = cls.instance_variable(c"_state")
             {
                 let ptr = unsafe { *ivar.load::<*mut c_void>(&*this) };
@@ -251,7 +251,7 @@ fn send_signal(this: *mut AnyObject, signal: StreamSignal) {
     if this.is_null() {
         return;
     }
-    let Some(cls) = AnyClass::get(c"HexClipBufferingDelegate") else {
+    let Some(cls) = AnyClass::get(c"OpcodeClipBufferingDelegate") else {
         return;
     };
     let Some(ivar) = cls.instance_variable(c"_state") else {
@@ -268,10 +268,10 @@ fn send_signal(this: *mut AnyObject, signal: StreamSignal) {
 fn make_delegate(signals: SyncSender<StreamSignal>) -> Result<Retained<AnyObject>, String> {
     let cls = delegate_class();
     let obj: Option<Retained<AnyObject>> = unsafe { msg_send![cls, new] };
-    let obj = obj.ok_or_else(|| "could not allocate HexClipBufferingDelegate".to_string())?;
+    let obj = obj.ok_or_else(|| "could not allocate OpcodeClipBufferingDelegate".to_string())?;
     let ivar = cls
         .instance_variable(c"_state")
-        .ok_or_else(|| "missing _state ivar on HexClipBufferingDelegate".to_string())?;
+        .ok_or_else(|| "missing _state ivar on OpcodeClipBufferingDelegate".to_string())?;
     let boxed = Box::into_raw(Box::new(DelegateBox { signals })).cast::<c_void>();
     unsafe {
         let slot = ivar.load::<*mut c_void>(&obj) as *const *mut c_void as *mut *mut c_void;
@@ -460,7 +460,7 @@ impl ClipBufferSession {
         })
     }
 
-    /// Updates Hex's excluded overlay windows in place without resetting the
+    /// Updates Opcode's excluded overlay windows in place without resetting the
     /// 15 s rolling clip buffer.
     pub fn update_exclusions(
         &self,

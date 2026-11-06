@@ -13,10 +13,10 @@ fn the_pump_idles_unless_the_hud_animates() {
     assert!(pump_interval(false) >= 0.2);
 }
 
-/// ⌘Tab back to Hex opens its closed window (#1298), but never for a
-/// menu-bar-only Hex, an overlay that took the keyboard, or an open window.
+/// ⌘Tab back to Opcode opens its closed window (#1298), but never for a
+/// menu-bar-only Opcode, an overlay that took the keyboard, or an open window.
 #[test]
-fn switching_to_hex_opens_its_closed_window() {
+fn switching_to_opcode_opens_its_closed_window() {
     assert!(reopen_on_activation(true, false, false));
     assert!(!reopen_on_activation(false, false, false));
     assert!(!reopen_on_activation(true, true, false));
@@ -24,8 +24,8 @@ fn switching_to_hex_opens_its_closed_window() {
 }
 
 /// Setup or a missing menu-bar item always opens the window; otherwise a
-/// shown Dock icon opens it unless macOS started Hex at login (#1321), and a
-/// hidden one never does. `hex app --hidden` opens it only without the
+/// shown Dock icon opens it unless macOS started Opcode at login (#1321), and a
+/// hidden one never does. `opcode app --hidden` opens it only without the
 /// menu-bar item.
 #[test]
 fn login_item_launch_starts_without_the_window() {
@@ -227,7 +227,7 @@ fn a_mapping_to_the_current_model_in_another_language_switches_the_language() {
 }
 
 #[test]
-fn hex_model_use_with_the_current_model_and_language_loads_nothing() {
+fn opcode_model_use_with_the_current_model_and_language_loads_nothing() {
     let mut fixture = Fixture::new(AppSettings::default());
     let same = fixture.runtime.settings.transcription.clone();
     fixture.runtime.handle(Request::UseInstalledSelection(same));

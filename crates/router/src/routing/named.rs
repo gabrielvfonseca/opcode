@@ -1,5 +1,5 @@
 //! A session named at the start of what was said ("tell scrawl …", "for rune: …", "scrawl, …",
-//! "hey hex …"): an address, obeyed ahead of Jev (`docs/routing.md`).
+//! "hey opcode …"): an address, obeyed ahead of Jev (`docs/routing.md`).
 //!
 //! Only an addressing phrase at the very start counts, never a name elsewhere in the text, so
 //! "scroll down" isn't an address even when `scroll` is an alias.

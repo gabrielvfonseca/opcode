@@ -7,7 +7,7 @@
 //! while off.
 
 mod group;
-#[cfg(all(target_os = "macos", hex_capture))]
+#[cfg(all(target_os = "macos", opcode_capture))]
 mod screenshots;
 mod store;
 
@@ -22,7 +22,7 @@ use crate::desktop::i18n::{tr, tr_fill};
 use crate::labs::{Feature, Group};
 
 pub(super) static LABS_ICON: Icon = Icon {
-    name: "hex-labs",
+    name: "opcode-labs",
     view: 16.0,
     body: r#"<path d="M6.25 2.5h3.5M6.75 2.5v4L3.2 12.3a.8.8 0 0 0 .7 1.2h8.2a.8.8 0 0 0 .7-1.2L9.25 6.5v-4M4.8 10h6.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>"#,
 };
@@ -32,9 +32,9 @@ pub(super) static LABS_ICON: Icon = Icon {
 /// builds).
 pub(super) fn main_panes(ui: &Ui) -> Vec<Pane> {
     let mut panes = vec![Pane::General, Pane::Output, Pane::History];
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     let optional = [Pane::Meetings, Pane::Annotate, Pane::VoiceFilter];
-    #[cfg(not(hex_capture))]
+    #[cfg(not(opcode_capture))]
     let optional = [Pane::Meetings, Pane::VoiceFilter];
     panes.extend(optional.into_iter().filter(|pane| pane.shown(ui)));
     panes
@@ -135,16 +135,16 @@ pub(super) fn nav(ui: &Ui, p: Paint) -> El {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Lab {
     Feature(Feature),
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     Annotate,
 }
 
 impl Lab {
-    /// Its stable id, in `hex://labs/<id>`.
+    /// Its stable id, in `opcode://labs/<id>`.
     pub(super) fn id(self) -> &'static str {
         match self {
             Self::Feature(feature) => feature.name(),
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Self::Annotate => "annotate",
         }
     }
@@ -153,7 +153,7 @@ impl Lab {
     fn added(self) -> u32 {
         match self {
             Self::Feature(feature) => feature.added(),
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Self::Annotate => 0,
         }
     }
@@ -164,7 +164,7 @@ impl Lab {
                 .iter()
                 .position(|known| *known == feature)
                 .unwrap_or(0),
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Self::Annotate => 0,
         }
     }
@@ -172,7 +172,7 @@ impl Lab {
     fn audience(self) -> crate::labs::Audience {
         match self {
             Self::Feature(feature) => feature.audience(),
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             Self::Annotate => crate::labs::Audience::Everyone,
         }
     }
@@ -201,7 +201,7 @@ impl Store {
     }
 }
 
-/// What a `hex://labs` link asks the store to show.
+/// What a `opcode://labs` link asks the store to show.
 #[cfg_attr(
     not(any(target_os = "macos", all(test, target_os = "linux"))),
     allow(dead_code)
@@ -248,7 +248,7 @@ pub(super) fn reveal(ui: &mut Ui, link: &LabsLink, tx: &mut Tx) {
     match shown(ui).into_iter().find(|row| row.lab.id() == id) {
         Some(row) if link.category.is_none() => ui.lab_store.group = Some(row.group),
         Some(_) => {}
-        None => tracing::warn!(feature = %id, "a Labs link named no feature this Hex has"),
+        None => tracing::warn!(feature = %id, "a Labs link named no feature this Opcode has"),
     }
 }
 
@@ -271,7 +271,7 @@ struct Row {
     title: &'static str,
     about: &'static str,
     on: bool,
-    /// Can't be switched: on while an installed Hex Microphone driver or
+    /// Can't be switched: on while an installed Opcode Microphone driver or
     /// the dictation model needs it, off under an organization's lock.
     locked: bool,
     group: Group,
@@ -333,9 +333,9 @@ fn rows(ui: &Ui) -> Vec<Row> {
             on: super::fun::running(ui),
             locked,
             about: if locked {
-                tr("On while the Hex Microphone driver is installed. Uninstall the driver in Voice Filter to turn it off.")
+                tr("On while the Opcode Microphone driver is installed. Uninstall the driver in Voice Filter to turn it off.")
             } else {
-                tr("Hex Microphone virtual input and real-time voice filters")
+                tr("Opcode Microphone virtual input and real-time voice filters")
             },
             ..row(Feature::VoiceFilter, Some(&VOICE_FILTER_ICON), tr("Voice Filter"), "")
         });
@@ -363,7 +363,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
             Feature::SubtitleExport,
             None,
             tr("Subtitle export"),
-            tr("Export meeting transcripts as SRT or VTT subtitles with hex meetings show"),
+            tr("Export meeting transcripts as SRT or VTT subtitles with opcode meetings show"),
         ));
         // macOS's meeting controller reads the call app's audio output, so
         // Linux renders of macOS scenes leave it out.
@@ -372,7 +372,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
                 Feature::StopWhenCallEnds,
                 Some(&TIMER),
                 tr("Stop when the call ends"),
-                tr("Stop a recording Hex started on its own 30 s after the call app leaves the microphone and goes quiet"),
+                tr("Stop a recording Opcode started on its own 30 s after the call app leaves the microphone and goes quiet"),
             ));
             // Only macOS's capsules know the screen to snap a drag against.
             rows.push(row(
@@ -399,7 +399,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
             Feature::MeetingFinishedEvent,
             Some(&GLOBE),
             tr("Meeting finished event"),
-            tr("Tell apps on this computer when a meeting's transcript is ready. They get only the meeting's ID, through Hex's local API"),
+            tr("Tell apps on this computer when a meeting's transcript is ready. They get only the meeting's ID, through Opcode's local API"),
         ));
         rows.push(row(
             Feature::MeetingPlatformIcons,
@@ -412,6 +412,12 @@ fn rows(ui: &Ui) -> Vec<Row> {
             None,
             tr("Follow live transcript"),
             tr("While a meeting records, the transcript scrolls to the newest line. Scroll up to read earlier text; scroll back to the bottom to follow again."),
+        ));
+        rows.push(row(
+            Feature::CollapsibleMeetingSections,
+            None,
+            tr("Collapsible meeting sections"),
+            tr("Fold the summary, chapters, and day groups in Meetings"),
         ));
     }
     rows.push(row(
@@ -439,7 +445,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
             Feature::PauseBrowser,
             Some(&GLOBE),
             tr("Also pause the browser"),
-            tr("While dictating with Pause media: YouTube and other tabs, resumed only if Hex paused them"),
+            tr("While dictating with Pause media: YouTube and other tabs, resumed only if Opcode paused them"),
         ));
         rows.push(row(
             Feature::KeepOnClipboard,
@@ -494,7 +500,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
                 Feature::HideMenuBarIcon,
                 None,
                 tr("Hide menu bar icon"),
-                tr("Hide Hex's icon from the menu bar. Shortcuts keep working; open Hex again from Finder or Spotlight for Settings"),
+                tr("Hide Opcode's icon from the menu bar. Shortcuts keep working; open Opcode again from Finder or Spotlight for Settings"),
             ));
             // macOS's HUD reads the screen's notch from NSScreen.
             rows.push(row(
@@ -503,8 +509,8 @@ fn rows(ui: &Ui) -> Vec<Row> {
                 tr("Notch indicator"),
                 tr("On a screen with a notch, the recording indicator grows out of the notch instead of sitting below the menu bar"),
             ));
-            // Hex's session tap takes the shortcut; ScreenCaptureKit shoots.
-            #[cfg(hex_capture)]
+            // Opcode's session tap takes the shortcut; ScreenCaptureKit shoots.
+            #[cfg(opcode_capture)]
             rows.push(row(
                 Feature::Screenshots,
                 Some(&CAMERA),
@@ -512,7 +518,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
                 tr("Press ⌘⇧4 to capture an area, or press Space for a window. The shot goes on the clipboard and into a folder"),
             ));
             // macOS 27's SCClipBufferingOutput keeps a rolling 15 s display ring in replayd.
-            #[cfg(hex_capture)]
+            #[cfg(opcode_capture)]
             if Feature::AnnotateReplay.on_this_os() {
                 rows.push(row(
                     Feature::AnnotateReplay,
@@ -535,7 +541,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
             Feature::SectionKeyAlone,
             Some(&KEYBOARD),
             tr("Section key alone"),
-            tr("Use the § key, left of 1 on ISO keyboards, as a shortcut without a modifier. Hex takes § from every app while it's bound"),
+            tr("Use the § key, left of 1 on ISO keyboards, as a shortcut without a modifier. Opcode takes § from every app while it's bound"),
         ));
         // Linux's shortcut machine reads it with the listener's options.
         rows.push(row(
@@ -600,7 +606,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
         Feature::HistoryStats,
         None,
         tr("Dictation stats"),
-        tr("Show a summary of your retained dictations at the top of History, with hex history stats"),
+        tr("Show a summary of your retained dictations at the top of History, with opcode history stats"),
     ));
     rows.push(row(
         Feature::KeepRecordings,
@@ -677,7 +683,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
             tr("Paste with Ctrl+Shift+V so terminals accept it"),
         ));
     }
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     if ui.platform.scrawl.is_some() {
         let locked = crate::policy::Policy::current().locks(crate::policy::Lock::Annotate);
         rows.push(Row {
@@ -700,7 +706,7 @@ fn rows(ui: &Ui) -> Vec<Row> {
 fn row_key(lab: Lab) -> &'static str {
     let feature = match lab {
         Lab::Feature(feature) => feature,
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         Lab::Annotate => return "lab-annotate",
     };
     match feature {
@@ -752,6 +758,7 @@ fn row_key(lab: Lab) -> &'static str {
         Feature::MeetingPlatformIcons => "lab-meeting-platform-icons",
         Feature::Screenshots => "lab-screenshots",
         Feature::FollowLiveTranscript => "lab-follow-live-transcript",
+        Feature::CollapsibleMeetingSections => "lab-collapsible-meeting-sections",
         Feature::AnnotateReplay => "lab-annotate-replay",
     }
 }
@@ -759,7 +766,7 @@ fn row_key(lab: Lab) -> &'static str {
 fn flip(ui: &mut Ui, lab: Lab) {
     let feature = match lab {
         Lab::Feature(feature) => feature,
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         Lab::Annotate => {
             if ui.settings.capture.enabled {
                 group::keep_open(ui, Group::Annotate);
@@ -784,7 +791,7 @@ fn flip(ui: &mut Ui, lab: Lab) {
     ui.update(|settings| feature.set(settings, on));
     match feature {
         Feature::KeyboardModelSwitching => ui.open = None,
-        // Hex hears the browser through System Audio Recording.
+        // Opcode hears the browser through System Audio Recording.
         Feature::PauseBrowser if on && !ui.platform.system_audio => {
             ui.ask(super::platform::PlatformRequest::SystemAudio);
         }
@@ -813,7 +820,7 @@ fn extras(ui: &Ui, p: Paint, entry: &Row) -> Option<El> {
                 )
                 .child(unload_after(ui, p)),
         ),
-        #[cfg(all(target_os = "macos", hex_capture))]
+        #[cfg(all(target_os = "macos", opcode_capture))]
         Lab::Feature(Feature::Screenshots) => Some(screenshots::body(
             ui,
             p,

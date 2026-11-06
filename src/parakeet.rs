@@ -37,7 +37,7 @@ pub struct Parakeet {
 /// Loaded model weights, estimated from the model file size (they live in Metal buffers).
 static MODEL_WEIGHTS: procwatch::Gauge = procwatch::Gauge::new("speech.model_weights");
 static TRANSCRIBE_LOGGING: Once = Once::new();
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 const TRANSCRIPTION_SAMPLES_PER_MS: usize = 16;
 const MAX_PENDING_OUTPUTS: usize = 16;
 
@@ -90,7 +90,7 @@ pub enum TranscriptionTarget {
     /// pane's steps.
     RawPaste,
     Service,
-    /// `hex dictation stop --print`: processed as a paste, then handed to
+    /// `opcode dictation stop --print`: processed as a paste, then handed to
     /// the waiting command instead of pasted.
     Print,
     /// A printing stop of a raw dictation: the transcript as heard.
@@ -631,11 +631,11 @@ fn process_job_text(
 
 /// The longest audio the capture path hands the model at once; longer
 /// captures are transcribed in consecutive chunks with their times offset.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 const WORD_CHUNK_SAMPLES: usize = 30 * 16_000;
 /// How long a capture chunk waits for dictation to go idle before it is
 /// queued anyway; the engine still never runs it inside a live stream.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 const WORD_DICTATION_WAIT: std::time::Duration = std::time::Duration::from_secs(20);
 
 /// Transcribes a capture's 16 kHz audio with word timestamps on the engine's
@@ -646,7 +646,7 @@ const WORD_DICTATION_WAIT: std::time::Duration = std::time::Duration::from_secs(
 /// first. No second copy of the model is loaded, and only a weak reference
 /// to the engine is kept between chunks. Quitting stops it between chunks.
 /// Every chunk runs on `selection`.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub fn transcribe_with_words(
     engine: &std::sync::Weak<TranscriptionEngine>,
     selection: &crate::transcription::models::TranscriptionSelection,
@@ -682,7 +682,7 @@ pub fn transcribe_with_words(
     })
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 fn wait_for_dictation_idle() -> Result<()> {
     let started = Instant::now();
     while dictation_busy()
@@ -692,14 +692,14 @@ fn wait_for_dictation_idle() -> Result<()> {
         thread::sleep(std::time::Duration::from_millis(50));
     }
     if crate::desktop::process_exit::quitting() {
-        return Err(eyre!("Hex is quitting"));
+        return Err(eyre!("Opcode is quitting"));
     }
     Ok(())
 }
 
 /// Transcribes `samples` in chunks of at most `chunk_samples`, offsetting
 /// each chunk's segment and word times by where it starts.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 fn transcribe_in_chunks(
     samples: Vec<f32>,
     chunk_samples: usize,
@@ -1351,11 +1351,11 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires HEX_COHERE_MODEL and HEX_COHERE_FIXTURES synthetic audio"]
+    #[ignore = "requires OPCODE_COHERE_MODEL and OPCODE_COHERE_FIXTURES synthetic audio"]
     fn cohere_long_form_keeps_all_sections_with_and_without_pauses() {
-        let model_path = PathBuf::from(std::env::var_os("HEX_COHERE_MODEL").expect("model path"));
+        let model_path = PathBuf::from(std::env::var_os("OPCODE_COHERE_MODEL").expect("model path"));
         let fixtures =
-            PathBuf::from(std::env::var_os("HEX_COHERE_FIXTURES").expect("fixture path"));
+            PathBuf::from(std::env::var_os("OPCODE_COHERE_FIXTURES").expect("fixture path"));
         let selection = TranscriptionSelection {
             model: TranscriptionModelId::CohereTranscribe,
             language: "en".into(),
@@ -1516,14 +1516,14 @@ mod tests {
     /// blocks, the last 200 ms held back as the release tail) and compares
     /// the stream's release latency and text with whole-clip transcription.
     #[test]
-    #[ignore = "requires HEX_STREAM_MODEL (Unified English GGUF) and HEX_STREAM_WAVS (comma-separated)"]
+    #[ignore = "requires OPCODE_STREAM_MODEL (Unified English GGUF) and OPCODE_STREAM_WAVS (comma-separated)"]
     fn metal_stream_tracks_offline_transcription() {
         use crate::transcription::engine::{Offline, Source, TranscriptionEngine};
         use crate::transcription::{Transcriber, WarmTranscriber};
 
         let selection = TranscriptionSelection::default();
         let mut model = Parakeet::load_from(
-            &PathBuf::from(std::env::var("HEX_STREAM_MODEL").unwrap()),
+            &PathBuf::from(std::env::var("OPCODE_STREAM_MODEL").unwrap()),
             false,
             Some(&selection),
         )
@@ -1536,13 +1536,13 @@ mod tests {
             Box::new(model),
         )))
         .unwrap();
-        // `HEX_STREAM_LIVE_TEXT=0` replays without reading live text.
-        let engine = if std::env::var("HEX_STREAM_LIVE_TEXT").is_ok_and(|value| value == "0") {
+        // `OPCODE_STREAM_LIVE_TEXT=0` replays without reading live text.
+        let engine = if std::env::var("OPCODE_STREAM_LIVE_TEXT").is_ok_and(|value| value == "0") {
             engine
         } else {
             engine.with_live_text()
         };
-        let speed = std::env::var("HEX_STREAM_SPEED")
+        let speed = std::env::var("OPCODE_STREAM_SPEED")
             .ok()
             .and_then(|speed| speed.parse::<f64>().ok())
             .unwrap_or(4.0);
@@ -1566,7 +1566,7 @@ mod tests {
                 .filter(|word| !word.is_empty())
                 .collect::<Vec<_>>()
         };
-        for path in std::env::var("HEX_STREAM_WAVS").unwrap().split(',') {
+        for path in std::env::var("OPCODE_STREAM_WAVS").unwrap().split(',') {
             let mut reader = WavReader::open(path).unwrap();
             let rate = reader.spec().sample_rate;
             let channels = usize::from(reader.spec().channels);
@@ -1668,7 +1668,7 @@ mod tests {
         }
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     #[test]
     fn chunked_word_transcription_keeps_word_times_across_chunks() {
         use crate::transcription::{Transcript, TranscriptSegment};
@@ -1713,7 +1713,7 @@ mod tests {
         assert_eq!(merged.segments[2].start_ms, 20_000);
     }
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     #[test]
     fn word_transcription_is_a_foreground_request_on_the_shared_engine() {
         use crate::transcription::engine::Command as EngineCommand;
@@ -1774,9 +1774,9 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires HEX_STUTTER_FIXTURE and the installed Parakeet model"]
+    #[ignore = "requires OPCODE_STUTTER_FIXTURE and the installed Parakeet model"]
     fn tdt_decoder_does_not_repeat_single_letter_tokens() {
-        let path = PathBuf::from(std::env::var("HEX_STUTTER_FIXTURE").unwrap());
+        let path = PathBuf::from(std::env::var("OPCODE_STUTTER_FIXTURE").unwrap());
         let mut reader = WavReader::open(path).unwrap();
         let sample_rate = reader.spec().sample_rate;
         let samples = reader

@@ -4,18 +4,18 @@
 Agent or terminal                                  // control.cli; every OS
 ├── One tree and protocol over the local API's POST /control on every OS;
 │   OS can't do it -> unsupported at runtime, exit 1
-├── hex status [--json] -> Listener, capture, meeting, model, features,
+├── opcode status [--json] -> Listener, capture, meeting, model, features,
 │   permissions, window, update, version, pid, memory
-│   └── Hex not running -> exit 3, "Hex is not running; run `hex start`"
-├── hex start -> Already running: nothing | else open Hex.app (Linux and
-│   Windows: a detached `hex app --hidden`), wait ≤ 20 s
-│   └── The caller's HEX_* variables -> open --env (values never logged)
-├── hex quit | restart [--force]
+│   └── Opcode not running -> exit 3, "Opcode is not running; run `opcode start`"
+├── opcode start -> Already running: nothing | else open Opcode.app (Linux and
+│   Windows: a detached `opcode app --hidden`), wait ≤ 20 s
+│   └── The caller's OPCODE_* variables -> open --env (values never logged)
+├── opcode quit | restart [--force]
 │   ├── Meeting or dictation in progress, no --force -> refused, exit 1
 │   ├── Listener didn't answer, no --force -> busy (it might be recording)
-│   └── restart -> reopens with the running Hex's HEX_* variables (macOS);
+│   └── restart -> reopens with the running Opcode's OPCODE_* variables (macOS);
 │       Linux unit -> systemctl restart; else waits for the drain, then start
-├── hex dictation start|stop|toggle|cancel
+├── opcode dictation start|stop|toggle|cancel
 │   ├── Same shortcut state machine as the hotkey; start locks the capture
 │   ├── start -> intentional at once: tone once the mic is open, recording
 │   │   behavior, live stream
@@ -33,42 +33,42 @@ Agent or terminal                                  // control.cli; every OS
 │   └── dictation start|toggle --raw -> the dictation it starts pastes the
 │       transcript as heard (Dictate without processing); History keeps it as Raw;
 │       --raw with stop -> usage error, exit 2
-├── hex paste-last -> pastes the last dictation
+├── opcode paste-last -> pastes the last dictation
 │   ├── Setup gates the listener -> not-ready
 │   └── Recording or shortcut gesture in progress -> busy (menu bar: nothing)
-├── hex meetings record [--title] | stop | copy-last
+├── opcode meetings record [--title] | stop | copy-last
 │   ├── Meetings off -> feature-off; recording shows in the menu bar and HUD
 │   │   exactly like a menu-bar recording
-│   └── No meetings cancel: Hex cannot discard a recording
-├── hex settings list | get <key|prefix> | set <key> <value>
+│   └── No meetings cancel: Opcode cannot discard a recording
+├── opcode settings list | get <key|prefix> | set <key> <value>
 │   ├── The window's save, then ReloadSettings -> live, no restart
 │   ├── Unknown key, bad value, read-only key -> refused, nothing written
 │   ├── Shortcut conflict -> refused, as the window's recorder would
 │   └── apply <file|-> -> a JSON object of key: value, all or none
 │       ├── Undeclared settings keep their values; dependent keys in any order
 │       ├── transcription.model / .language -> selected, never downloaded
-│       ├── Hex running -> SettingsApply: saved and adopted live, like set
-│       └── Hex stopped -> written to settings.json under the service lock
-│           (Linux); a Hex holding it is waited for (≤ 35 s) instead
-├── hex model list | use <id> | install [id] | cancel
+│       ├── Opcode running -> SettingsApply: saved and adopted live, like set
+│       └── Opcode stopped -> written to settings.json under the service lock
+│           (Linux); a Opcode holding it is waited for (≤ 35 s) instead
+├── opcode model list | use <id> | install [id] | cancel
 │   ├── use -> installed models only; never downloads or repairs; keeps the
 │   │   model's remembered language and hints (--language overrides)
-│   └── Linux/Windows: install with Hex stopped downloads here; status,
+│   └── Linux/Windows: install with Opcode stopped downloads here; status,
 │       devices, check, transcribe run here (macOS: unsupported)
-├── hex window show [pane] | hide
+├── opcode window show [pane] | hide
 │   ├── settings -> the General pane (status window.pane stays "settings")
 │   ├── meetings pane with Meetings off -> the pane's opt-in card
 │   └── story <story> [--variant V] [--play] -> a playground story, as a
-│       hex://story link opens (labs.md); playground off -> feature-off
-├── hex history clear --yes -> without --yes refused before Hex is asked
-├── hex check-for-updates -> The updater checks now
-├── hex launch-at-login [on|off] -> SMAppService (changes need Hex.app);
+│       opcode://story link opens (labs.md); playground off -> feature-off
+├── opcode history clear --yes -> without --yes refused before Opcode is asked
+├── opcode check-for-updates -> The updater checks now
+├── opcode launch-at-login [on|off] -> SMAppService (changes need Opcode.app);
 │   Windows Run key; Linux XDG autostart entry
-└── hex logs [--process] [-n N] [-f] -> local tail; works with Hex stopped
+└── opcode logs [--process] [-n N] [-f] -> local tail; works with Opcode stopped
 ```
 
 Every command except `start`, `restart`, `logs`, `settings apply`, and the
-read commands talks only to the running Hex; none of them launch Hex. Every OS reaches it through
+read commands talks only to the running Opcode; none of them launch Opcode. Every OS reaches it through
 the local API's owner-only discovery file and the bearer-authenticated
 `POST /control` route. Commands dispatch before logging and the instance lock on every OS,
 so they never compete with the running app for its files. Opt-ins stay
@@ -82,8 +82,8 @@ window's do, and `settings set` refuses a key whose capability the OS lacks
 (`settings list` marks it "not on this OS"). `meetings record|stop|copy-last`
 go to the meeting recorder (`meeting/runtime`) as the tray's items do;
 `window story` answers `unsupported`; Windows sends every `annotate`
-command to the running Hex. `hex history`, `hex meetings list|show|search`, and
-`hex mcp` read files on every OS.
+command to the running Opcode. `opcode history`, `opcode meetings list|show|search`, and
+`opcode mcp` read files on every OS.
 
 Sources: [control.rs](../../src/control.rs) (protocol, status, quit rules),
 [control/host.rs](../../src/control/host.rs) (the Linux and Windows host),
@@ -101,8 +101,8 @@ protocol versions, and cover the quit rules (an unanswered listener refuses)
 and `model_selection` (remembered hints, wildcard-language validation); `control::settings::tests` include
 `every_persisted_setting_has_a_cli_key`, value parsing, shortcut conflicts,
 and zero volume; `control::cli::tests` pin
-exit codes, output, and `hex start`'s `open`
-arguments; `desktop::onboarding::tests::relaunch_forwards_only_the_hex_environment`
+exit codes, output, and `opcode start`'s `open`
+arguments; `desktop::onboarding::tests::relaunch_forwards_only_the_opcode_environment`
 pins restart's; `macos_rune::control::tests` check that `model use` prepares
 its exact selection installed-only;
 `dictation::audio::tests::marked_captures_are_intentional_without_a_hold`
@@ -118,7 +118,7 @@ the quit refusal, printing stops, and runtime `unsupported` replies;
 without a recorded reason; `settings_name_real_capabilities_and_keys` checks
 the settings-to-capability table.
 
-Observed (Oct 30, apollo, an isolated data root and `hex service` without a
+Observed (Oct 30, apollo, an isolated data root and `opcode service` without a
 display): status, settings get/set (and refusing `show_dock_icon`), vocabulary
 add/list/remove, model list/use/status, history clear, window hide,
 check-for-updates, commands check, quit, start, and restart all answered as

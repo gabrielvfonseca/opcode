@@ -1,5 +1,5 @@
 schema "sigil/v1"
-// Hex's capture capsule (src/rune_ui/capture_capsule), every state as a scene.
+// Opcode's capture capsule (src/rune_ui/capture_capsule), every state as a scene.
 // Kit's Scrawl capsule (sigil examples/scrawl_capsule.sigil) in the OpenCode
 // theme: no iPhone, Paste, Inspect or Write at cursor; Window shows no Record;
 // a finished capture reads "Saved" until the router answers, and "Copied"
@@ -115,7 +115,7 @@ artboard capsule (w: 640, theme: "opencode.dark") {
     send-list := Col { visible: state.list; w: 420; mt: 6; padding: 4; radius: 14; fill: color.bg_base; elevation: "floating"; presence: "drop"; presence_exit: 170
       sug-head := Section(title: "SUGGESTED") { visible: state.sug }
       row-seer := Dest(n: "1", title: "SEER", reason: "guess · problems.kitlangton.com", fill: color.layer_01) { visible: state.sug }
-      row-hex := Dest(n: "2", title: "HEX", reason: "last sent") { visible: state.sug }
+      row-opcode := Dest(n: "2", title: "OPCODE", reason: "last sent") { visible: state.sug }
       recent-head := Section(title: "RECENT") { visible: state.recent }
       row-home := Dest(n: state.sug ? "3" : "1", title: "HOME", reason: "yesterday", fill: state.sug ? "#00000000" : color.layer_01) { visible: state.recent }
       row-rune := Dest(n: state.sug ? "4" : "2", title: "RUNE", reason: "2 days ago") { visible: state.recent }

@@ -1,7 +1,7 @@
-//! Hex's own GNOME custom keyboard shortcuts, for GNOME without a
+//! Opcode's own GNOME custom keyboard shortcuts, for GNOME without a
 //! GlobalShortcuts portal (GNOME 46 and older, #781): entries in GNOME
-//! Settings › Keyboard › Custom Shortcuts that run `hex` commands. Hex owns
-//! only the entries under its own paths (`…/custom-keybindings/hex-*/`) and
+//! Settings › Keyboard › Custom Shortcuts that run `opcode` commands. Opcode owns
+//! only the entries under its own paths (`…/custom-keybindings/opcode-*/`) and
 //! leaves every other custom shortcut alone. GNOME runs a custom shortcut on
 //! the key press only, so dictation toggles there.
 
@@ -14,10 +14,10 @@ use crate::linux::gsettings::{gsettings, string_list, string_list_text, string_t
 const LIST_SCHEMA: &str = "org.gnome.settings-daemon.plugins.media-keys";
 const ENTRY_SCHEMA: &str = "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding";
 const BASE: &str = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/";
-/// Every entry Hex may write, by path name.
-const ENTRIES: [&str; 3] = ["hex-dictation", "hex-paste-last", "hex-annotate"];
+/// Every entry Opcode may write, by path name.
+const ENTRIES: [&str; 3] = ["opcode-dictation", "opcode-paste-last", "opcode-annotate"];
 
-/// One custom shortcut: its path name, its name in GNOME Settings, the `hex`
+/// One custom shortcut: its path name, its name in GNOME Settings, the `opcode`
 /// arguments it runs, and its GTK accelerator.
 #[derive(Debug, PartialEq)]
 struct Entry {
@@ -27,10 +27,10 @@ struct Entry {
     accelerator: String,
 }
 
-/// Whether Hex's entries should exist, or `None` while a starting listener
+/// Whether Opcode's entries should exist, or `None` while a starting listener
 /// hasn't said how it gets its shortcuts. They stand in for a missing
 /// shortcuts portal only: once the portal (or X11) binds the shortcuts, an
-/// entry on the same key would also run `hex dictation toggle` on every press
+/// entry on the same key would also run `opcode dictation toggle` on every press
 /// and repeat, stopping the hold the portal just started (#931).
 pub(crate) fn wanted(requested: bool, shortcuts: Option<DesktopShortcuts>) -> Option<bool> {
     match shortcuts {
@@ -41,13 +41,13 @@ pub(crate) fn wanted(requested: bool, shortcuts: Option<DesktopShortcuts>) -> Op
     }
 }
 
-/// Writes Hex's entries for `settings`' shortcuts, starting `hex`, and
-/// removes Hex's entries it no longer has a shortcut for. An entry already
+/// Writes Opcode's entries for `settings`' shortcuts, starting `opcode`, and
+/// removes Opcode's entries it no longer has a shortcut for. An entry already
 /// listed keeps its key, which the person may have changed in GNOME Settings.
-pub(crate) fn install(settings: &AppSettings, hex: &std::path::Path) -> Result<()> {
+pub(crate) fn install(settings: &AppSettings, opcode: &std::path::Path) -> Result<()> {
     let entries = entries(settings);
     let listed = string_list(&gsettings(&["get", LIST_SCHEMA, "custom-keybindings"])?);
-    let command_path = hex.to_string_lossy();
+    let command_path = opcode.to_string_lossy();
     for entry in &entries {
         let path = format!("{ENTRY_SCHEMA}:{BASE}{}/", entry.id);
         let command = format!("{} {}", shell_word(&command_path), entry.arguments);
@@ -61,13 +61,13 @@ pub(crate) fn install(settings: &AppSettings, hex: &std::path::Path) -> Result<(
     write_list(&kept)
 }
 
-/// Removes every entry Hex wrote.
+/// Removes every entry Opcode wrote.
 pub(crate) fn remove() -> Result<()> {
     write_list(&[])
 }
 
-/// Lists Hex's entries `kept` (and every entry that isn't Hex's) in GNOME's
-/// custom shortcuts, and resets Hex's others.
+/// Lists Opcode's entries `kept` (and every entry that isn't Opcode's) in GNOME's
+/// custom shortcuts, and resets Opcode's others.
 fn write_list(kept: &[&str]) -> Result<()> {
     let listed = string_list(&gsettings(&["get", LIST_SCHEMA, "custom-keybindings"])?);
     let ours = |path: &str| {
@@ -97,7 +97,7 @@ fn write_list(kept: &[&str]) -> Result<()> {
     Ok(())
 }
 
-/// Hex's entries for the shortcuts `settings` records. A shortcut GNOME
+/// Opcode's entries for the shortcuts `settings` records. A shortcut GNOME
 /// can't bind (modifiers alone, a mouse button) gets none.
 fn entries(settings: &AppSettings) -> Vec<Entry> {
     let mut entries = Vec::new();
@@ -112,22 +112,22 @@ fn entries(settings: &AppSettings) -> Vec<Entry> {
         }
     };
     add(
-        "hex-dictation",
-        "Hex: dictation",
+        "opcode-dictation",
+        "Opcode: dictation",
         "dictation toggle",
         Some(&settings.dictation_hotkey),
     );
     add(
-        "hex-paste-last",
-        "Hex: paste last dictation",
+        "opcode-paste-last",
+        "Opcode: paste last dictation",
         "paste-last",
         settings.paste_last_hotkey.as_ref(),
     );
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     if settings.capture.enabled {
         add(
-            "hex-annotate",
-            "Hex: annotate",
+            "opcode-annotate",
+            "Opcode: annotate",
             "annotate toggle",
             Some(&settings.capture.hotkey),
         );
@@ -266,11 +266,11 @@ mod tests {
         };
         let entries = entries(&settings);
         assert_eq!(entries[0].arguments, "dictation toggle");
-        assert!(entries.iter().all(|entry| entry.id != "hex-paste-last"));
+        assert!(entries.iter().all(|entry| entry.id != "opcode-paste-last"));
         assert_eq!(
-            shell_word("/home/a/.local/bin/hex"),
-            "/home/a/.local/bin/hex"
+            shell_word("/home/a/.local/bin/opcode"),
+            "/home/a/.local/bin/opcode"
         );
-        assert_eq!(shell_word("/home/a b/hex"), "'/home/a b/hex'");
+        assert_eq!(shell_word("/home/a b/opcode"), "'/home/a b/opcode'");
     }
 }

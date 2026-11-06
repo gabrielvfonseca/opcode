@@ -1,6 +1,6 @@
-//! Hex's first run: the onboarding story, the one onboarding on every OS.
+//! Opcode's first run: the onboarding story, the one onboarding on every OS.
 //! A new install (or an upgrade whose setup isn't ready) opens it at
-//! launch, and Run setup again and `hex onboarding reset` replay it. The
+//! launch, and Run setup again and `opcode onboarding reset` replay it. The
 //! window's tour ([`onboarding`](super::super::onboarding)) is the state
 //! machine underneath: it starts the model download, asks for the
 //! permissions, relaunches when macOS needs it, watches the practice
@@ -8,7 +8,7 @@
 //! over the window and feeds them that real state each frame.
 //!
 //! When the Hugging Face cache holds a compatible model, the download page
-//! becomes the model step (`found_choice`): one list, Hex's recommended
+//! becomes the model step (`found_choice`): one list, Opcode's recommended
 //! model first and selected, then the models found. Picking ours downloads
 //! it; picking a found one uses it in place, and the story moves on without
 //! a download. Back on the next pages returns to the list. Nothing found
@@ -45,7 +45,7 @@ const STALL_AFTER: f64 = 30.0;
 
 /// What the real first run reports to the story's pages.
 pub(crate) struct Live {
-    /// Hex's own dictation records.
+    /// Opcode's own dictation records.
     pub(crate) listening: bool,
     /// The model download stopped with an error.
     pub(crate) failed: bool,
@@ -59,20 +59,17 @@ pub(crate) struct Live {
     pub(crate) using_file: bool,
     pub(crate) microphone: ItemStatus,
     pub(crate) accessibility: ItemStatus,
-    /// General's "Turn off the mic when not dictating" was on when the
-    /// first run opened, so the microphone opens only while you dictate.
-    pub(crate) release_microphone: bool,
-    /// Every permission is on and one applies only after Hex restarts.
+    /// Every permission is on and one applies only after Opcode restarts.
     pub(crate) restart: bool,
     /// macOS asks for Microphone and Accessibility; Windows only shows the
     /// Microphone row while its privacy switch is off.
     pub(crate) accessibility_row: bool,
     /// macOS 27 calls Accessibility "Device Control and Data Access".
     pub(crate) accessibility_renamed: bool,
-    /// The shortcut listener failed after setup and Hex won't relaunch by
-    /// itself again: Reopen Hex.
+    /// The shortcut listener failed after setup and Opcode won't relaunch by
+    /// itself again: Reopen Opcode.
     pub(crate) reopen: bool,
-    /// macOS needed a restart and Hex couldn't relaunch itself.
+    /// macOS needed a restart and Opcode couldn't relaunch itself.
     pub(crate) relaunch_failed: bool,
     /// The desktop's paste permission on GNOME and KDE Wayland: the
     /// permissions page explains it and asks before the practice pastes.
@@ -236,7 +233,6 @@ pub(in crate::rune_ui) fn open(ui: &mut Ui) {
         using_file: false,
         microphone: ItemStatus::Todo,
         accessibility: ItemStatus::Todo,
-        release_microphone: ui.settings.release_microphone_while_idle,
         restart: false,
         accessibility_row: ui.platform.caps.permissions,
         accessibility_renamed: ui.platform.accessibility_renamed,
@@ -273,7 +269,7 @@ pub(in crate::rune_ui) fn open(ui: &mut Ui) {
 /// A page of the first run, for scenes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(in crate::rune_ui) enum Page {
-    /// `"Setting up Hex"`, or the model step when models were found.
+    /// `"Setting up Opcode"`, or the model step when models were found.
     Download,
     /// The demo, finished: `"Twice as fast"` and Continue.
     Demo,
@@ -354,7 +350,7 @@ pub(in crate::rune_ui) fn fixture_resume(ui: &mut Ui, page: Page) {
     poll(ui, &mut tx);
 }
 
-/// "Run setup again" and `hex onboarding reset`: forgets that onboarding
+/// "Run setup again" and `opcode onboarding reset`: forgets that onboarding
 /// finished and opens it now. Settings, history, models, and permissions
 /// stay as they are, so the run finds them ready and passes their steps.
 pub(crate) fn restart(ui: &mut Ui, tx: &mut Tx) -> Result<(), String> {
@@ -367,7 +363,7 @@ pub(crate) fn restart(ui: &mut Ui, tx: &mut Tx) -> Result<(), String> {
     open(ui);
     tx.settle();
     if ui.first_run.is_none() {
-        return Err("Hex could not open onboarding".into());
+        return Err("Opcode could not open onboarding".into());
     }
     Ok(())
 }
@@ -428,7 +424,7 @@ pub(in crate::rune_ui) fn poll(ui: &mut Ui, tx: &mut Tx) -> bool {
             }
         }
     };
-    // A model picked from the list is the one Hex uses, whatever the
+    // A model picked from the list is the one Opcode uses, whatever the
     // language capsule last chose.
     let (choice_installed, status) = (
         checked.installed || tour_model == ItemStatus::Ready,
@@ -531,7 +527,7 @@ pub(in crate::rune_ui) fn poll(ui: &mut Ui, tx: &mut Tx) -> bool {
         }
     }
 
-    // Hex's state arrives between frames, so the first run keeps polling;
+    // Opcode's state arrives between frames, so the first run keeps polling;
     // a fixture shows one moment and stays still.
     advance_to(s, now, tx);
     if live_window {
@@ -548,7 +544,7 @@ pub(in crate::rune_ui) fn overlay(ui: &Ui, p: Paint, reduced: bool) -> Option<El
         super::flows::view(p, s)
             .key("first-run")
             .role("dialog")
-            .label(tr("Setting up Hex"))
+            .label(tr("Setting up Opcode"))
             .absolute(0.0, 0.0)
             .on_press(|_: &mut Ui| {}),
     )
@@ -570,7 +566,7 @@ pub(super) fn press_continue(ui: &mut Ui) {
 }
 
 /// Skip on the demo or the practice: passes over that part to the next
-/// step setup still needs. It never records completion; only Hex is ready
+/// step setup still needs. It never records completion; only Opcode is ready
 /// (or Continue without a model) does.
 pub(in crate::rune_ui) fn skip(ui: &mut Ui) {
     if let Some(s) = ui.first_run.as_mut() {
@@ -599,7 +595,7 @@ pub(in crate::rune_ui) fn continue_without_model(ui: &mut Ui) {
     ui.tour = None;
 }
 
-/// "Start using Hex": closes the first run and the tour under it.
+/// "Start using Opcode": closes the first run and the tour under it.
 pub(super) fn finish(ui: &mut Ui) {
     let installed = ui.picker.selected_installed(&ui.settings);
     if ui.live()
@@ -672,7 +668,7 @@ pub(super) fn back_to_models(ui: &mut Ui) {
     }
 }
 
-/// "Reopen Hex" once the listener failed and Hex won't relaunch itself.
+/// "Reopen Opcode" once the listener failed and Opcode won't relaunch itself.
 pub(super) fn reopen(ui: &mut Ui) {
     onboarding::input(ui, Input::Reopen);
 }
@@ -713,8 +709,8 @@ pub(super) fn paste_later(ui: &mut Ui) {
     }
 }
 
-/// "Restart Hex" once macOS applies a grant only after a restart.
-pub(super) fn restart_hex(ui: &mut Ui) {
+/// "Restart Opcode" once macOS applies a grant only after a restart.
+pub(super) fn restart_opcode(ui: &mut Ui) {
     onboarding::input(ui, Input::Restart);
 }
 
@@ -736,7 +732,7 @@ pub(super) fn practice_changed(ui: &mut Ui, tx: &mut Tx) {
 pub(super) fn hint_copy(live: &Live) -> Option<&'static str> {
     Some(match live.practice {
         Practice::TooShort => tr("Hold the shortcut a little longer while you speak."),
-        Practice::NothingHeard => tr("Hex didn't hear any words. Try again a little louder."),
+        Practice::NothingHeard => tr("Opcode didn't hear any words. Try again a little louder."),
         Practice::Failed => tr("That didn't work. Try again."),
         Practice::Transcribing => tr("Typing what you said…"),
         _ => return None,

@@ -62,7 +62,7 @@ pub(super) fn scan(ui: &mut Ui) {
     let (sender, receiver) = channel();
     let wake = wake(ui.modes.waker.clone());
     let started = std::thread::Builder::new()
-        .name("hex-found-models".into())
+        .name("opcode-found-models".into())
         .spawn(move || {
             let _ = sender.send(found_models::scan());
             wake();
@@ -145,7 +145,7 @@ pub(super) fn adopt(ui: &mut Ui, found: Found, onboarding: bool) {
     let (sender, receiver) = channel();
     let wake = wake(ui.modes.waker.clone());
     let started = std::thread::Builder::new()
-        .name("hex-found-adopt".into())
+        .name("opcode-found-adopt".into())
         .spawn(move || {
             let result = custom_models::adopt_in_place(
                 &found.path,
@@ -164,7 +164,7 @@ pub(super) fn adopt(ui: &mut Ui, found: Found, onboarding: bool) {
 }
 
 /// Two found files for scenes: Parakeet v3's pinned file (an exact catalog
-/// match) and a Whisper Small Q8_0 Hex hasn't tested.
+/// match) and a Whisper Small Q8_0 Opcode hasn't tested.
 pub(super) fn fixture() -> Vec<Found> {
     let hub = std::path::Path::new("/home/you/.cache/huggingface/hub");
     vec![
@@ -263,7 +263,7 @@ pub(super) fn section(ui: &Ui, p: super::controls::Paint) -> Option<rune::El> {
                                     .color(p.text()),
                             )
                             .child(
-                                Badge::new(crate::desktop::i18n::tr("Not tested by Hex"))
+                                Badge::new(crate::desktop::i18n::tr("Not tested by Opcode"))
                                     .build(p.k),
                             ),
                     )

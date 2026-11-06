@@ -1,20 +1,20 @@
 #!/bin/sh
 set -eu
 
-# Builds the release Hex.app from a clean, pushed commit, signs it with the
-# Developer ID of HEX_TEAM_ID, notarizes and staples the app and
+# Builds the release Opcode.app from a clean, pushed commit, signs it with the
+# Developer ID of OPCODE_TEAM_ID, notarizes and staples the app and
 # its DMG, and leaves the two release files the Release workflow publishes
 # to the Anomaly release service (docs/plans/release-service.md):
-#   dist/hex-<version>-macos-arm64.dmg   download (target macos-arm64-dmg)
-#   dist/hex-<version>-macos-arm64.zip   in-app update, root Hex.app (target macos-arm64)
+#   dist/opcode-<version>-macos-arm64.dmg   download (target macos-arm64-dmg)
+#   dist/opcode-<version>-macos-arm64.zip   in-app update, root Opcode.app (target macos-arm64)
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-: "${HEX_TEAM_ID:?Set HEX_TEAM_ID to the Apple Developer signing team}"
+: "${OPCODE_TEAM_ID:?Set OPCODE_TEAM_ID to the Apple Developer signing team}"
 . "$root/scripts/macos-signing.sh"
-version=$(hex_version "$root")
-build_number=$(hex_build_number "$version")
+version=$(opcode_version "$root")
+build_number=$(opcode_build_number "$version")
 dist="$root/dist"
-dmg="$dist/hex-$version-macos-arm64.dmg"
-zip="$dist/hex-$version-macos-arm64.zip"
+dmg="$dist/opcode-$version-macos-arm64.dmg"
+zip="$dist/opcode-$version-macos-arm64.zip"
 
 if [ "$#" -gt 1 ] || { [ "$#" -eq 1 ] && [ "$1" != prepare ]; }; then
   echo "Usage: $0 [prepare]" >&2
@@ -35,12 +35,12 @@ fi
 
 # Staging builds publish a prerelease (X.Y.Z-dev.N); the binary must report it.
 "$root/scripts/set-crate-version.sh" "$root" "$version"
-export HEX_VERSION="$version" HEX_BUILD_NUMBER="$build_number"
+export OPCODE_VERSION="$version" OPCODE_BUILD_NUMBER="$build_number"
 bundle=$("$root/scripts/build-app.sh")
-"$root/scripts/validate-app.sh" "$bundle" Hex.app "$version" "$build_number" >/dev/null
+"$root/scripts/validate-app.sh" "$bundle" Opcode.app "$version" "$build_number" >/dev/null
 mkdir -p "$dist"
 rm -f "$dmg" "$zip"
-"$root/scripts/notarize-app.sh" "$bundle" "$dmg" Hex
+"$root/scripts/notarize-app.sh" "$bundle" "$dmg" Opcode
 # The updater unpacks this beside the installed bundle and swaps it in.
 /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$bundle" "$zip"
 

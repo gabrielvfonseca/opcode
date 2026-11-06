@@ -4,35 +4,35 @@
 
 There is no Swift-to-Rust data migration, but the old apps update straight
 into the new one (Kit, 2026-11-02: "gotta get everyone over"). 2.3.1 and Swift
-Hex both run Sparkle 2.9.4 with the same EdDSA key, so their feeds offer the
-released `Hex.app` and **Install Update** replaces the old app with it. See
+Opcode both run Sparkle 2.9.4 with the same EdDSA key, so their feeds offer the
+released `Opcode.app` and **Install Update** replaces the old app with it. See
 [Legacy Update](#legacy-update).
 
 - Do not import Swift settings, history, audio, models, or other data.
 - Nothing installs without the user's Install Update click, and nothing is
-  deleted. Once setup is ready and the listener starts, `anomaly.hex` asks a
-  running old Hex (the retired bundle IDs below) to quit, so the two never
+  deleted. Once setup is ready and the listener starts, `anomaly.opcode` asks a
+  running old Opcode (the retired bundle IDs below) to quit, so the two never
   answer the same shortcut.
 - Do not adopt the Swift bundle identifier.
 - Do not move or copy existing Rust settings, models, or history.
-- Narrow TCC exception: when `anomaly.hex` shows an untrusted Accessibility,
+- Narrow TCC exception: when `anomaly.opcode` shows an untrusted Accessibility,
   Screen Recording, or System Audio Recording permission row (or the user clicks
-  `"Still grey? Fix it"`), it may run `tccutil reset` against retired Hex bundle
-  identifiers (`com.kitlangton.hex2`, `com.kitlangton.Hex`, `com.kitlangton.Hex.debug`)
-  so System Settings does not list duplicate **Hex** rows that shadow the new grant.
+  `"Still grey? Fix it"`), it may run `tccutil reset` against retired Opcode bundle
+  identifiers (`com.kitlangton.opcode2`, `com.kitlangton.Opcode`, `com.kitlangton.Opcode.debug`)
+  so System Settings does not list duplicate **Opcode** rows that shadow the new grant.
 - New Rust users complete ordinary setup and download their selected local model.
 
 ## Separate Identities
 
-The Rust app is called **Hex**, packaged as **Hex.app**, with
-bundle identifier `com.kitlangton.hex2` and executable `hex`. Its Application Support
-root is `hex`. The supported platform remains Apple silicon with
+The Rust app is called **Opcode**, packaged as **Opcode.app**, with
+bundle identifier `com.kitlangton.opcode2` and executable `opcode`. Its Application Support
+root is `opcode`. The supported platform remains Apple silicon with
 macOS 15 or newer. The new bundle identity requires fresh macOS permission grants;
 changing the display name alone does not change signing ownership.
 
 Kit's personal Developer ID Application certificate (team `QC99C9JE59`) is approved
-for this app. Explicitly provide `HEX_TEAM_ID` and the matching
-`HEX_NOTARY_PROFILE` before release; an Anomaly signing account is not required.
+for this app. Explicitly provide `OPCODE_TEAM_ID` and the matching
+`OPCODE_NOTARY_PROFILE` before release; an Anomaly signing account is not required.
 
 Swift retains its own bundle identity, sandbox data, and S3 update feed. Intel
 and macOS 14 users can continue using Swift without an incompatible-install nag.
@@ -46,10 +46,10 @@ two global hotkey listeners.
 
 ## Legacy Update
 
-Sparkle 2.9.4 installs the new app over 2.3.1 (`HEX.app` or `Hex.app`) and Swift
-Hex because:
+Sparkle 2.9.4 installs the new app over 2.3.1 (`OPCODE.app` or `Opcode.app`) and Swift
+Opcode because:
 
-- **It finds the app.** The ZIP's `Hex.app` matches the old app's file name or
+- **It finds the app.** The ZIP's `Opcode.app` matches the old app's file name or
   its `CFBundleName` plus `.app`
   ([SUInstaller.m](https://github.com/sparkle-project/Sparkle/blob/2.9.4/Autoupdate/SUInstaller.m)).
 - **The key passes.** The old app has `SUPublicEDKey`, so Sparkle refuses an
@@ -62,10 +62,10 @@ Hex because:
   aside and the new one in, then opens it.
 
 Each feed gets one item whose enclosure is the release's
-`Hex-<version>-macos-arm64.zip`, with `sparkle:edSignature` from the old key,
+`Opcode-<version>-macos-arm64.zip`, with `sparkle:edSignature` from the old key,
 `sparkle:version` the new `CFBundleVersion`, `sparkle:minimumSystemVersion`
 15.0, and `sparkle:hardwareRequirements` arm64. Macs that cannot run the new
-Hex keep their last compatible release. The new Hex starts fresh: new
+Opcode keep their last compatible release. The new Opcode starts fresh: new
 permissions, model, and shortcut.
 
 ## Legacy Notice (superseded)
@@ -81,7 +81,7 @@ Sparkle 2.9.4, which supports both the informational item and platform gates.
 After the new signed app and download page are live, add one item to the existing
 Swift S3 appcast while preserving every existing release and artifact:
 
-- `link`: `https://github.com/anomalyco/hex`, the public download page.
+- `link`: `https://github.com/anomalyco/opcode`, the public download page.
 - `sparkle:version`: reserve 93 if still unused; it must exceed installed build 92.
 - `sparkle:shortVersionString`: the public Rust release advertised when the notice
   is published; do not copy a stale version from this plan.
@@ -114,7 +114,7 @@ and these behaviors are validated.
 
 Prepare and publish Rust through `scripts/release-app.sh`, with identity checks
 from `scripts/validate-app.sh`. Publish immutable artifacts before the R2 feed.
-The manual DMG contains `Hex.app`; the Sparkle ZIP keeps the old Rust `HEX.app`
+The manual DMG contains `Opcode.app`; the Sparkle ZIP keeps the old Rust `OPCODE.app`
 archive name. Sparkle 2.9.4 uses case-sensitive filenames or matching bundle IDs
 to discover an update, so changing both at once would hide the update payload
 from 2.0.x installations. Both artifacts contain the same signed, stapled app.
@@ -129,8 +129,8 @@ migration rollback is needed.
 ## GitHub Handoff
 
 Keep the old Swift repository's history, issues, and releases. A prominent README
-notice and repository website link can direct users to `anomalyco/hex`; archive
+notice and repository website link can direct users to `anomalyco/opcode`; archive
 the old repository only after the handoff is complete and explicitly approved.
 Do not overwrite its history with Rust source. An actual repository transfer is
-a separate decision because `anomalyco/hex` already exists; GitHub does not merge
+a separate decision because `anomalyco/opcode` already exists; GitHub does not merge
 the two repositories' stars, issues, and histories automatically.

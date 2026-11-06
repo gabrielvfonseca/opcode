@@ -2,12 +2,12 @@
 
 **Status:** Personal commands, typed capture descriptors, dictation control
 phrases, and text transformations are implemented on macOS; Windows and Linux
-use the transformations. This document records the shipped contract. Hex runs
+use the transformations. This document records the shipped contract. Opcode runs
 configs in embedded QuickJS ([quickjs.md](quickjs.md)).
 
 ## What Users Can Configure
 
-Personal commands live in `~/.config/hex/hex.config.ts` (or `hex.config.js`).
+Personal commands live in `~/.config/opcode/opcode.config.ts` (or `opcode.config.js`).
 The config defines
 ordinary commands, capture descriptors, named text transformations, and optional
 dictation control phrases. Rust validates and matches the grammar and retains
@@ -20,9 +20,9 @@ transformations can run with Commands off; hotkey dictation does not require
 voice commands.
 
 ```ts
-import { defineHexConfig, openUrl } from "@hex/commands"
+import { defineOpcodeConfig, openUrl } from "@opcode/commands"
 
-export default defineHexConfig({
+export default defineOpcodeConfig({
   commands: {
     "open-training": {
       phrases: ["open training"],
@@ -41,7 +41,7 @@ commands that can coexist at equal specificity may not share a phrase.
 
 Available actions are `openUrl`, `openApplication`, `openPath`, `press`, and
 `typeText`. A handler returns an action, a list of actions, or nothing, and may
-also queue actions through its `hex` argument; Hex validates them all and runs
+also queue actions through its `opcode` argument; Opcode validates them all and runs
 them in order after the handler returns. Handlers are plain TypeScript or
 JavaScript and may import other files in the config folder, but not npm
 packages, Effect, or Node APIs.
@@ -64,13 +64,13 @@ script/data URLs remain unsupported; use `openPath` for filesystem paths.
 The config may register named string transformations. Select them in a mode's
 Transformations section to run them in displayed order after that mode's
 corrections and optional OpenCode rewrite. This pipeline applies to Paste and
-Send, not Voice Action or meetings. If the transformation stage fails, Hex
+Send, not Voice Action or meetings. If the transformation stage fails, Opcode
 keeps the text from before that stage, not partially transformed output.
 
 ```ts
-import { defineHexConfig } from "@hex/commands"
+import { defineOpcodeConfig } from "@opcode/commands"
 
-export default defineHexConfig({
+export default defineOpcodeConfig({
   transformations: {
     "trim-whitespace": {
       name: "Trim whitespace",
@@ -93,8 +93,8 @@ contextual modes do not inherit hidden processing from Global.
 
 ## Trust Boundary
 
-The config runs inside Hex's process in QuickJS with no filesystem, network,
-environment, process, or timer API, and imports only `@hex/commands` and files
+The config runs inside Opcode's process in QuickJS with no filesystem, network,
+environment, process, or timer API, and imports only `@opcode/commands` and files
 in the config folder. What it can do is limited to the actions it returns,
 which run with the user's permissions, so review agent changes before enabling
 commands. Each call has a one-second limit and the engine a 64 MiB limit.
@@ -109,9 +109,9 @@ The optional `dictation` section replaces the native voice-dictation phrases,
 not the native capture lifecycle:
 
 ```ts
-import { defineHexConfig } from "@hex/commands"
+import { defineOpcodeConfig } from "@opcode/commands"
 
-export default defineHexConfig({
+export default defineOpcodeConfig({
   dictation: {
     start: ["begin note"],
     stop: ["finish note"],
@@ -122,7 +122,7 @@ export default defineHexConfig({
 })
 ```
 
-`start` matches an utterance prefix while Hex listens. `stop`, `send`, and
+`start` matches an utterance prefix while Opcode listens. `stop`, `send`, and
 `cancel` match suffixes during active voice dictation. Each list must contain at
 least one phrase. Omitting the section uses the native protocol.
 
@@ -132,33 +132,33 @@ Choose Create Config in the Commands pane, Set up in Modes' Transformations, or
 run:
 
 ```sh
-hex commands init
+opcode commands init
 ```
 
 ```text
-~/.config/hex/
-├── hex.config.ts   the user's; created only when no config exists
-├── hex.d.ts        types for @hex/commands; Hex rewrites it when it changes
-├── AGENTS.md       agent notes; Hex rewrites it when it changes
+~/.config/opcode/
+├── opcode.config.ts   the user's; created only when no config exists
+├── opcode.d.ts        types for @opcode/commands; Opcode rewrites it when it changes
+├── AGENTS.md       agent notes; Opcode rewrites it when it changes
 └── tsconfig.json   created only when missing, for editors and `tsc`
 ```
 
 Nothing is installed. Folders from the Bun era keep working once their config
 avoids Effect and npm packages; their `package.json`, `bun.lock`,
-`node_modules`, `.hex-sdk`, and `.agents` can be deleted.
+`node_modules`, `.opcode-sdk`, and `.agents` can be deleted.
 
-Hex reloads the config about a third of a second after any `.ts`, `.js`,
+Opcode reloads the config about a third of a second after any `.ts`, `.js`,
 `.mjs`, or `.json` file in the folder changes (not `.d.ts`, dot folders,
 `node_modules`, or symlink targets), activates valid changes, and reports the
 last load error with its file, line, and column in Modes' Transformations
-section. `hex commands check` (macOS) loads the config as Hex would and prints
+section. `opcode commands check` (macOS) loads the config as Opcode would and prints
 what it registers or why it fails. Type checking is optional:
 `npx -y -p typescript tsc` in the folder.
 
 ## Runtime Boundary
 
 ```text
-hex.config.ts -> type erasure -> QuickJS on one worker thread -> registration
+opcode.config.ts -> type erasure -> QuickJS on one worker thread -> registration
   -> native Rust resolver -> handler call -> actions -> native executor
 ```
 

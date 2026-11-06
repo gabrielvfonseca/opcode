@@ -175,7 +175,7 @@ def main() -> None:
             print(f"  {problem}", file=sys.stderr)
         fail(
             "update cargoGitDependencies in nix/package.nix with the new rev "
-            "and the output hash from a failed `nix build .#hex`"
+            "and the output hash from a failed `nix build .#opcode`"
         )
 
     print(

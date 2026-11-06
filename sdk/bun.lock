@@ -3,17 +3,17 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "hex-sdk-workspace",
+      "name": "opcode-sdk-workspace",
       "devDependencies": {
         "@changesets/cli": "^3.0.3",
       },
     },
     "service-darwin-arm64": {
-      "name": "@hex-ai/service-darwin-arm64",
+      "name": "@opcode-ai/service-darwin-arm64",
       "version": "0.0.0",
     },
     "typescript": {
-      "name": "@kitlangton/hex",
+      "name": "@kitlangton/opcode",
       "version": "0.3.1",
       "devDependencies": {
         "@types/node": "^24.19.1",

@@ -136,7 +136,7 @@ impl WindowsPaster {
             .lock()
             .unwrap_or_else(|error| error.into_inner());
         let original_sequence = clipboard_sequence();
-        // A clipboard Hex can't snapshot (an app's private format) never
+        // A clipboard Opcode can't snapshot (an app's private format) never
         // blocks the paste: the transcript still goes in, and that
         // clipboard just isn't restored afterwards.
         let snapshot = match ClipboardSnapshot::read(&mut self.clipboard) {
@@ -221,7 +221,7 @@ fn restore_clipboard_generation(clipboard_restore: &Arc<Mutex<ClipboardRestore>>
 }
 
 /// Waits, without a deadline, until Shift, Alt, and Win are up: held, they
-/// would turn the synthesized Ctrl+V (or Ctrl+Shift+V, whose Shift Hex
+/// would turn the synthesized Ctrl+V (or Ctrl+Shift+V, whose Shift Opcode
 /// presses and releases itself) into a different shortcut. A held Ctrl
 /// is harmless, so the user may keep it down after finishing with a chord.
 fn wait_for_conflicting_modifiers() {
@@ -317,7 +317,7 @@ fn keyboard_input(key: u16, scan: u16, flags: u32) -> INPUT {
                 wScan: scan,
                 dwFlags: flags,
                 time: 0,
-                dwExtraInfo: crate::windows::input::HEX_INJECTED,
+                dwExtraInfo: crate::windows::input::OPCODE_INJECTED,
             },
         },
     }

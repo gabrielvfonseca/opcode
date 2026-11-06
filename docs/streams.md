@@ -1,13 +1,13 @@
 # Live transcription streams (`/streams`)
 
-`/streams` lets another app on this computer transcribe its own audio live on Hex's
+`/streams` lets another app on this computer transcribe its own audio live on Opcode's
 loaded dictation model. The app records the microphone (or anything else) and
-pushes 16 kHz mono samples; Hex sends partial text while it listens, one final
+pushes 16 kHz mono samples; Opcode sends partial text while it listens, one final
 segment per window, and the final text when the app finishes.
 
 This is the API of the planned shared engine service (`ROADMAP.md`, "Shared
-engine service"). Today the running Hex app serves it; later a launchd service
-(`anomaly.hex.engine`) will serve the same routes and the Hex UI will become
+engine service"). Today the running Opcode app serves it; later a launchd service
+(`anomaly.opcode.engine`) will serve the same routes and the Opcode UI will become
 one more client. Clients written against this document should not need to
 change.
 
@@ -16,7 +16,7 @@ The code is `src/local_api/streams.rs` (routes) and `src/transcription/stream.rs
 
 ## Availability
 
-- The running Hex app on macOS, Linux, and Windows, with a GGUF model loaded
+- The running Opcode app on macOS, Linux, and Windows, with a GGUF model loaded
   by dictation (on Linux and Windows, once the listener is on).
 - `GET /capabilities` reports `"streams": true` when the routes exist.
 - Streams never load, download, or switch a model. They use whatever model
@@ -25,15 +25,15 @@ The code is `src/local_api/streams.rs` (routes) and `src/transcription/stream.rs
 
 ## Discovery and auth
 
-Read the owner-only discovery file `local-api.json` in Hex's data folder
-(`~/Library/Application Support/hex` on macOS, `$XDG_DATA_HOME/hex` or
-`~/.local/share/hex` on Linux, `%APPDATA%\hex` on Windows) (`port`, `token`,
+Read the owner-only discovery file `local-api.json` in Opcode's data folder
+(`~/Library/Application Support/opcode` on macOS, `$XDG_DATA_HOME/opcode` or
+`~/.local/share/opcode` on Linux, `%APPDATA%\opcode` on Windows) (`port`, `token`,
 `apiVersion`), then call `http://127.0.0.1:<port>` with:
 
 | Header | On | Value |
 | --- | --- | --- |
 | `Authorization` | every request | `Bearer <token>` from discovery |
-| `X-Hex-Stream-Token` | every `/streams/{id}/…` request | the stream's `ownerToken` |
+| `X-Opcode-Stream-Token` | every `/streams/{id}/…` request | the stream's `ownerToken` |
 | `Content-Type` | create / audio | `application/json` / `application/octet-stream` |
 | `Content-Length` | every request with a body | required; chunked bodies are refused |
 
@@ -71,7 +71,7 @@ dictation holds, or the answer is `409 model-mismatch` with the held ones:
 ```json
 {
   "id": 3,
-  "ownerToken": "hex_9f…",
+  "ownerToken": "opcode_9f…",
   "model": "parakeet_v3",
   "language": "auto",
   "sampleRate": 16000,
@@ -160,7 +160,7 @@ every few seconds. The lease doesn't run while finishing.
 
 ## Scheduling: dictation always comes first
 
-Hex's dictation shares the engine, and the hotkey must never wait for a
+Opcode's dictation shares the engine, and the hotkey must never wait for a
 stream. So:
 
 - Audio is cut into windows at pauses (at most 25 s). Each window is fed to
@@ -195,7 +195,7 @@ has no body.
 | 400 | `invalid-request` | Create body isn't the JSON above. |
 | 400 | `unsupported-sample-rate` | `sampleRate` isn't 16000. |
 | 400 | `unsupported-sample-format` | Not `f32le` or `s16le`. |
-| 400 | `unknown-model` | `model` isn't a Hex model id. |
+| 400 | `unknown-model` | `model` isn't a Opcode model id. |
 | 400 | `invalid-audio` | Partial sample or non-finite float. |
 | 401 | (no body) | Missing or wrong bearer token. |
 | 404 | `stream-not-found` | Unknown id, replaced stream, or wrong stream token. |
@@ -204,42 +204,42 @@ has no body.
 | 409 | `stream-ended` | Audio or heartbeat after the end. |
 | 409 | `stream-finishing` | Audio after `finish`. |
 | 409 | `stream-cancelled` | `finish` on a cancelled stream. |
-| 409 | `lease-expired`, `model-changed`, `transcription-failed`, `hex-quitting` | `finish` on a stream that failed that way (same codes as the `error` event). |
+| 409 | `lease-expired`, `model-changed`, `transcription-failed`, `opcode-quitting` | `finish` on a stream that failed that way (same codes as the `error` event). |
 | 411 | `length-required` | No `Content-Length`. |
 | 413 | `request-too-large`, `audio-too-large` | Over the limits. |
 | 415 | `unsupported-content-type` | Wrong `Content-Type`. |
 | 429 | `stream-backlog-full` | 120 s not yet transcribed; slow down or wait. |
-| 503 | `engine-unavailable` | Hex's dictation engine isn't running. |
+| 503 | `engine-unavailable` | Opcode's dictation engine isn't running. |
 | 503 | `model-not-loaded` | Dictation holds no GGUF model (for example Apple Speech). |
-| 503 | `shutting-down` | Hex is quitting. |
+| 503 | `shutting-down` | Opcode is quitting. |
 | 504 | `stream-finish-timeout` | `finish` waited 120 s; the stream continues. |
 
 `model-changed` means the user switched dictation's model during the stream;
-start a new one. `hex-quitting` means Hex quit.
+start a new one. `opcode-quitting` means Opcode quit.
 
 ## Meeting finished events (`GET /meetings/events`, Labs)
 
 Not part of `/streams`, but on the same local API with the same discovery
 and bearer token. Only while Labs › Meeting finished event
-(`labs.meeting_finished_event`, `hex labs on meeting-finished-event`) is on;
+(`labs.meeting_finished_event`, `opcode labs on meeting-finished-event`) is on;
 off, it answers `404 labs-off`. Code: `src/local_api/meeting_events.rs`
 (route) and `src/meeting/finished_events.rs` (the hub the recorder publishes
 to).
 
 Server-sent events with `: keep-alive` comments every 15 s. Once per meeting,
 after its final transcript and Markdown are written and its manifest reads
-`complete` (a Stop, or the final pass of a meeting Hex quit while recording):
+`complete` (a Stop, or the final pass of a meeting Opcode quit while recording):
 
 ```text
 data: {"type":"meeting.finished","id":"1730700000000-4242"}
 ```
 
 Only the id is sent: no title, path, transcript, or audio. Read the rest with
-`hex meetings show <id>` (or `hex mcp`). One subscriber at a time; a
+`opcode meetings show <id>` (or `opcode mcp`). One subscriber at a time; a
 second answers `409 subscriber-busy`. Nothing is queued while nobody listens,
 so a client that reconnects should list meetings to catch up. A meeting whose
-final transcript fails sends nothing. The stream ends when Hex quits or the
-toggle turns off. `hex service` serves the route but records no meetings, so
+final transcript fails sends nothing. The stream ends when Opcode quits or the
+toggle turns off. `opcode service` serves the route but records no meetings, so
 it never sends one.
 
 ### Catching up after being offline
@@ -250,11 +250,11 @@ meetings folder as the record and the event as a hint to look now:
 1. Keep a cursor: the end time (`timestamp_ms + duration_ms`, Unix ms) of the
    newest meeting you've handled, and the ids you've handled near it.
 2. On start or reconnect, subscribe to `GET /meetings/events` first, then run
-   `hex meetings list --since <cursor> --limit 200 --json` (or MCP's
+   `opcode meetings list --since <cursor> --limit 200 --json` (or MCP's
    `list_meetings` with `since`). Subscribing first means a meeting that
    finishes while you list still arrives as an event.
 3. A meeting is finished when its `status` is `complete` and its
-   `transcript_source` is `final`; read it with `hex meetings show <id> --json`.
+   `transcript_source` is `final`; read it with `opcode meetings show <id> --json`.
    Leave the cursor before any meeting that is still `recording`,
    `transcribing`, or `interrupted`, so the next list sees it again.
 4. Delivery is at least once: the same id can come from the list and the
@@ -268,7 +268,7 @@ Limits:
 - `--since`/`--until` include every meeting whose recording overlaps the
   range, so the meeting at the cursor comes back; the dedupe handles it.
 - A meeting retention already removed is gone and can't be caught up.
-- A meeting Hex quit while recording reads `interrupted` until its final
+- A meeting Opcode quit while recording reads `interrupted` until its final
   pass on the next launch with Meetings on; then it reads `complete` and the
   event is sent.
 - There is no separate transcript revision id; the meeting id is the key.
@@ -278,7 +278,7 @@ Limits:
 Final-transcript readiness is separate from notes. The event and `complete`
 mean the transcript and Markdown are written; notes (Apple Intelligence, or
 OpenCode with Summarize with OpenCode) are written after that, may fail, and
-can be regenerated later. Read them from `notes` in `hex meetings show <id>
+can be regenerated later. Read them from `notes` in `opcode meetings show <id>
 --json` (`null` until written; `generated_at_ms` changes when they're
 rewritten). Subscribing, listing, and showing are read-only: they run no
 command, upload nothing, and write nothing.

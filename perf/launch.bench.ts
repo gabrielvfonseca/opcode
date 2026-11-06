@@ -11,9 +11,9 @@ export default bench({
     // Needs an unlocked session: it ends on the window's first painted frame.
     // A returning user's launch: the GPU shader caches stay warm (strobe's
     // default), as after any earlier launch (docs/perf.md).
-    window: native("hex"),
+    window: native("opcode"),
     // A login launch with no window. Runs on a locked session too.
-    tray: native("hex", { args: ["--hidden"], window: false }),
+    tray: native("opcode", { args: ["--hidden"], window: false }),
   },
   cases: {
     "cold-launch": {
@@ -26,7 +26,7 @@ export default bench({
         milestones: { api },
       },
     },
-    // To the window's first frame drawn, from Hex's own log: needs no screen
+    // To the window's first frame drawn, from Opcode's own log: needs no screen
     // capture (macOS refuses `painted` without Screen Recording). It covers
     // the GPU device and pipelines the window draws with.
     "first-frame": {

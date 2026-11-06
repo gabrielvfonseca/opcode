@@ -1,4 +1,4 @@
-export { HexError, isHexError, type HexErrorCode } from "./errors.js"
+export { OpcodeError, isOpcodeError, type OpcodeErrorCode } from "./errors.js"
 export { connect, create } from "./host.js"
 export { MODEL_IDS } from "./types.js"
 export type {
@@ -11,8 +11,8 @@ export type {
   DictationLevel,
   DictationStartOptions,
   Health,
-  HexClient,
-  HexHost,
+  OpcodeClient,
+  OpcodeHost,
   ListModelsOptions,
   ModelId,
   ModelInfo,

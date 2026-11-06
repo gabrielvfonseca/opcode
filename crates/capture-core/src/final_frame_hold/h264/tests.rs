@@ -4,10 +4,10 @@ use super::*;
 /// byte).
 const X264_SPS: &str = "6764000aacd9447b0110000003001000000303c0f1225960";
 
-fn hex(text: &str) -> Vec<u8> {
+fn opcode(text: &str) -> Vec<u8> {
     (0..text.len())
         .step_by(2)
-        .map(|at| u8::from_str_radix(&text[at..at + 2], 16).expect("hex"))
+        .map(|at| u8::from_str_radix(&text[at..at + 2], 16).expect("opcode"))
         .collect()
 }
 
@@ -87,7 +87,7 @@ fn emulation_prevention_round_trips() {
 #[test]
 fn parses_a_high_profile_sps() {
     assert_eq!(
-        parse_sps(&hex(X264_SPS)).expect("parse SPS"),
+        parse_sps(&opcode(X264_SPS)).expect("parse SPS"),
         Sps {
             id: 0,
             chroma_array_type: 1,
@@ -101,7 +101,7 @@ fn parses_a_high_profile_sps() {
 
 #[test]
 fn skip_pps_and_slice_parse_back() {
-    let sps = parse_sps(&hex(X264_SPS)).expect("parse SPS");
+    let sps = parse_sps(&opcode(X264_SPS)).expect("parse SPS");
     let pps_nal = skip_pps(1, 0);
     assert_eq!(pps_nal[0], 0x68);
     let pps = parse_pps(&pps_nal).expect("parse PPS");

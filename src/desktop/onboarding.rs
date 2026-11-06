@@ -26,8 +26,8 @@ pub enum PermissionState {
     Ready,
     NeedsRequest,
     NeedsSettings,
-    /// Switched on in System Settings, but macOS applies it to Hex only
-    /// after Hex restarts.
+    /// Switched on in System Settings, but macOS applies it to Opcode only
+    /// after Opcode restarts.
     NeedsRestart,
 }
 
@@ -48,9 +48,9 @@ pub enum PermissionAction {
     RequestMicrophone,
     /// Everything else is turned on in System Settings, with the guide.
     ShowGuide(PermissionKind),
-    /// Clear stale TCC entries for Hex and reopen the prompt and guide.
+    /// Clear stale TCC entries for Opcode and reopen the prompt and guide.
     ResetAndPrompt(PermissionKind),
-    /// Granted, waiting for Hex to restart.
+    /// Granted, waiting for Opcode to restart.
     Restart,
 }
 
@@ -148,7 +148,7 @@ pub enum ItemStatus {
     Stale,
     /// Refused once: only System Settings can turn it on.
     Denied,
-    /// Switched on; macOS applies it once Hex restarts.
+    /// Switched on; macOS applies it once Opcode restarts.
     Restart,
     /// Downloading, with progress from zero through one.
     Downloading(f32),
@@ -179,7 +179,7 @@ pub enum Practice {
     Waiting,
     Listening,
     Transcribing,
-    /// Released before Hex kept any audio, or the clip was silent.
+    /// Released before Opcode kept any audio, or the clip was silent.
     TooShort,
     /// Transcribed, but no words came back.
     NothingHeard,
@@ -200,7 +200,7 @@ pub enum Input {
         relaunch_allowed: bool,
     },
     Reopen,
-    /// "Restart Hex" once every permission is on and one waits for it.
+    /// "Restart Opcode" once every permission is on and one waits for it.
     Restart,
 }
 
@@ -208,7 +208,7 @@ pub enum Input {
 pub enum Effect {
     None,
     RequestMicrophone,
-    /// Open the Privacy pane with the guide beside it: drag Hex into the
+    /// Open the Privacy pane with the guide beside it: drag Opcode into the
     /// list, or (for a refused microphone) switch it on.
     ShowGuide(PermissionKind),
     /// Clear stale TCC entries for this permission and reopen the prompt and
@@ -218,7 +218,7 @@ pub enum Effect {
     /// Every permission just turned on: move to the next step after a beat,
     /// so the last check is seen.
     AdvanceSoon,
-    /// Quit and reopen Hex, resuming the tour: at the practice step, or
+    /// Quit and reopen Opcode, resuming the tour: at the practice step, or
     /// at setup while setup is unfinished.
     Relaunch,
     /// Close the tour.
@@ -246,10 +246,10 @@ pub struct View {
     /// outside the setup rows.
     pub show_download: bool,
     pub practice: Practice,
-    /// The listener needs a restart Hex will not do by itself again.
+    /// The listener needs a restart Opcode will not do by itself again.
     pub reopen: bool,
-    /// Every permission is on, and at least one applies only after Hex
-    /// restarts: setup's primary action restarts Hex.
+    /// Every permission is on, and at least one applies only after Opcode
+    /// restarts: setup's primary action restarts Opcode.
     pub restart: bool,
 }
 
@@ -580,12 +580,12 @@ fn grantable(state: PermissionState) -> bool {
     )
 }
 
-/// Bundle identifiers of older macOS Hex releases (2.3.1 and the Swift app)
-/// whose stale TCC rows can shadow or confuse grants for `anomaly.hex`.
+/// Bundle identifiers of older macOS Opcode releases (2.3.1 and the Swift app)
+/// whose stale TCC rows can shadow or confuse grants for `anomaly.opcode`.
 pub const LEGACY_MAC_BUNDLE_IDS: [&str; 3] = [
-    "com.kitlangton.hex2",
-    "com.kitlangton.Hex",
-    "com.kitlangton.Hex.debug",
+    "com.kitlangton.opcode2",
+    "com.kitlangton.Opcode",
+    "com.kitlangton.Opcode.debug",
 ];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -595,9 +595,9 @@ pub enum TccResetOutcome {
     Failed,
 }
 
-/// TCC services cleared for retired Hex bundle IDs when `kind` is missing.
+/// TCC services cleared for retired Opcode bundle IDs when `kind` is missing.
 /// Both screen and system-audio lists live on the same System Settings pane, so
-/// clearing both leaves no duplicate Hex rows on either list.
+/// clearing both leaves no duplicate Opcode rows on either list.
 pub const fn legacy_tcc_services(kind: PermissionKind) -> &'static [&'static str] {
     match kind {
         PermissionKind::Accessibility => &["Accessibility"],
@@ -608,7 +608,7 @@ pub const fn legacy_tcc_services(kind: PermissionKind) -> &'static [&'static str
     }
 }
 
-/// TCC services reset for the running Hex bundle on `"Still grey? Fix it"`.
+/// TCC services reset for the running Opcode bundle on `"Still grey? Fix it"`.
 /// Resets only the stuck service so a working Screen Recording grant is never
 /// cleared while fixing System Audio, or vice versa.
 pub const fn own_tcc_services(kind: PermissionKind) -> &'static [&'static str] {
@@ -640,29 +640,29 @@ pub fn classify_tccutil_reset(code: Option<i32>, stderr: &str) -> TccResetOutcom
 /// unavailable (such as a loose binary).
 pub fn default_mac_bundle_id(test_build: Option<&str>) -> &'static str {
     if test_build == Some("1") {
-        "anomaly.hex.test"
+        "anomaly.opcode.test"
     } else {
-        "anomaly.hex"
+        "anomaly.opcode"
     }
 }
 
 /// How long after returning from System Settings an asked permission must stay
-/// untrusted before Hex offers `"Still grey? Fix it"`.
+/// untrusted before Opcode offers `"Still grey? Fix it"`.
 pub const STALE_RETURN_DELAY: std::time::Duration = std::time::Duration::from_secs(2);
 /// Fallback when System Settings stayed side-by-side without taking focus (such
-/// as under a tiling window manager) while Hex remained active and untrusted.
+/// as under a tiling window manager) while Opcode remained active and untrusted.
 pub const STALE_SIDE_BY_SIDE_DELAY: std::time::Duration = std::time::Duration::from_secs(6);
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct SettingsFocus {
     pub settings_open: bool,
     pub settings_frontmost: bool,
-    pub hex_active: bool,
+    pub opcode_active: bool,
 }
 
-/// Tracks one asked permission across System Settings focus changes so Hex
+/// Tracks one asked permission across System Settings focus changes so Opcode
 /// offers `"Still grey? Fix it"` only after the person went to System Settings,
-/// came back (or closed it), and Hex is still untrusted.
+/// came back (or closed it), and Opcode is still untrusted.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct StalePermissionTracker {
     asked_at: Option<std::time::Instant>,
@@ -698,11 +698,11 @@ impl StalePermissionTracker {
         if self.stale {
             return true;
         }
-        // While System Settings' window is open and Hex is inactive (including
+        // While System Settings' window is open and Opcode is inactive (including
         // during Touch ID / password sheets or dragging from Finder), the
-        // person has not returned to Hex yet.
+        // person has not returned to Opcode yet.
         let away_in_settings =
-            focus.settings_open && (focus.settings_frontmost || !focus.hex_active);
+            focus.settings_open && (focus.settings_frontmost || !focus.opcode_active);
         if away_in_settings {
             self.saw_settings = true;
             self.returned_at = None;
@@ -713,7 +713,7 @@ impl StalePermissionTracker {
             if now.saturating_duration_since(returned_at) >= STALE_RETURN_DELAY {
                 self.stale = true;
             }
-        } else if focus.hex_active
+        } else if focus.opcode_active
             && now.saturating_duration_since(asked_at) >= STALE_SIDE_BY_SIDE_DELAY
         {
             self.stale = true;
@@ -736,7 +736,7 @@ fn next_practice(current: Practice, observation: Observation) -> Practice {
 }
 
 /// A relaunch the tour started at most this long ago keeps it from
-/// relaunching again, so a grant that never reaches Hex cannot loop.
+/// relaunching again, so a grant that never reaches Opcode cannot loop.
 pub const RELAUNCH_GUARD_MS: u64 = 120_000;
 
 static LISTENER_FAILED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -767,7 +767,7 @@ pub fn relaunch_allowed(now_ms: u64) -> bool {
         .unwrap_or(false)
 }
 
-/// The step a relaunched Hex resumes at, consumed once.
+/// The step a relaunched Opcode resumes at, consumed once.
 pub fn take_resume() -> Option<Step> {
     let directory = crate::app_paths::support_dir().ok()?;
     take_resume_at(&directory, unix_ms())
@@ -791,7 +791,7 @@ pub(crate) fn relaunch_allowed_at(directory: &Path, now_ms: u64) -> bool {
     relaunched_at(directory).is_none_or(|at| now_ms.saturating_sub(at) >= RELAUNCH_GUARD_MS)
 }
 
-/// A relaunch older than the guard is stale (Hex was quit and reopened
+/// A relaunch older than the guard is stale (Opcode was quit and reopened
 /// later), so the tour does not resume from it.
 pub(crate) fn take_resume_at(directory: &Path, now_ms: u64) -> Option<Step> {
     let at = relaunched_at(directory)?;
@@ -871,7 +871,7 @@ pub(crate) fn completion_recorded_at(directory: &Path) -> bool {
     true
 }
 
-/// Once per settings file from before `anomaly.hex` (2.3.1 shared the `hex`
+/// Once per settings file from before `anomaly.opcode` (2.3.1 shared the `opcode`
 /// folder): macOS gave the new identity none of the old grants, so setup
 /// that is not ready at launch reopens the tour instead of counting the old
 /// completion. Setup that is ready changes nothing.
@@ -981,7 +981,7 @@ pub fn status(selection: &TranscriptionSelection) -> SetupStatus {
 pub fn status_with_transcription_model(transcription_model: bool) -> SetupStatus {
     SetupStatus {
         microphone: microphone_state(),
-        // Accessibility also grants the listen-event access Hex's shortcut
+        // Accessibility also grants the listen-event access Opcode's shortcut
         // taps need, so Input Monitoring is never asked for.
         accessibility: accessibility_state(CGPreflightPostEventAccess(), AXIsProcessTrusted()),
         transcription_model,
@@ -1004,7 +1004,7 @@ pub fn status_with_transcription_model(transcription_model: bool) -> SetupStatus
     }
 }
 
-/// Windows Settings' "Where Hex turns the microphone on".
+/// Windows Settings' "Where Opcode turns the microphone on".
 #[cfg(target_os = "windows")]
 pub const WINDOWS_MICROPHONE_SETTINGS: &str = "ms-settings:privacy-microphone";
 
@@ -1055,8 +1055,8 @@ pub fn request_microphone() {
 }
 
 /// Reopens the installed app once this process exits. Returns false outside
-/// an app bundle (a development binary), where the person reopens Hex.
-/// The relaunch keeps this process's `HEX_*` environment.
+/// an app bundle (a development binary), where the person reopens Opcode.
+/// The relaunch keeps this process's `OPCODE_*` environment.
 #[cfg(target_os = "macos")]
 pub fn spawn_relaunch() -> bool {
     let Ok(executable) = std::env::current_exe() else {
@@ -1094,7 +1094,7 @@ fn relaunch_arguments(
         "pid=$1; shift; while kill -0 \"$pid\" 2>/dev/null; do sleep 0.1; done; \
          exec /usr/bin/open \"$@\""
             .into(),
-        "hex-relaunch".into(),
+        "opcode-relaunch".into(),
         pid.to_string().into(),
     ];
     arguments.extend(open_env_arguments(vars));
@@ -1102,10 +1102,10 @@ fn relaunch_arguments(
     arguments
 }
 
-/// `open --env` arguments for every `HEX_*` variable in `vars`
-/// (HEX_RETAIN_DICTATION_AUDIO, HEX_ENABLE_LLM, HEX_EXPERIMENTAL_MIC, …), sorted.
+/// `open --env` arguments for every `OPCODE_*` variable in `vars`
+/// (OPCODE_RETAIN_DICTATION_AUDIO, OPCODE_ENABLE_LLM, OPCODE_EXPERIMENTAL_MIC, …), sorted.
 /// LaunchServices starts apps without the caller's environment, so a
-/// relaunch or `hex start` passes these explicitly. Values go only to
+/// relaunch or `opcode start` passes these explicitly. Values go only to
 /// `open`'s arguments; never log them.
 #[cfg(target_os = "macos")]
 pub fn open_env_arguments(
@@ -1113,7 +1113,7 @@ pub fn open_env_arguments(
 ) -> Vec<std::ffi::OsString> {
     let mut forwarded = vars
         .into_iter()
-        .filter(|(key, _)| key.to_str().is_some_and(|key| key.starts_with("HEX_")))
+        .filter(|(key, _)| key.to_str().is_some_and(|key| key.starts_with("OPCODE_")))
         .collect::<Vec<_>>();
     forwarded.sort();
     forwarded
@@ -1141,7 +1141,7 @@ fn microphone_state() -> PermissionState {
     microphone_authorization_state(status)
 }
 
-/// Accessibility reaches a running Hex: `AXIsProcessTrusted` follows the
+/// Accessibility reaches a running Opcode: `AXIsProcessTrusted` follows the
 /// switch, and the listener's event taps, created only once setup is ready,
 /// are allowed (macOS offers no "Quit & Reopen" for it, as it does for Input
 /// Monitoring). Only `CGPreflightPostEventAccess` keeps its launch-time answer,
@@ -1189,16 +1189,16 @@ mod tests {
 
     #[cfg(target_os = "macos")]
     #[test]
-    fn relaunch_forwards_only_the_hex_environment() {
+    fn relaunch_forwards_only_the_opcode_environment() {
         let vars = [
             ("PATH", "/usr/bin"),
-            ("HEX_RETAIN_DICTATION_AUDIO", "1"),
-            ("HEX_ENABLE_LLM", "1"),
-            ("HEX_EXPERIMENTAL_MIC", "a=b,c"),
-            ("HEXAGON", "no"),
+            ("OPCODE_RETAIN_DICTATION_AUDIO", "1"),
+            ("OPCODE_ENABLE_LLM", "1"),
+            ("OPCODE_EXPERIMENTAL_MIC", "a=b,c"),
+            ("OPCODEAGON", "no"),
         ]
         .map(|(key, value)| (key.into(), value.into()));
-        let arguments = relaunch_arguments(42, Path::new("/Applications/Hex.app"), vars);
+        let arguments = relaunch_arguments(42, Path::new("/Applications/Opcode.app"), vars);
         let arguments = arguments
             .iter()
             .map(|argument| argument.to_str().unwrap())
@@ -1208,15 +1208,15 @@ mod tests {
         assert_eq!(
             arguments[2..],
             [
-                "hex-relaunch",
+                "opcode-relaunch",
                 "42",
                 "--env",
-                "HEX_ENABLE_LLM=1",
+                "OPCODE_ENABLE_LLM=1",
                 "--env",
-                "HEX_EXPERIMENTAL_MIC=a=b,c",
+                "OPCODE_EXPERIMENTAL_MIC=a=b,c",
                 "--env",
-                "HEX_RETAIN_DICTATION_AUDIO=1",
-                "/Applications/Hex.app",
+                "OPCODE_RETAIN_DICTATION_AUDIO=1",
+                "/Applications/Opcode.app",
             ]
         );
     }
@@ -1294,7 +1294,7 @@ mod tests {
     #[test]
     fn existing_rust_settings_migrate_onboarding_completion() {
         let directory =
-            std::env::temp_dir().join(format!("hex-onboarding-migration-{}", std::process::id()));
+            std::env::temp_dir().join(format!("opcode-onboarding-migration-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir_all(&directory).unwrap();
         fs::write(directory.join("settings.json"), b"{}").unwrap();
@@ -1314,7 +1314,7 @@ mod tests {
     #[test]
     fn reset_replays_onboarding_and_keeps_data() {
         let directory =
-            std::env::temp_dir().join(format!("hex-onboarding-reset-{}", std::process::id()));
+            std::env::temp_dir().join(format!("opcode-onboarding-reset-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir_all(directory.join("models")).unwrap();
         fs::write(
@@ -1346,7 +1346,7 @@ mod tests {
     #[test]
     fn fresh_install_does_not_skip_onboarding() {
         let directory =
-            std::env::temp_dir().join(format!("hex-onboarding-fresh-{}", std::process::id()));
+            std::env::temp_dir().join(format!("opcode-onboarding-fresh-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir_all(&directory).unwrap();
 
@@ -1359,7 +1359,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     fn identity_directory(name: &str) -> std::path::PathBuf {
         let directory = std::env::temp_dir().join(format!(
-            "hex-onboarding-identity-{name}-{}",
+            "opcode-onboarding-identity-{name}-{}",
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&directory);
@@ -1410,7 +1410,7 @@ mod tests {
         assert_eq!(saved["sound_effects"], false);
         let migrations = saved["migrations"].as_array().unwrap();
         assert_eq!(migrations[0], "streaming-english-model");
-        assert_eq!(migrations.last().unwrap(), "anomaly-hex-identity");
+        assert_eq!(migrations.last().unwrap(), "anomaly-opcode-identity");
 
         // Finishing the tour sticks: the check does not run again.
         record_completion_at(&directory).unwrap();
@@ -1863,7 +1863,7 @@ mod tests {
     #[test]
     fn relaunch_guard_and_resume_marker() {
         let directory =
-            std::env::temp_dir().join(format!("hex-onboarding-relaunch-{}", std::process::id()));
+            std::env::temp_dir().join(format!("opcode-onboarding-relaunch-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir_all(&directory).unwrap();
 
@@ -1985,7 +1985,7 @@ mod tests {
     #[test]
     fn the_tour_step_is_saved_for_the_next_launch() {
         let directory =
-            std::env::temp_dir().join(format!("hex-onboarding-step-{}", std::process::id()));
+            std::env::temp_dir().join(format!("opcode-onboarding-step-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         assert_eq!(saved_step_at(&directory), None);
         record_step_at(&directory, Step::Setup).unwrap();
@@ -2006,7 +2006,7 @@ mod tests {
         assert_eq!(
             classify_tccutil_reset(
                 Some(64),
-                "tccutil: No such bundle identifier \"com.kitlangton.hex2\": \
+                "tccutil: No such bundle identifier \"com.kitlangton.opcode2\": \
                  The operation couldn’t be completed. (OSStatus error -10814.)"
             ),
             TccResetOutcome::NothingToClear
@@ -2027,14 +2027,14 @@ mod tests {
         assert_eq!(
             LEGACY_MAC_BUNDLE_IDS,
             [
-                "com.kitlangton.hex2",
-                "com.kitlangton.Hex",
-                "com.kitlangton.Hex.debug"
+                "com.kitlangton.opcode2",
+                "com.kitlangton.Opcode",
+                "com.kitlangton.Opcode.debug"
             ]
         );
-        assert_eq!(default_mac_bundle_id(None), "anomaly.hex");
-        assert_eq!(default_mac_bundle_id(Some("0")), "anomaly.hex");
-        assert_eq!(default_mac_bundle_id(Some("1")), "anomaly.hex.test");
+        assert_eq!(default_mac_bundle_id(None), "anomaly.opcode");
+        assert_eq!(default_mac_bundle_id(Some("0")), "anomaly.opcode");
+        assert_eq!(default_mac_bundle_id(Some("1")), "anomaly.opcode.test");
 
         assert_eq!(
             own_tcc_services(PermissionKind::Accessibility),
@@ -2073,25 +2073,25 @@ mod tests {
         let in_settings = SettingsFocus {
             settings_open: true,
             settings_frontmost: true,
-            hex_active: false,
+            opcode_active: false,
         };
         let touch_id_over_settings = SettingsFocus {
             settings_open: true,
             settings_frontmost: false,
-            hex_active: false,
+            opcode_active: false,
         };
-        let back_in_hex = SettingsFocus {
+        let back_in_opcode = SettingsFocus {
             settings_open: true,
             settings_frontmost: false,
-            hex_active: true,
+            opcode_active: true,
         };
         let settings_closed = SettingsFocus {
             settings_open: false,
             settings_frontmost: false,
-            hex_active: false,
+            opcode_active: false,
         };
 
-        assert!(!tracker.poll(t0, true, back_in_hex));
+        assert!(!tracker.poll(t0, true, back_in_opcode));
         tracker.note_asked(t0);
         assert!(tracker.is_waiting());
 
@@ -2100,11 +2100,11 @@ mod tests {
         assert!(!tracker.poll(t0 + Duration::from_secs(1), true, in_settings));
         assert!(!tracker.poll(t0 + Duration::from_secs(12), true, touch_id_over_settings));
 
-        // Returning to Hex starts the 2 s grace window; granting clears it.
-        assert!(!tracker.poll(t0 + Duration::from_secs(13), true, back_in_hex));
-        assert!(!tracker.poll(t0 + Duration::from_millis(14_900), true, back_in_hex));
-        assert!(tracker.poll(t0 + Duration::from_secs(15), true, back_in_hex));
-        assert!(!tracker.poll(t0 + Duration::from_secs(16), false, back_in_hex));
+        // Returning to Opcode starts the 2 s grace window; granting clears it.
+        assert!(!tracker.poll(t0 + Duration::from_secs(13), true, back_in_opcode));
+        assert!(!tracker.poll(t0 + Duration::from_millis(14_900), true, back_in_opcode));
+        assert!(tracker.poll(t0 + Duration::from_secs(15), true, back_in_opcode));
+        assert!(!tracker.poll(t0 + Duration::from_secs(16), false, back_in_opcode));
         assert!(!tracker.is_waiting());
 
         // Closing System Settings without granting also triggers after 2 s.
@@ -2113,11 +2113,11 @@ mod tests {
         assert!(!tracker.poll(t0 + Duration::from_secs(2), true, settings_closed));
         assert!(tracker.poll(t0 + Duration::from_secs(4), true, settings_closed));
 
-        // Tiling window managers where Hex stays active beside System Settings
+        // Tiling window managers where Opcode stays active beside System Settings
         // fall back after STALE_SIDE_BY_SIDE_DELAY.
         tracker.note_asked(t0);
-        assert!(!tracker.poll(t0 + Duration::from_secs(5), true, back_in_hex));
-        assert!(tracker.poll(t0 + STALE_SIDE_BY_SIDE_DELAY, true, back_in_hex));
+        assert!(!tracker.poll(t0 + Duration::from_secs(5), true, back_in_opcode));
+        assert!(tracker.poll(t0 + STALE_SIDE_BY_SIDE_DELAY, true, back_in_opcode));
     }
 
     #[test]

@@ -28,7 +28,7 @@ impl Group {
         Self::Models,
     ];
 
-    /// Its stable id: `hex://labs?category=<id>` and `labs.groups` in
+    /// Its stable id: `opcode://labs?category=<id>` and `labs.groups` in
     /// settings.json.
     pub const fn id(self) -> &'static str {
         match self {
@@ -79,6 +79,7 @@ impl Feature {
             | Self::MeetingFinishedEvent
             | Self::MeetingPlatformIcons
             | Self::FollowLiveTranscript
+            | Self::CollapsibleMeetingSections
             | Self::GnomeMeetingCapsules => Group::Meetings,
             Self::Screenshots | Self::AnnotateReplay => Group::Annotate,
             Self::MouseShortcuts

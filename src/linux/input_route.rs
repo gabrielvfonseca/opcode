@@ -1,7 +1,7 @@
-//! System default on Linux passes over a Bluetooth headset. Hex records
+//! System default on Linux passes over a Bluetooth headset. Opcode records
 //! through ALSA's default device, which PipeWire (or PulseAudio) routes to
 //! its default source and cannot name another one, so when that source is
-//! Bluetooth Hex moves its own capture streams to the built-in microphone,
+//! Bluetooth Opcode moves its own capture streams to the built-in microphone,
 //! else the first other hardware input, passing over any whose active port
 //! the sound server reports unplugged (an empty headset jack records only
 //! silence). The streams are marked so
@@ -12,16 +12,16 @@ use std::time::{Duration, Instant};
 
 use serde::Deserialize;
 
-/// Properties every PipeWire ALSA stream Hex opens carries: no remembered
-/// target, so a move lasts only for that stream, and Hex's PID to find it.
+/// Properties every PipeWire ALSA stream Opcode opens carries: no remembered
+/// target, so a move lasts only for that stream, and Opcode's PID to find it.
 const STREAM_PROPERTIES: &str = "PIPEWIRE_ALSA";
-const PID_PROPERTY: &str = "hex.process.id";
+const PID_PROPERTY: &str = "opcode.process.id";
 /// How long a new stream has to appear in the sound server.
 const STREAM_DEADLINE: Duration = Duration::from_secs(2);
 const STREAM_POLL: Duration = Duration::from_millis(50);
 
 /// Marks the PipeWire ALSA streams this process opens. Called on the main
-/// thread before Hex starts any other thread.
+/// thread before Opcode starts any other thread.
 pub(crate) fn mark_streams() {
     if std::env::var_os(STREAM_PROPERTIES).is_some() {
         return;
@@ -31,10 +31,10 @@ pub(crate) fn mark_streams() {
     unsafe { std::env::set_var(STREAM_PROPERTIES, properties) };
 }
 
-/// The stream properties: a stable `hex` application and node name (the
+/// The stream properties: a stable `opcode` application and node name (the
 /// ALSA plugin otherwise names it after the binary with spaces, which
 /// varies by packaging), so tools such as audio idle inhibitors can tell
-/// Hex's microphone stream apart and ignore it.
+/// Opcode's microphone stream apart and ignore it.
 fn stream_properties(pid: u32) -> String {
     format!(
         "{{ state.restore-target = false, application.name = \"{STREAM_NAME}\", \
@@ -42,7 +42,7 @@ fn stream_properties(pid: u32) -> String {
     )
 }
 
-const STREAM_NAME: &str = "hex";
+const STREAM_NAME: &str = "opcode";
 
 #[derive(Deserialize)]
 struct Source {
@@ -74,7 +74,7 @@ impl Source {
     }
 
     /// A hardware microphone: not a monitor, loopback, filter or virtual
-    /// device, which may record silence or Hex itself.
+    /// device, which may record silence or Opcode itself.
     fn is_hardware_input(&self) -> bool {
         self.property("device.api") == Some("alsa")
             && self.property("device.class") != Some("monitor")
@@ -230,10 +230,10 @@ mod tests {
     #[test]
     fn streams_carry_a_stable_name_without_spaces() {
         let properties = stream_properties(42);
-        assert!(properties.contains("application.name = \"hex\""));
-        assert!(properties.contains("node.name = \"hex\""));
+        assert!(properties.contains("application.name = \"opcode\""));
+        assert!(properties.contains("node.name = \"opcode\""));
         assert!(properties.contains("state.restore-target = false"));
-        assert!(properties.contains("hex.process.id = 42"));
+        assert!(properties.contains("opcode.process.id = 42"));
     }
 
     #[test]

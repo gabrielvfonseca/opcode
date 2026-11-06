@@ -13,28 +13,28 @@ use crate::meeting::generator::{
 };
 
 unsafe extern "C" {
-    fn hex_apple_intelligence_availability() -> i32;
-    fn hex_apple_intelligence_context_size() -> isize;
-    fn hex_apple_intelligence_notes(
+    fn opcode_apple_intelligence_availability() -> i32;
+    fn opcode_apple_intelligence_context_size() -> isize;
+    fn opcode_apple_intelligence_notes(
         instructions: *const c_char,
         prompt: *const c_char,
         title_only: bool,
         timeout_ms: u64,
         error: *mut *mut c_char,
     ) -> *mut c_char;
-    fn hex_apple_intelligence_chapter(
+    fn opcode_apple_intelligence_chapter(
         instructions: *const c_char,
         prompt: *const c_char,
         timeout_ms: u64,
         error: *mut *mut c_char,
     ) -> *mut c_char;
-    fn hex_apple_intelligence_chapter_lines(
+    fn opcode_apple_intelligence_chapter_lines(
         instructions: *const c_char,
         prompt: *const c_char,
         timeout_ms: u64,
         error: *mut *mut c_char,
     ) -> *mut c_char;
-    fn hex_apple_intelligence_free_string(string: *mut c_char);
+    fn opcode_apple_intelligence_free_string(string: *mut c_char);
 }
 
 const AVAILABILITY_TTL: Duration = Duration::from_secs(10);
@@ -92,7 +92,7 @@ pub fn availability() -> Availability {
         return availability;
     }
     // SAFETY: A synchronous property read without arguments.
-    let availability = Availability::from_code(unsafe { hex_apple_intelligence_availability() });
+    let availability = Availability::from_code(unsafe { opcode_apple_intelligence_availability() });
     *cache = Some((Instant::now(), availability));
     availability
 }
@@ -100,7 +100,7 @@ pub fn availability() -> Availability {
 /// The model's context window in tokens, or zero when unavailable.
 pub fn context_tokens() -> usize {
     // SAFETY: A synchronous property read without arguments.
-    usize::try_from(unsafe { hex_apple_intelligence_context_size() }).unwrap_or(0)
+    usize::try_from(unsafe { opcode_apple_intelligence_context_size() }).unwrap_or(0)
 }
 
 /// Generates a meeting title and short summary with guided generation.
@@ -131,7 +131,7 @@ pub fn generate_chapter(
 ) -> Result<GeneratedChapter, GenerationError> {
     call(instructions, prompt, |instructions, prompt, error| {
         // SAFETY: Both strings outlive the call and the bridge writes only `error`.
-        unsafe { hex_apple_intelligence_chapter(instructions, prompt, timeout_ms(timeout), error) }
+        unsafe { opcode_apple_intelligence_chapter(instructions, prompt, timeout_ms(timeout), error) }
     })
 }
 
@@ -144,7 +144,7 @@ pub fn generate_chapter_lines(
     call(instructions, prompt, |instructions, prompt, error| {
         // SAFETY: Both strings outlive the call and the bridge writes only `error`.
         unsafe {
-            hex_apple_intelligence_chapter_lines(instructions, prompt, timeout_ms(timeout), error)
+            opcode_apple_intelligence_chapter_lines(instructions, prompt, timeout_ms(timeout), error)
         }
     })
     .map(|generated: GeneratedChapterLines| generated.lines)
@@ -163,7 +163,7 @@ fn generate(
     call(instructions, prompt, |instructions, prompt, error| {
         // SAFETY: Both strings outlive the call and the bridge writes only `error`.
         unsafe {
-            hex_apple_intelligence_notes(
+            opcode_apple_intelligence_notes(
                 instructions,
                 prompt,
                 title_only,
@@ -213,7 +213,7 @@ fn take_string(string: *mut c_char) -> Option<String> {
         .to_string_lossy()
         .into_owned();
     // SAFETY: Ownership returns to the bridge allocator exactly once.
-    unsafe { hex_apple_intelligence_free_string(string) };
+    unsafe { opcode_apple_intelligence_free_string(string) };
     Some(value)
 }
 

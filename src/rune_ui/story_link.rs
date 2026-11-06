@@ -1,5 +1,5 @@
-//! Links into the playground: `hex://story/<group>/<story>[?variant=V&play=1]`
-//! (`hex-test://` in a test build) and `hex window story`. Both open the
+//! Links into the playground: `opcode://story/<group>/<story>[?variant=V&play=1]`
+//! (`opcode-test://` in a test build) and `opcode window story`. Both open the
 //! window on the story, pick the variant, and with `play` run its `r`
 //! trigger, as pressing R does. Only with Labs on.
 
@@ -9,9 +9,9 @@ use super::playground;
 
 /// Why a link opened only the window.
 pub(crate) const PLAYGROUND_OFF: &str = "the playground is in Labs; turn it on with \
-     `hex labs on playground` and restart Hex";
+     `opcode labs on playground` and restart Opcode";
 
-/// Longer links are ignored: they come from outside Hex.
+/// Longer links are ignored: they come from outside Opcode.
 pub(super) const MAX_LINK: usize = 2048;
 
 /// A story to open in the playground.
@@ -35,12 +35,12 @@ impl StoryLink {
     }
 }
 
-/// The scheme this build registers: a test build's never opens the real Hex.
+/// The scheme this build registers: a test build's never opens the real Opcode.
 pub(crate) fn scheme() -> &'static str {
     if crate::app_paths::is_macos_test_build() {
-        "hex-test"
+        "opcode-test"
     } else {
-        "hex"
+        "opcode"
     }
 }
 
@@ -100,10 +100,10 @@ pub(super) fn percent_decode(segment: &str) -> Option<String> {
     let mut out = Vec::with_capacity(bytes.len());
     let mut i = 0;
     while i < bytes.len() {
-        let hex = |b: u8| (b as char).to_digit(16);
+        let opcode = |b: u8| (b as char).to_digit(16);
         if bytes[i] == b'%'
             && let (Some(&high), Some(&low)) = (bytes.get(i + 1), bytes.get(i + 2))
-            && let (Some(high), Some(low)) = (hex(high), hex(low))
+            && let (Some(high), Some(low)) = (opcode(high), opcode(low))
         {
             out.push((high * 16 + low) as u8);
             i += 3;
@@ -145,23 +145,23 @@ mod tests {
     fn reads_story_links() {
         assert_eq!(
             parse(
-                "hex://story/prototypes/hud/recording-your-voice?play=1",
-                "hex"
+                "opcode://story/prototypes/hud/recording-your-voice?play=1",
+                "opcode"
             ),
             Ok(link("prototypes-hud-recording-your-voice", None, true))
         );
         assert_eq!(
-            parse("hex://story/Prototypes/HUD/Processing?variant=2", "hex"),
+            parse("opcode://story/Prototypes/HUD/Processing?variant=2", "opcode"),
             Ok(link("Prototypes/HUD/Processing", Some("2"), false))
         );
         assert_eq!(
-            parse("hex://story/Window/General/Microphone%20missing", "hex"),
+            parse("opcode://story/Window/General/Microphone%20missing", "opcode"),
             Ok(link("Window/General/Microphone missing", None, false))
         );
         assert_eq!(
             parse(
-                "hex://story/Prototypes/HUD/Recording%20%C2%B7%20your%20voice?variant=Quiet&play=0",
-                "hex"
+                "opcode://story/Prototypes/HUD/Recording%20%C2%B7%20your%20voice?variant=Quiet&play=0",
+                "opcode"
             ),
             Ok(link(
                 "Prototypes/HUD/Recording · your voice",
@@ -170,7 +170,7 @@ mod tests {
             ))
         );
         assert_eq!(
-            parse("hex://story/processing/", "hex"),
+            parse("opcode://story/processing/", "opcode"),
             Ok(link("processing", None, false))
         );
     }
@@ -179,26 +179,26 @@ mod tests {
     fn links_from_before_the_list_nested_still_open_their_story() {
         for (old, now) in [
             (
-                "hex://story/hud/recording-your-voice?play=1",
+                "opcode://story/hud/recording-your-voice?play=1",
                 "prototypes-hud-recording-your-voice",
             ),
-            ("hex://story/HUD/Processing", "Prototypes/HUD/Processing"),
-            ("hex://story/hud/processing", "Prototypes/hud/processing"),
+            ("opcode://story/HUD/Processing", "Prototypes/HUD/Processing"),
+            ("opcode://story/hud/processing", "Prototypes/hud/processing"),
             (
-                "hex://story/onboarding/option-pill",
+                "opcode://story/onboarding/option-pill",
                 "prototypes-onboarding-option-pill",
             ),
-            ("hex://story/mac-settings", "Window/General/Settings"),
+            ("opcode://story/mac-settings", "Window/General/Settings"),
             (
-                "hex://story/Meetings/meetings-calendar",
+                "opcode://story/Meetings/meetings-calendar",
                 "Window/Meetings/Calendar",
             ),
             (
-                "hex://story/general/mac-settings",
+                "opcode://story/general/mac-settings",
                 "Window/General/Settings",
             ),
         ] {
-            assert_eq!(parse(old, "hex").map(|link| link.story), Ok(now.into()));
+            assert_eq!(parse(old, "opcode").map(|link| link.story), Ok(now.into()));
         }
         assert_eq!(
             StoryLink::new("HUD/Processing", None, false).story,
@@ -209,18 +209,18 @@ mod tests {
     #[test]
     fn ignores_other_links() {
         for bad in [
-            "hex-test://story/hud/processing",
-            "hex://settings",
-            "hex://story",
-            "hex://story/",
-            "hex://story/%FF",
+            "opcode-test://story/hud/processing",
+            "opcode://settings",
+            "opcode://story",
+            "opcode://story/",
+            "opcode://story/%FF",
             "not a link",
             "",
         ] {
-            assert!(parse(bad, "hex").is_err(), "{bad}");
+            assert!(parse(bad, "opcode").is_err(), "{bad}");
         }
-        let long = format!("hex://story/{}", "a".repeat(MAX_LINK));
-        assert!(parse(&long, "hex").is_err());
-        assert!(parse("hex-test://story/hud/processing", "hex-test").is_ok());
+        let long = format!("opcode://story/{}", "a".repeat(MAX_LINK));
+        assert!(parse(&long, "opcode").is_err());
+        assert!(parse("opcode-test://story/hud/processing", "opcode-test").is_ok());
     }
 }

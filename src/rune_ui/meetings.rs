@@ -23,8 +23,10 @@ use super::platform::MeetingRequest;
 use super::{Menu, Ui};
 use crate::desktop::i18n::{tr, tr_fill, tr_named};
 
+mod folds;
+
 static MORE_ICON: rune::Icon = rune::Icon {
-    name: "hex-more",
+    name: "opcode-more",
     view: 16.0,
     body: r#"<circle cx="3.5" cy="8" r="1.25" fill="currentColor"/><circle cx="8" cy="8" r="1.25" fill="currentColor"/><circle cx="12.5" cy="8" r="1.25" fill="currentColor"/>"#,
 };
@@ -65,7 +67,7 @@ pub(super) struct Chapter {
     pub(super) summary: String,
     pub(super) start_ms: u64,
     /// What Copy section copies, from the same transcript lines as the menu
-    /// bar and `hex meetings show --chapter`.
+    /// bar and `opcode meetings show --chapter`.
     pub(super) markdown: String,
 }
 
@@ -176,6 +178,8 @@ pub(super) struct MeetingsPane {
     copied: Option<(String, String)>,
     pub(super) start_pending: bool,
     pub(super) stop_pending: bool,
+    /// Labs › Collapsible meeting sections: what is folded, until Opcode quits.
+    folds: folds::Folds,
     /// Where Linux and Windows perform meeting requests.
     #[cfg(not(target_os = "macos"))]
     pub(super) local: super::meetings_host::LocalMeetings,
@@ -775,17 +779,29 @@ fn recordings(ui: &Ui, p: Paint, layer: &mut Vec<El>, action: El) -> (Vec<El>, E
         let mut list = col().key("meetings-list").label(tr("Meetings"));
         let mut day: Option<&str> = None;
         let visible = pane.visible();
-        let count = visible.len();
+        // Rows under a folded day (Labs) stay out of the list; their
+        // heading stays.
+        let count = visible
+            .iter()
+            .filter(|meeting| !folds::day_folded(ui, &meeting.day))
+            .count();
+        let mut position = 0;
         for (index, meeting) in visible.into_iter().enumerate() {
             if day != Some(meeting.day.as_str()) {
-                list = list.child(ld::group(
+                list = list.child(folds::day_heading(
+                    ui,
                     p,
                     &format!("day{index}"),
                     day_label(&meeting.day),
+                    &meeting.day,
                     day.is_none(),
                 ));
                 day = Some(&meeting.day);
             }
+            if folds::day_folded(ui, &meeting.day) {
+                continue;
+            }
+            position += 1;
             let (meta, meta_ink) = row_meta(pane, meeting, p);
             let completed = meeting.status == Status::Complete && !meeting.turns().is_empty();
             let id = meeting.id.clone();
@@ -807,7 +823,7 @@ fn recordings(ui: &Ui, p: Paint, layer: &mut Vec<El>, action: El) -> (Vec<El>, E
                     platform_icon(ui, meeting),
                     move |ui: &mut Ui| ui.meetings.select(id.clone()),
                 )
-                .position_in_set(index + 1, count),
+                .position_in_set(position, count),
             );
         }
         let detail = match pane.selected.as_deref().and_then(|id| pane.meeting(id)) {
@@ -990,8 +1006,8 @@ fn detail(ui: &Ui, p: Paint, meeting: &Meeting, layer: &mut Vec<El>) -> El {
             col()
                 .key("notes")
                 .gap(6.0)
-                .child(section_label(p, "summary-label", tr("Summary")))
-                .child(
+                .child(folds::summary_label(ui, p))
+                .children(folds::summary_shown(ui).then(|| {
                     text(if summary.is_empty() {
                         tr("Nothing to summarize.")
                     } else {
@@ -1004,8 +1020,8 @@ fn detail(ui: &Ui, p: Paint, meeting: &Meeting, layer: &mut Vec<El>) -> El {
                     } else {
                         p.text()
                     })
-                    .wrap(),
-                ),
+                    .wrap()
+                })),
         );
     } else if meeting.notes_running {
         body = body.child(
@@ -1016,7 +1032,7 @@ fn detail(ui: &Ui, p: Paint, meeting: &Meeting, layer: &mut Vec<El>) -> El {
         );
     }
     if !meeting.chapters.is_empty() {
-        body = body.child(chapters(p, meeting, &copied));
+        body = body.child(chapters(ui, p, meeting, &copied));
     }
     let transcript_label = match meeting.status {
         Status::Starting | Status::Recording if !pane.stop_pending => tr("Live transcript"),
@@ -1057,12 +1073,15 @@ fn follows_live_transcript(ui: &Ui, meeting: &Meeting) -> bool {
 
 /// The meeting's chapters, each with its start, name, line, and Copy
 /// section.
-fn chapters(p: Paint, meeting: &Meeting, copied: &dyn Fn(&str) -> bool) -> El {
+fn chapters(ui: &Ui, p: Paint, meeting: &Meeting, copied: &dyn Fn(&str) -> bool) -> El {
     let mut list = col()
         .key("chapters")
         .gap(10.0)
         .pb(16.0)
-        .child(section_label(p, "chapters-label", tr("Chapters")));
+        .child(folds::chapters_label(ui, p));
+    if !folds::chapters_shown(ui) {
+        return list;
+    }
     for (index, chapter) in meeting.chapters.iter().enumerate() {
         let what = format!("chapter{index}");
         let id = meeting.id.clone();
@@ -1339,12 +1358,12 @@ mod tests {
             let meeting = pane.meeting(id).unwrap();
             platform_icon(&ui, meeting).map(|icon| icon.name)
         };
-        assert_eq!(name("preview-live"), Some("hex-provider-zoom"));
-        assert_eq!(name("preview-meet"), Some("hex-provider-meet"));
-        assert_eq!(name("preview-teams"), Some("hex-provider-teams"));
-        assert_eq!(name("preview-huddle"), Some("hex-provider-slack"));
-        assert_eq!(name("preview-design"), Some("hex-row-call"));
-        assert_eq!(name("preview-failed"), Some("hex-row-call"));
+        assert_eq!(name("preview-live"), Some("opcode-provider-zoom"));
+        assert_eq!(name("preview-meet"), Some("opcode-provider-meet"));
+        assert_eq!(name("preview-teams"), Some("opcode-provider-teams"));
+        assert_eq!(name("preview-huddle"), Some("opcode-provider-slack"));
+        assert_eq!(name("preview-design"), Some("opcode-row-call"));
+        assert_eq!(name("preview-failed"), Some("opcode-row-call"));
     }
 
     /// Labs › Follow live transcript: only a recording meeting's transcript

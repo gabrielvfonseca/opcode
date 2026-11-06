@@ -57,11 +57,11 @@ Launch -> read settings.json
 
 Loading repaired settings does not itself rewrite the file. A later settings
 save (including a migration save) takes the backup before replacing it.
-Backups are never automatically removed. On Linux, the running Hex checks
+Backups are never automatically removed. On Linux, the running Opcode checks
 `settings.json` every two seconds and adopts an edit made outside the window
 (by hand or by an agent), so its modes reach the listener and the next save
 keeps it (#970); macOS and Windows still read it only at launch or through
-`hex settings set`. Unchosen `meetings.retention` is
+`opcode settings set`. Unchosen `meetings.retention` is
 written as an absent key, so older builds with a non-optional retention still
 read the file; existing `null` values also load in the current build.
 
@@ -135,7 +135,7 @@ Command-Tab -> Tab still tracked (IDLE, DIRTY, or LOCKED)
                      -> 100 ms poll as before
 tracked key down in combined-session state but up in HID state  // #612
   -> reads as up for both the press check and the poll   // a latched Tab or Q
-     no longer blocks every press until Hex restarts
+     no longer blocks every press until Opcode restarts
 tracked keyboard key reads down in both states but sent no key event,  // #1008
 not even a key repeat, for 5 s (TRACKED_KEY_REPEAT_TIMEOUT)
   -> the press check treats it as released               // logged; mouse buttons excluded
@@ -199,7 +199,7 @@ Proof limit: reducer response to a supplied interruption, not macOS disabling
 and re-enabling a real tap.
 
 `recover.tap-health`: macOS can disable a tap (callback timeout, user input)
-or silently disable or invalidate it while Hex idles, after sleep, secure
+or silently disable or invalidate it while Opcode idles, after sleep, secure
 input, or an Accessibility change. The tap thread repairs all three taps (key,
 modifier, HID) and logs each repair to `process.log`.
 
@@ -239,7 +239,7 @@ device refuses a stream in its own default format     // #988, Intel Smart Sound
   -> none opens -> the default format's error, with its format, goes to recovery
 no input device at all (macOS)
   -> devices whose name can't be read are skipped     // audio::device_name, never Display
-  -> bounded recovery; `hex status` listener: "No microphone"
+  -> bounded recovery; `opcode status` listener: "No microphone"
 no input opens, at startup or after an interruption (Linux) // #937
   -> one "could not open the microphone: …" failure per outage // take_failure
   -> last failure filled in while it keeps retrying; reset once one opens
@@ -252,12 +252,12 @@ saved microphone missing or will not open
                     └── Windows, Linux: bounded backoff, logged only on a switch
   -> found -> switch back once capture is idle        // not during a pending start or tail
 MacBook lid closed (macOS)                            // built-in mic is off but still listed
-  -> built-in mic is passed over like Hex Microphone  // AppleClamshellState, read per resolve
+  -> built-in mic is passed over like Opcode Microphone  // AppleClamshellState, read per resolve
   ├── headphone-jack mic (BuiltInHeadphoneInputDevice UID, or the built-in
   │   input's emic/line data source) -> stays usable: listed, selectable,
   │   followed as the default, and can stand in (#712)
   ├── default or saved mic is built in -> first other real input stands in
-  │     -> Settings: "… is off while the lid is closed, so Hex listens to …"
+  │     -> Settings: "… is off while the lid is closed, so Opcode listens to …"
   ├── no other input -> "the built-in microphone is off while the lid is closed"
   └── lid opens or closes -> re-resolve like a device-list change // IOKit clamshell notification
         -> switch once capture is idle
@@ -354,11 +354,11 @@ Checks in [dictation/audio.rs](../../src/dictation/audio.rs):
 [audio.rs](../../src/audio.rs): `overload_glitches_do_not_interrupt_the_stream`,
 `cold_open_retries_the_selected_microphone_before_falling_back`.
 
-**Fixed after 2.1.25 ([#130](https://github.com/anomalyco/hex/issues/130)):** the
+**Fixed after 2.1.25 ([#130](https://github.com/anomalyco/opcode/issues/130)):** the
 first hold after minutes of idle failed with the error tone. The reporter's logs
 show the cold stream reporting "A buffer underrun or overrun occurred" 20–76 ms
 after opening. cpal 0.18 reports that as `ErrorKind::Xrun` from CoreAudio's
-`kAudioDeviceProcessorOverload` listener; the stream keeps running, but Hex
+`kAudioDeviceProcessorOverload` listener; the stream keeps running, but Opcode
 treated every error callback as fatal. In release-when-idle mode the owner then
 closed the device without retrying, and recognition suspended the held gesture.
 Overloads and refused real-time promotion are now logged and ignored; actual
@@ -372,7 +372,7 @@ for their device, or a physical cold open after idle.
 Proof limit: controlled asynchronous opener and capture ownership, not onset
 latency or the macOS microphone indicator.
 
-**Fixed after dev ([#619](https://github.com/anomalyco/hex/issues/619)):** a
+**Fixed after dev ([#619](https://github.com/anomalyco/opcode/issues/619)):** a
 Bluetooth headset's stream skipped about 130–145 ms of audio soon after it
 started, and every gap over 50 ms failed the held capture with the error tone.
 Gaps up to 250 ms are now filled with silence on the timeline, so the capture
@@ -382,19 +382,19 @@ report that a Bluetooth device was used with `avoid_bluetooth_microphone` on
 was not reproduced (a saved Bluetooth microphone, or no other usable input,
 keeps it by design).
 
-**Fixed after dev ([#1122](https://github.com/anomalyco/hex/issues/1122)):**
+**Fixed after dev ([#1122](https://github.com/anomalyco/opcode/issues/1122)):**
 after a WhatsApp desktop call ended, the warm built-in microphone stream kept
 running without an error but delivered only exact zeros, so every dictation
-was discarded as near-silent (`zero_fraction` 1.0) until Hex restarted. A
+was discarded as near-silent (`zero_fraction` 1.0) until Opcode restarted. A
 finished dictation whose audio through the release is exactly zero now
 reopens the stream the way a stream failure does; a cold microphone
 (release-while-idle) already opens fresh for each press. The first such
 dictation is still discarded. Not verified with a real WhatsApp call.
 
-**Fixed after 3.3.0 ([#1206](https://github.com/anomalyco/hex/issues/1206)):**
+**Fixed after 3.3.0 ([#1206](https://github.com/anomalyco/opcode/issues/1206)):**
 after a burst of overrun warnings while idle, a warm USB microphone's stream
 stopped delivering audio without reporting an error, so every dictation held
-only the stale pre-roll and was discarded as no speech until Hex restarted. An
+only the stale pre-roll and was discarded as no speech until Opcode restarted. An
 open stream that delivers nothing for 4 s now counts as failed and is reopened
 with the usual bounded recovery. Not verified on the reporter's microphone.
 
@@ -444,7 +444,7 @@ Source: `ModelSwap::place`/`take_reload` in
 [transcription/local_transcriber.rs](../../src/transcription/local_transcriber.rs)
 and `Command::Reload` in [transcription/engine.rs](../../src/transcription/engine.rs).
 Check: `a_model_without_room_on_the_gpu_reloads_in_place_once` (swap state
-only). Not observed on a real 2 GB GPU. A second process (another `hex`
+only). Not observed on a real 2 GB GPU. A second process (another `opcode`
 command that loads a model itself) still loads its own copy.
 
 `recover.command-pressure`: command recognition is best-effort; dictation
@@ -492,13 +492,13 @@ listener worker fails -> reap worker -> show failure
   ├── Retry -> new managed listener -> fresh capture -> expected output
   └── Dismiss -> clear error                            // not evidence of recovery
 
-close the window -> Hex keeps running
+close the window -> Opcode keeps running
   └── uncommitted shortcut capture -> cancel edit -> restore prior listening
 
-Hex crashes -> systemd restart-on-failure (no window) OR explicit hex start
-  -> hex / hex status -> live state, not stale log state
+Opcode crashes -> systemd restart-on-failure (no window) OR explicit opcode start
+  -> opcode / opcode status -> live state, not stale log state
 
-hex quit / Quit Hex -> drain accepted work -> release microphone and hotkeys -> exit 0
+opcode quit / Quit Opcode -> drain accepted work -> release microphone and hotkeys -> exit 0
 ```
 Sources/checks: [linux/app.rs](../../src/linux/app.rs),
 [Linux CI](../../.github/workflows/check-linux.yml),
@@ -510,16 +510,16 @@ single-instance socket is same-user only; bounded I/O and queues keep client
 stalls off the audio loop.
 
 **Escape on Linux since #786:** dictation has no cancel, so Escape stays with
-applications on X11 and Wayland. Hex grabs it on X11 only while Annotate
+applications on X11 and Wayland. Opcode grabs it on X11 only while Annotate
 draws, where it stops drawing; a grab conflict is logged once and drawing goes
 on. The portal never binds Escape or any cancel shortcut, and the shortcut set
 is bound once in one session.
 
 ```ts
-listener starts -> one session, one BindShortcuts: Hex's shortcuts only
+listener starts -> one session, one BindShortcuts: Opcode's shortcuts only
   └── KDE -> remove the stale `cancel` and `cancel-dictation` entries first
 desktop closes the shortcuts session -> cancel active capture
-  -> listener stops with an error -> Retry / hex start binds again
+  -> listener stops with an error -> Retry / opcode start binds again
 X11, Annotate drawing -> grab Escape (AnyModifier, else bare + lock variants)
   └── BadAccess -> warn once, keep drawing; other grab errors stop the listener
 ```
@@ -529,23 +529,23 @@ looked for again instead of leaving shortcuts off for the session (#875).
 
 ```ts
 listener starts -> no GlobalShortcuts portal
-  -> warn (desktop name, restart-the-portal hint) -> hex commands drive dictation
+  -> warn (desktop name, restart-the-portal hint) -> opcode commands drive dictation
   -> check again on its own thread: after 15 s, doubling up to every 2 min
      └── portal appears (e.g. xdg-desktop-portal restarted) -> bind shortcuts as usual
 ```
 
-**Fixed after dev-520** ([#875](https://github.com/anomalyco/hex/issues/875)):
+**Fixed after dev-520** ([#875](https://github.com/anomalyco/opcode/issues/875)):
 on KDE Plasma Wayland, xdg-desktop-portal started before Plasma exported its
 session environment picked the wrong backend and offered no shortcuts
-interface; Hex fell back to commands and never checked again. Source:
+interface; Opcode fell back to commands and never checked again. Source:
 `Backend::wait_for_portal` in [linux/input.rs](../../src/linux/input.rs);
 `commands_alone_drive_a_listener_without_shortcuts` covers the command loop,
 not the portal appearing. Not run on a live Plasma session.
 
-**Fixed after dev-249** ([#482](https://github.com/anomalyco/hex/issues/482),
-reported by ohlmann on KDE Plasma): Hex bound Escape in a second portal session
+**Fixed after dev-249** ([#482](https://github.com/anomalyco/opcode/issues/482),
+reported by ohlmann on KDE Plasma): Opcode bound Escape in a second portal session
 when recording started. KDE keys shortcuts by app, so that session's
-BindShortcuts removed Hex's other shortcuts, so recording never started. Hex
+BindShortcuts removed Opcode's other shortcuts, so recording never started. Opcode
 binds every shortcut once in one session and never binds Escape there.
 
 Checks in [linux/input.rs](../../src/linux/input.rs):
@@ -611,7 +611,7 @@ verification remain separate.
 
 Layouts can also switch arrangement while Command is held. "Dvorak – QWERTY ⌘"
 types `v` from keycode 47, but ⌘+47 is ⌘. there; ⌘V is keycode 9. Resolving ⌘V
-from the plain layer posted ⌘. and the target beeped (kitlangton/Hex#162). The
+from the plain layer posted ⌘. and the target beeped (kitlangton/Opcode#162). The
 snapshot and headless lookups now resolve Command shortcuts from the layout's
 Command layer first. Ordinary layouts map letters identically on both layers.
 `command_shortcuts_resolve_against_the_command_layer` covers the selection and
@@ -644,14 +644,14 @@ It posts no key events and does not launch the installed app or capture audio.
 
 **Contributor-reported September 9, 2026 (PR #81, ASCII-capable fallback):** with the Russian
 layout active on macOS 26.6.2 (25G83), Apple M3, a locally built
-`/Applications/Hex.app` resolved `paste_key_code=9` at startup and held
+`/Applications/Opcode.app` resolved `paste_key_code=9` at startup and held
 Option-dictations pasted into the focused app; the retained
 `keyboard_layout` regression still passed all twelve child runs. The
 fallback mirrors AppKit's own resolution of shortcuts such as ⌘V on
 non-Latin layouts, so a Latin-active snapshot is unchanged.
 
 **Local startup check, September 1, 2026:** Developer ID-signed version 2.1.11,
-local build `20111.1`, was installed and launched from `/Applications/Hex.app`.
+local build `20111.1`, was installed and launched from `/Applications/Opcode.app`.
 Bundle identity/signature and the installed executable's match to the signed
 build were validated. The new process reported resolved keyboard layout,
 loaded transcription model, and Listening, with no startup errors or panic.
@@ -695,7 +695,7 @@ listen-only native metadata -> establish distinguishability before choosing a fi
 ```
 Source/check: [suppression.rs](../../src/suppression.rs),
 `remapped_control_does_not_start_or_hold_right_control_dictation`;
-issue [#37](https://github.com/anomalyco/hex/issues/37).
+issue [#37](https://github.com/anomalyco/opcode/issues/37).
 Missing evidence: affected-keyboard metadata showing whether Quartz preserves
 enough identity to distinguish the remapped key.
 
@@ -708,8 +708,8 @@ reported mute failure / missed hold
 
 ownership/timing tests -> device-specific root cause    // UNSAFE inference
 ```
-Reports: [#53](https://github.com/anomalyco/hex/issues/53),
-[#54](https://github.com/anomalyco/hex/issues/54).
+Reports: [#53](https://github.com/anomalyco/opcode/issues/53),
+[#54](https://github.com/anomalyco/opcode/issues/54).
 Proof limit: existing ownership/timing tests do not establish these native
 failure causes; a current hold-to-result sequence is still needed.
 
@@ -731,7 +731,7 @@ check `runaway_scripts_stop_at_the_time_limit_and_the_config_keeps_working`,
 `a_throwing_or_slow_transformation_pastes_the_text_unchanged` in
 [tests/host_apis.rs](../../src/personal_commands/tests/host_apis.rs).
 Handlers return actions instead of awaiting native results, so the old late
-native tool reply ([#20](https://github.com/anomalyco/hex/issues/20)) cannot
+native tool reply ([#20](https://github.com/anomalyco/opcode/issues/20)) cannot
 occur.
 
 ### Slow Paste Consumer
@@ -746,7 +746,7 @@ controlled delayed consumer -> output A -> output B -> restoration
                                                       // missing isolated evidence
 ```
 Source: [paste.rs](../../src/paste.rs);
-issue [#24](https://github.com/anomalyco/hex/issues/24).
+issue [#24](https://github.com/anomalyco/opcode/issues/24).
 Missing evidence: both outputs and restoration with a controlled delayed
 consumer, without using the user's clipboard.
 

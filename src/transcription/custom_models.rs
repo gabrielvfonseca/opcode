@@ -4,10 +4,10 @@
 //! on Metal and Vulkan) before transcribe.cpp ever loads it, then copied into
 //! `models/custom/` under its SHA-256, with a receipt of its size and digest
 //! and a manifest of what its metadata declared. Its ID (`custom-` and the
-//! digest's first 16 hex digits) is stable across launches and machines.
+//! digest's first 16 opcode digits) is stable across launches and machines.
 //!
-//! The digest identifies the file Hex copied; it is not a publisher's
-//! checksum and Hex vouches for nothing in it. A saved choice of an import
+//! The digest identifies the file Opcode copied; it is not a publisher's
+//! checksum and Opcode vouches for nothing in it. A saved choice of an import
 //! that is missing, changed since it was imported, or behind its Labs toggle
 //! stays saved, and the listener runs the default model until it is fixed
 //! ([`runnable`]).
@@ -34,7 +34,7 @@ const PREFIX: &str = "custom-";
 const DIGITS: usize = 16;
 const MAX_NAME_CHARS: usize = 64;
 
-/// The model families Hex's runtime handles, with the names people know.
+/// The model families Opcode's runtime handles, with the names people know.
 const ARCHITECTURES: [(&str, &str); 6] = [
     ("parakeet", "Parakeet"),
     ("whisper", "Whisper"),
@@ -50,14 +50,14 @@ fn takes_language_hint(architecture: &str) -> bool {
     !matches!(architecture, "parakeet" | "gigaam")
 }
 
-/// An imported model's stable ID: `custom-` and the first 16 hex digits of
+/// An imported model's stable ID: `custom-` and the first 16 opcode digits of
 /// the file's SHA-256.
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct CustomModelId([u8; PREFIX.len() + DIGITS]);
 
 impl CustomModelId {
     fn from_sha256(sha256: &str) -> Self {
-        Self::parse(&format!("{PREFIX}{}", &sha256[..DIGITS])).expect("a SHA-256 is hex")
+        Self::parse(&format!("{PREFIX}{}", &sha256[..DIGITS])).expect("a SHA-256 is opcode")
     }
 
     pub fn parse(text: &str) -> Option<Self> {
@@ -108,7 +108,7 @@ struct Manifest {
     repository: Option<String>,
     imported_at: u64,
     /// A file found on this computer and used where it is (the Hugging Face
-    /// cache), never copied, written, or deleted; `None` for Hex's own copy.
+    /// cache), never copied, written, or deleted; `None` for Opcode's own copy.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     path: Option<PathBuf>,
     /// Where a found file came from: `owner/name@abcdef1`.
@@ -116,7 +116,7 @@ struct Manifest {
     origin: Option<String>,
 }
 
-/// The receipt every model file has: the size and digest Hex checked, and
+/// The receipt every model file has: the size and digest Opcode checked, and
 /// the modification time that proves the file is still that one.
 #[derive(Deserialize, Serialize)]
 pub(crate) struct Receipt {
@@ -161,7 +161,7 @@ pub enum Status {
     Changed,
 }
 
-/// One imported model, as the picker, `hex model list`, and the local API
+/// One imported model, as the picker, `opcode model list`, and the local API
 /// show it.
 #[derive(Clone)]
 pub struct Imported {
@@ -284,7 +284,7 @@ fn model_file(directory: &Path, id: CustomModelId) -> PathBuf {
     directory.join(format!("{}.gguf", id.digits()))
 }
 
-/// Where an import's file is: Hex's copy, or the found file it uses in place.
+/// Where an import's file is: Opcode's copy, or the found file it uses in place.
 fn located(directory: &Path, id: CustomModelId, manifest: &Manifest) -> PathBuf {
     manifest
         .path
@@ -492,21 +492,21 @@ pub(crate) struct Profile {
     pub(crate) repository: Option<String>,
 }
 
-/// Checks a header against what Hex can run, with the reason when it can't.
-/// What a header declares, or why Hex can't run it (also the hub-cache scan).
+/// Checks a header against what Opcode can run, with the reason when it can't.
+/// What a header declares, or why Opcode can't run it (also the hub-cache scan).
 pub(crate) fn profile_of(header: &GgufHeader, file_name: &str) -> Result<Profile> {
     profile(header, file_name)
 }
 
 fn profile(header: &GgufHeader, file_name: &str) -> Result<Profile> {
     let Some(architecture) = header.string("general.architecture") else {
-        bail!("it has no general.architecture, so Hex can't tell which model family it is");
+        bail!("it has no general.architecture, so Opcode can't tell which model family it is");
     };
     if !ARCHITECTURES.iter().any(|(name, _)| *name == architecture) {
         bail!(
-            "its architecture is {architecture}, so it was made for another program. Hex runs \
+            "its architecture is {architecture}, so it was made for another program. Opcode runs \
              only GGUF files converted with transcribe.cpp (Parakeet, Whisper, Qwen3-ASR, \
-             Cohere Transcribe, SenseVoice, or GigaAM); for a model in Hex's list, download \
+             Cohere Transcribe, SenseVoice, or GigaAM); for a model in Opcode's list, download \
              it from the list instead"
         );
     }
@@ -522,7 +522,7 @@ fn profile(header: &GgufHeader, file_name: &str) -> Result<Profile> {
     let unsupported = header.unsupported_tensor_types();
     if !unsupported.is_empty() {
         bail!(
-            "it has {} tensors; Hex runs only F32, F16, and Q8_0 weights on Metal and Vulkan. \
+            "it has {} tensors; Opcode runs only F32, F16, and Q8_0 weights on Metal and Vulkan. \
              Quantize it to Q8_0 with transcribe-quantize",
             unsupported.join(", ")
         );
@@ -540,7 +540,7 @@ fn profile(header: &GgufHeader, file_name: &str) -> Result<Profile> {
         }
     }
     if languages.is_empty() {
-        bail!("its general.languages names no language Hex knows");
+        bail!("its general.languages names no language Opcode knows");
     }
     Ok(Profile {
         name: header
@@ -743,7 +743,7 @@ fn valid_name(name: &str) -> Result<String> {
     Ok(name)
 }
 
-/// Checks Hex's copy of an import again: when its contents still match the
+/// Checks Opcode's copy of an import again: when its contents still match the
 /// digest recorded at import (only its modification time moved, say), the
 /// receipt is rewritten and the import is ready again. A copy that no
 /// longer matches stays changed, and is never trusted on size alone.
@@ -760,7 +760,7 @@ pub fn repair(id: CustomModelId, canceled: &AtomicBool) -> Result<()> {
             manifest.name
         );
     }
-    if super::models::sha256_hex(&file, Some(canceled))? != manifest.sha256 {
+    if super::models::sha256_opcode(&file, Some(canceled))? != manifest.sha256 {
         bail!(
             "{} no longer matches the file that was imported. Import it again, or remove it.",
             manifest.name
@@ -774,7 +774,7 @@ pub fn repair(id: CustomModelId, canceled: &AtomicBool) -> Result<()> {
     Ok(())
 }
 
-/// Hex's verification for an import before it loads: its receipt still
+/// Opcode's verification for an import before it loads: its receipt still
 /// holds, or a full rehash matches the digest recorded when it was chosen.
 pub fn verify(id: CustomModelId, canceled: &AtomicBool) -> Result<PathBuf> {
     let directory = directory()?;
@@ -790,8 +790,8 @@ pub fn verify(id: CustomModelId, canceled: &AtomicBool) -> Result<PathBuf> {
 
 /// Starts using a found file where it is: checks its header, hashes it in
 /// full once (the digest must be the hub's blob name, when it has one), and
-/// records it beside Hex's imports. Nothing is copied or written near the
-/// file; forgetting it later removes only Hex's record.
+/// records it beside Opcode's imports. Nothing is copied or written near the
+/// file; forgetting it later removes only Opcode's record.
 pub fn adopt_in_place(
     path: &Path,
     blob_sha256: Option<&str>,
@@ -804,8 +804,8 @@ pub fn adopt_in_place(
 /// Labs › Use model files where they are: adds a file the person chose
 /// and uses it where it is, as a found file is, so several accounts can
 /// share one file. Its header is checked, it is hashed in full once, and
-/// only Hex's receipt and record are written, in Hex's own folder. An
-/// earlier import of the same file by copy keeps its name, and Hex's copy
+/// only Opcode's receipt and record are written, in Opcode's own folder. An
+/// earlier import of the same file by copy keeps its name, and Opcode's copy
 /// goes. Forgetting it later leaves the file.
 pub fn add_in_place(path: &Path, canceled: &AtomicBool) -> Result<CustomModelId> {
     record_in_place(path, None, None, canceled)
@@ -821,7 +821,7 @@ fn record_in_place(
         .map_err(|error| eyre!("{} can't be used: {error}", display_name(path)))?;
     let profile = profile(&header, &file_stem(path))
         .map_err(|error| eyre!("{} can't be used: {error}", display_name(path)))?;
-    let sha256 = super::models::sha256_hex(path, Some(canceled))?;
+    let sha256 = super::models::sha256_opcode(path, Some(canceled))?;
     if blob_sha256.is_some_and(|blob| blob != sha256) {
         bail!(
             "{} doesn't match the checksum the Hugging Face cache recorded for it",
@@ -864,12 +864,12 @@ fn record_in_place(
         },
     )?;
     // The same file imported by copy before: the file in place replaces
-    // Hex's copy, which is never the file chosen.
+    // Opcode's copy, which is never the file chosen.
     let copy = model_file(&directory, id);
     if existing.is_some_and(|existing| existing.path.is_none()) && copy != path {
         match fs::remove_file(&copy) {
             Err(error) if error.kind() != std::io::ErrorKind::NotFound => {
-                tracing::warn!(%error, id = id.as_str(), "could not remove Hex's copy of a model now used in place");
+                tracing::warn!(%error, id = id.as_str(), "could not remove Opcode's copy of a model now used in place");
             }
             _ => {}
         }
@@ -895,7 +895,7 @@ pub fn rename(id: CustomModelId, name: &str) -> Result<()> {
     )
 }
 
-/// Removes Hex's copy of an import, its receipt, and its manifest. The file
+/// Removes Opcode's copy of an import, its receipt, and its manifest. The file
 /// it was imported from is not touched.
 pub fn remove(id: CustomModelId) -> Result<()> {
     let directory = directory()?;
@@ -946,7 +946,7 @@ mod tests {
     fn temporary_models_dir() -> PathBuf {
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let directory = std::env::temp_dir().join(format!(
-            "hex-custom-models-{}-{}",
+            "opcode-custom-models-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
         ));
@@ -974,7 +974,7 @@ mod tests {
         assert_eq!(artifact.bytes, fs::metadata(&source).unwrap().len());
         assert_eq!(
             artifact.sha256,
-            super::super::models::sha256_hex(&source, None).unwrap()
+            super::super::models::sha256_opcode(&source, None).unwrap()
         );
         assert!(
             super::super::models::model_path(definition)
@@ -1068,7 +1068,7 @@ mod tests {
         let id = import(&source, None, &AtomicBool::new(false)).unwrap();
         assert_eq!(status(id), Status::Ready);
         let copy = model_file(&directory().unwrap(), id);
-        // Hex's copy swapped for a link to the identical shared file.
+        // Opcode's copy swapped for a link to the identical shared file.
         fs::remove_file(&copy).unwrap();
         std::os::unix::fs::symlink(&source, &copy).unwrap();
         invalidate();
@@ -1250,7 +1250,7 @@ mod tests {
             .contains("its architecture is llama")
         );
         // A SenseVoice file made for another program names that, not a
-        // family Hex says it runs (#1299).
+        // family Opcode says it runs (#1299).
         let other_runtime = reason(gguf(
             &[("general.architecture", "sensevoice-small")],
             &[],
@@ -1288,6 +1288,6 @@ mod tests {
             &[],
             &[("a", 0, 4)],
         );
-        assert!(reason(no_languages).contains("no language Hex knows"));
+        assert!(reason(no_languages).contains("no language Opcode knows"));
     }
 }

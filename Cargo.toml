@@ -1,13 +1,13 @@
 [package]
-name = "hex"
+name = "opcode"
 version = "3.3.0"
 edition = "2024"
-default-run = "hex"
+default-run = "opcode"
 license = "MIT"
-repository = "https://github.com/anomalyco/hex"
+repository = "https://github.com/anomalyco/opcode"
 
 # Crates imported from Scrawl live under `crates/`. Plain `cargo build` and
-# `cargo test` still select only Hex; pass `--workspace` or `-p` for the others.
+# `cargo test` still select only Opcode; pass `--workspace` or `-p` for the others.
 # `crates/capture` and `crates/capture-core` are excluded so `--workspace`
 # never builds them: they compile only as the macOS and Linux dependencies
 # of the `capture` experiment, and `-p scrawl-capture` / `-p capture-core` test and lint
@@ -36,10 +36,10 @@ onnx-benchmark = ["dep:transcribe-rs"]
 strip = true
 
 # transcribe.cpp 0.4.1 plus one ggml patch that builds only the Vulkan
-# shaders Hex's models use (see `CMAKE_ARGS` in .cargo/config.toml),
-# Parakeet's vocabulary rescoring (branch hex/parakeet-vocabulary), and a Metal
+# shaders Opcode's models use (see `CMAKE_ARGS` in .cargo/config.toml),
+# Parakeet's vocabulary rescoring (branch opcode/parakeet-vocabulary), and a Metal
 # residency heartbeat that sleeps once its keep-alive runs out (branch
-# hex/metal-idle-residency). Drop this once a transcribe.cpp release carries
+# opcode/metal-idle-residency). Drop this once a transcribe.cpp release carries
 # them.
 [patch.crates-io]
 transcribe-cpp = { git = "https://github.com/anomalyco/transcribe.cpp", rev = "2778ae4bf5ca5f394d129a39467f4ad9552dc34f" }

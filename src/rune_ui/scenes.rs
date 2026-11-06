@@ -11,7 +11,7 @@ pub(super) const SCENES: &[Scene] = &[
     // (`--snap`): waits for its first snapshot instead of drawing
     // "Connecting…" at virtual time zero.
     ("live", |ui| {
-        // Reads the saved settings and the running Hex; writes neither.
+        // Reads the saved settings and the running Opcode; writes neither.
         let settings = AppSettings::read().unwrap_or_default();
         crate::desktop::i18n::apply(settings.ui_language.as_deref());
         *ui = Ui::with(settings, Service::Fixture(Vec::new()));
@@ -67,7 +67,7 @@ pub(super) const SCENES: &[Scene] = &[
         ui.microphones = Ok(crate::audio::InputDevices {
             names: vec!["Built-in Audio Analog Stereo".into(), "Shure MV7".into()],
             system_default: Some("Shure MV7".into()),
-            default_is_hex_microphone: false,
+            default_is_opcode_microphone: false,
             ..Default::default()
         });
     }),
@@ -219,9 +219,9 @@ pub(super) const SCENES: &[Scene] = &[
             },
         );
     }),
-    // The first run on Linux (Windows is the same window): setting up Hex
+    // The first run on Linux (Windows is the same window): setting up Opcode
     // with nothing found, the model step with models found here, the demo,
-    // waiting for the model, the practice game, and Hex is ready.
+    // waiting for the model, the practice game, and Opcode is ready.
     ("onboarding", |ui| {
         first_run(ui, FirstRun::Fresh, Page::Download)
     }),
@@ -554,19 +554,19 @@ pub(super) const SCENES: &[Scene] = &[
         ui.meetings = meetings::MeetingsPane::default();
         ui.pane = Pane::Meetings;
     }),
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     ("mac-scrawl-off", |ui| scrawl_fixture(ui, false, |_| {})),
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     ("mac-scrawl", |ui| scrawl_fixture(ui, true, |_| {})),
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     ("mac-scrawl-running", |ui| {
         scrawl_fixture(ui, true, |view| view.scrawl_running = true)
     }),
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     ("mac-scrawl-permission", |ui| {
         scrawl_fixture(ui, true, |view| view.screen_recording = false)
     }),
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     ("mac-scrawl-restart", |ui| {
         scrawl_fixture(ui, true, |view| {
             view.screen_recording = false;
@@ -582,13 +582,13 @@ pub(super) const SCENES: &[Scene] = &[
         ui.platform.tuning.mode = crate::audio::voice_filter::VoiceFilterMode::Muted;
         ui.platform.demo = Some(fun::preview_demo(
             false,
-            Some(crate::audio::hex_microphone::DemoPlaybackTrack::CallHears),
+            Some(crate::audio::opcode_microphone::DemoPlaybackTrack::CallHears),
         ));
         ui.pane = Pane::VoiceFilter;
     }),
     ("mac-voice-filter-driver-missing", |ui| {
         *ui = mac_fixture();
-        if let Some(driver) = &mut ui.platform.hex_microphone {
+        if let Some(driver) = &mut ui.platform.opcode_microphone {
             driver.driver_bundle_installed = false;
             driver.driver_loaded = false;
             driver.installed_version = None;
@@ -601,20 +601,20 @@ pub(super) const SCENES: &[Scene] = &[
         *ui = fixture(DesktopShortcuts::Commands);
         ui.platform = platform::PlatformState::preview(platform::Capabilities::LINUX);
         ui.host = platform::PlatformHost::Fixture(Vec::new());
-        ui.settings.experimental.hex_microphone = true;
+        ui.settings.experimental.opcode_microphone = true;
         ui.pane = Pane::VoiceFilter;
     }),
     ("voice-filter-unavailable", |ui| {
         *ui = fixture(DesktopShortcuts::Commands);
         ui.platform = platform::PlatformState::preview(platform::Capabilities::LINUX);
         ui.host = platform::PlatformHost::Fixture(Vec::new());
-        if let Some(source) = &mut ui.platform.hex_microphone {
+        if let Some(source) = &mut ui.platform.opcode_microphone {
             source.driver_loaded = false;
-            source.action_state = crate::audio::hex_microphone::DriverActionState::Failed(
-                "pw-cat was not found; Hex Microphone needs PipeWire".into(),
+            source.action_state = crate::audio::opcode_microphone::DriverActionState::Failed(
+                "pw-cat was not found; Opcode Microphone needs PipeWire".into(),
             );
         }
-        ui.settings.experimental.hex_microphone = true;
+        ui.settings.experimental.opcode_microphone = true;
         ui.pane = Pane::VoiceFilter;
     }),
     ("mac-hud-lab", |ui| {
@@ -623,7 +623,7 @@ pub(super) const SCENES: &[Scene] = &[
         ui.pane = Pane::HudLab;
     }),
     ("mac-labs", labs_with_some_on),
-    // Where hex://labs/vocabulary-biasing lands: its group's chip.
+    // Where opcode://labs/vocabulary-biasing lands: its group's chip.
     ("mac-labs-link", |ui| {
         *ui = mac_fixture();
         ui.labs_open = true;
@@ -700,8 +700,8 @@ pub(super) const SCENES: &[Scene] = &[
             key: None,
         };
     }),
-    // The first run on macOS: setting up Hex, each permission state, the
-    // practice game, and Hex is ready.
+    // The first run on macOS: setting up Opcode, each permission state, the
+    // practice game, and Opcode is ready.
     ("mac-onboarding", |ui| {
         mac_first_run(ui, onboarding::MacStep::Setup, Page::Download)
     }),
@@ -739,7 +739,7 @@ enum FirstRun {
     Failed,
     /// The model is installed.
     Ready,
-    /// The model is installed, and the desktop asks before Hex's first
+    /// The model is installed, and the desktop asks before Opcode's first
     /// paste (GNOME and KDE on Wayland).
     PasteAccess,
 }
@@ -778,7 +778,7 @@ fn mac_first_run(ui: &mut Ui, step: onboarding::MacStep, page: Page) {
 
 /// The Annotate pane with captures `enabled`, a 3-day video retention, and
 /// `adjust` applied to what the host shows.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 fn scrawl_fixture(ui: &mut Ui, enabled: bool, adjust: fn(&mut platform::ScrawlView)) {
     *ui = mac_fixture();
     ui.settings.capture.enabled = enabled;
@@ -808,7 +808,7 @@ pub(super) fn mac_fixture() -> Ui {
             policy: crate::app_settings::MeetingPolicy::NeverOffer,
         },
     ];
-    ui.settings.experimental.hex_microphone = true;
+    ui.settings.experimental.opcode_microphone = true;
     ui.microphones = Ok(crate::audio::InputDevices {
         names: vec![
             "Kit Pods".into(),
@@ -816,7 +816,7 @@ pub(super) fn mac_fixture() -> Ui {
             "Studio Display Microphone".into(),
         ],
         system_default: Some("Kit Pods".into()),
-        default_is_hex_microphone: false,
+        default_is_opcode_microphone: false,
         ..Default::default()
     });
     ui.meetings = meetings::MeetingsPane::fixture();
@@ -926,7 +926,7 @@ fn labs_with_some_on(ui: &mut Ui) {
     ] {
         feature.set(&mut ui.settings, true);
     }
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     {
         ui.platform.scrawl = Some(platform::ScrawlView::preview());
     }

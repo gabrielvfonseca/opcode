@@ -1,7 +1,7 @@
 # Rune As A Public Dependency
 
 **Decision (Dax, 2026-10-22):** Rune (`anomalyco/rune`) is public under the
-MIT license, the same license as Hex. Hex depends on it as an ordinary public
+MIT license, the same license as Opcode. Opcode depends on it as an ordinary public
 Git dependency:
 
 ```toml
@@ -12,28 +12,28 @@ rune = { git = "https://github.com/anomalyco/rune.git", rev = "<sha>" }
 
 Rune was published with a clean history: its `main` was replaced by one root
 commit (`7eea3a3`) holding the tree of the last private `main` plus the
-license. Commits from before that, including every rev Hex pinned earlier
+license. Commits from before that, including every rev Opcode pinned earlier
 (such as `338d22a`), no longer exist on Rune's branches.
 
 ## Why
 
 Cargo fetches every Git dependency in `Cargo.lock`, including optional ones.
 While Rune was private, even a build without Rune enabled failed without Rune
-access (CI, the Nix flake, and outside contributors). Neither Hex nor Rune is
+access (CI, the Nix flake, and outside contributors). Neither Opcode nor Rune is
 published to crates.io (`publish = false`); never run `cargo publish`. These
 alternatives were rejected:
 
 - A deploy key or token secret. Fork pull requests get no secrets, and Nix's
   fixed-output fetchers can't use SSH, so every public consumer still breaks.
-- Vendoring Rune into Hex. Publishing the vendored copy amounts to publishing
+- Vendoring Rune into Opcode. Publishing the vendored copy amounts to publishing
   Rune anyway, and the copy drifts from Rune's `main`.
 - A private Cargo registry. It has the same credential problem as Git, plus a
   registry to run.
-- A private repository for the Rune front end that depends on Hex as a
-  library. Public Hex would ship without its UI, and the single-process
-  design puts Rune's event loop in Hex's main process.
+- A private repository for the Rune front end that depends on Opcode as a
+  library. Public Opcode would ship without its UI, and the single-process
+  design puts Rune's event loop in Opcode's main process.
 
-## What this means for Hex
+## What this means for Opcode
 
 - No credentials or SSH are needed. `.cargo/config.toml` no longer sets
   `net.git-fetch-with-cli`.
@@ -44,7 +44,7 @@ alternatives were rejected:
   `cargoGitDependencies."rune-0.0.1"`, and the hash lands under
   `cargoLock.outputHashes` as `rune-0.0.1`. One entry covers every crate from
   the repository. **Every Rune pin bump must update both.** To get the new
-  hash, set it to `lib.fakeHash` and run `nix build .#hex.cargoDeps`; the
+  hash, set it to `lib.fakeHash` and run `nix build .#opcode.cargoDeps`; the
   error prints the hash to use. `scripts/check-nix-git-pins.py` fails a pull
   request whose recorded rev does not match `Cargo.lock`.
 - A pin bump changes the `rev` on all three crates together, followed by

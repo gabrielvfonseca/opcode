@@ -26,7 +26,7 @@ describe("ready transcriber", () => {
       expect(transcriber.model).toBe("parakeet_v2")
       expect(transcriber.language).toBe("en")
       for (const audio of [new Uint8Array([1, 2, 3]), new ArrayBuffer(4)]) {
-        expect(await transcriber.transcribe(audio)).toEqual({ transcript: "hello from hex", durationMs: 750 })
+        expect(await transcriber.transcribe(audio)).toEqual({ transcript: "hello from opcode", durationMs: 750 })
       }
       expect(requests.filter((url) => url.includes("/prepare"))).toHaveLength(1)
       expect(requests.filter((url) => url.includes("/transcriptions")).map((url) => new URL(url).search))
@@ -40,12 +40,12 @@ describe("ready transcriber", () => {
   })
 
   it.each(["error", "cancel", "callback"])("closes the helper before failed creation settles: %s", async (mode) => {
-    await withTempDir("hex-ready-", async (directory) => {
+    await withTempDir("opcode-ready-", async (directory) => {
       const pidPath = join(directory, "pid")
       const controller = new AbortController()
       await expect(create({
         ...options(), model: "parakeet_v2",
-        env: { HEX_FAKE_PID_PATH: pidPath, HEX_FAKE_PREPARE_ERROR: "1" },
+        env: { OPCODE_FAKE_PID_PATH: pidPath, OPCODE_FAKE_PREPARE_ERROR: "1" },
         signal: controller.signal,
         onProgress: () => {
           if (mode === "cancel") controller.abort()
@@ -64,7 +64,7 @@ describe("ready transcriber", () => {
       await expect(transcriber.transcribe(new Uint8Array(4), { signal: AbortSignal.abort() }))
         .rejects.toMatchObject({ code: "cancelled" })
       expect(processIsAlive(transcriber.pid)).toBe(true)
-      expect((await transcriber.transcribe(new Uint8Array(4))).transcript).toBe("hello from hex")
+      expect((await transcriber.transcribe(new Uint8Array(4))).transcript).toBe("hello from opcode")
     } finally {
       await transcriber.close()
     }
@@ -105,7 +105,7 @@ describe("ready transcriber", () => {
     try {
       await expect(create({
         ...options(), model: "parakeet_v2", shutdownTimeoutMs: 1,
-        env: { HEX_FAKE_MODE: "bad-handshake", HEX_FAKE_IGNORE_LEASE: "1" },
+        env: { OPCODE_FAKE_MODE: "bad-handshake", OPCODE_FAKE_IGNORE_LEASE: "1" },
       })).rejects.toMatchObject({ code: "shutdown-failed" })
     } finally {
       kill.mockRestore()
@@ -124,7 +124,7 @@ describe("ready transcriber", () => {
     const controller = new AbortController()
     const transcriber = await create({
       ...options(), model: "parakeet_v2",
-      env: { HEX_FAKE_TRANSCRIBE_HANG: "1" },
+      env: { OPCODE_FAKE_TRANSCRIBE_HANG: "1" },
       fetch: async (url, init) => {
         const response = await fetch(url, init)
         if (String(url).includes("/transcriptions")) markStarted()
@@ -148,7 +148,7 @@ describe("ready transcriber", () => {
 
   it("keeps the helper alive after an ordinary request failure", async () => {
     const transcriber = await create({
-      ...options(), model: "parakeet_v2", env: { HEX_FAKE_TRANSCRIBE_ERROR: "1" },
+      ...options(), model: "parakeet_v2", env: { OPCODE_FAKE_TRANSCRIBE_ERROR: "1" },
     })
     try {
       await expect(transcriber.transcribe(new Uint8Array(4)))
@@ -165,7 +165,7 @@ describe("ready transcriber", () => {
     let uploads = 0
     const controller = new AbortController()
     const transcriber = await create({
-      ...options(), model: "parakeet_v2", env: { HEX_FAKE_TRANSCRIBE_HANG: "1" },
+      ...options(), model: "parakeet_v2", env: { OPCODE_FAKE_TRANSCRIBE_HANG: "1" },
       fetch: async (url, init) => {
         const response = await fetch(url, init)
         if (String(url).includes("/transcriptions") && ++uploads === 2) markStarted()

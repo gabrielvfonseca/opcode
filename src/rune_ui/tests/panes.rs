@@ -64,7 +64,7 @@ fn settings_rows_follow_each_os() {
         "enable-on-launch",
         "meetings-enabled",
         "detected-calls",
-        "hex-mic-driver",
+        "opcode-mic-driver",
         "command-model-notice",
     ] {
         assert!(!present(&mac, key), "macOS General has no {key}");
@@ -448,7 +448,7 @@ fn the_meeting_summary_model_is_picked_from_opencode_s_models() {
     rt.state.models.open_picker();
     rt.invalidate();
     settle(&mut rt);
-    // Hex's automatic choice, then the catalog in order.
+    // Opcode's automatic choice, then the catalog in order.
     tap(&mut rt, "model-picker-option-3");
     assert_eq!(
         rt.state.settings.meetings.opencode_model.as_deref(),
@@ -462,7 +462,7 @@ fn the_meeting_summary_model_is_picked_from_opencode_s_models() {
     assert!(
         texts(&rt)
             .iter()
-            .any(|text| text == "Hex picks a fast model")
+            .any(|text| text == "Opcode picks a fast model")
     );
 
     rt.state.settings.labs.meeting_summary_model = false;
@@ -515,7 +515,7 @@ fn the_cancel_shortcut_shows_in_toggle_and_restores_escape() {
     );
 
     // On Wayland the portal would hold the key for good: the row points
-    // to `hex dictation cancel` instead of recording one.
+    // to `opcode dictation cancel` instead of recording one.
     let portal = runtime("portal-toggle-cancel", true, PANE_SIZE);
     assert!(portal.find("cancel-shortcut").is_some());
     assert!(portal.find("cancel-hotkey").is_none());
@@ -846,7 +846,7 @@ fn esc_stays_on_the_recorder_however_many_keys_are_held() {
 }
 
 #[test]
-fn the_practice_game_follows_hex_s_own_dictation_on_every_os() {
+fn the_practice_game_follows_opcode_s_own_dictation_on_every_os() {
     for scene in ["mac-onboarding-try", "onboarding-try"] {
         let mut rt = runtime(scene, true, PANE_SIZE);
         let holding = |rt: &Runtime<Ui>| {
@@ -859,7 +859,7 @@ fn the_practice_game_follows_hex_s_own_dictation_on_every_os() {
         assert!(!holding(&rt));
         onboarding::input(&mut rt.state, Input::Dictation(Observation::Started));
         refresh(&mut rt);
-        assert!(holding(&rt), "{scene}: the shortcut held, as Hex records");
+        assert!(holding(&rt), "{scene}: the shortcut held, as Opcode records");
         onboarding::input(&mut rt.state, Input::Dictation(Observation::Transcribing));
         refresh(&mut rt);
         assert!(!holding(&rt), "{scene}: released");
@@ -1101,7 +1101,7 @@ fn a_staged_dev_build_lists_its_first_changes_under_the_update() {
     if let Some(view) = &mut rt.state.view {
         view.update_notes = Some(crate::desktop::host::UpdateNotes {
             items: ["One", "Two", "Three", "Four"].map(String::from).to_vec(),
-            url: "https://anoma.ly/hex/dev#0.0.0-dev-2".into(),
+            url: "https://anoma.ly/opcode/dev#0.0.0-dev-2".into(),
         });
     }
     refresh(&mut rt);
@@ -1407,9 +1407,9 @@ fn the_mac_first_run_asks_each_permission_then_practices() {
         rt.state.tour.as_ref().unwrap().flow.view().practice,
         Practice::Landed
     );
-    // Done leaves the game at any point; Start using Hex closes onboarding.
+    // Done leaves the game at any point; Start using Opcode closes onboarding.
     tap(&mut rt, "done");
-    tap(&mut rt, "start-using-hex");
+    tap(&mut rt, "start-using-opcode");
     assert!(rt.state.tour.is_none());
     assert!(rt.state.first_run.is_none());
 }
@@ -1425,12 +1425,12 @@ fn a_listener_that_will_not_start_relaunches_once_then_asks_to_reopen() {
     );
     assert_eq!(asked(&rt), [PlatformRequest::Relaunch]);
     let mut rt = runtime("mac-onboarding-reopen", true, PANE_SIZE);
-    tap(&mut rt, "reopen-hex");
+    tap(&mut rt, "reopen-opcode");
     assert_eq!(asked(&rt), [PlatformRequest::Relaunch]);
 }
 
 #[test]
-fn a_grant_waiting_for_a_restart_makes_setup_restart_hex() {
+fn a_grant_waiting_for_a_restart_makes_setup_restart_opcode() {
     let mut rt = runtime("mac-onboarding-restart", true, PANE_SIZE);
     assert_eq!(rt.state.tour.as_ref().unwrap().flow.step(), Step::Setup);
     tap(&mut rt, "restart");
@@ -1444,7 +1444,7 @@ fn a_refused_microphone_points_to_system_settings() {
     assert!(
         shown
             .iter()
-            .any(|text| text == "Switch on Hex in System Settings")
+            .any(|text| text == "Switch on Opcode in System Settings")
     );
     tap(&mut rt, "mic-pill-allow");
     assert_eq!(
@@ -1460,7 +1460,7 @@ fn windows_onboarding_asks_only_for_the_microphone_switch() {
     let mut rt = runtime("windows-onboarding-microphone", true, PANE_SIZE);
     let shown = texts(&rt);
     assert!(
-        shown.iter().any(|text| text == "Let Hex hear you"),
+        shown.iter().any(|text| text == "Let Opcode hear you"),
         "{shown:?}"
     );
     assert!(rt.find("ax-row").is_none(), "no Accessibility on Windows");
@@ -1489,7 +1489,7 @@ fn stale_permissions_offer_fix_it_and_reset_entries_across_panes() {
     assert!(
         shown
             .iter()
-            .any(|text| text == "An older Hex entry can keep this off")
+            .any(|text| text == "An older Opcode entry can keep this off")
     );
     tap(&mut rt, "ax-pill-allow");
     assert_eq!(
@@ -1507,7 +1507,7 @@ fn stale_permissions_offer_fix_it_and_reset_entries_across_panes() {
     assert!(
         shown
             .iter()
-            .any(|text| text == "An older Hex entry can keep this off")
+            .any(|text| text == "An older Opcode entry can keep this off")
     );
     tap(&mut rt, "permission-accessibility-allow");
     assert_eq!(
@@ -1528,7 +1528,7 @@ fn stale_permissions_offer_fix_it_and_reset_entries_across_panes() {
     assert!(
         shown
             .iter()
-            .any(|text| text == "An older Hex entry can keep this off")
+            .any(|text| text == "An older Opcode entry can keep this off")
     );
     tap(&mut rt, "meeting-system-audio-allow");
     assert_eq!(
@@ -1564,7 +1564,7 @@ fn visible_untrusted_permission_rows_are_reported_for_legacy_cleanup() {
         [PermissionKind::SystemAudio]
     );
 
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     {
         let mut rt = runtime("mac-scrawl-permission", true, PANE_SIZE);
         refresh(&mut rt);
@@ -1619,7 +1619,7 @@ fn voice_filter_saves_the_mode_and_applies_the_tuning_live() {
     let mut rt = runtime("mac-voice-filter", true, PANE_SIZE);
     tap(&mut rt, "fun-mode/segment1");
     assert_eq!(
-        rt.state.settings.experimental.hex_microphone_mode,
+        rt.state.settings.experimental.opcode_microphone_mode,
         VoiceFilterMode::Muted
     );
     assert!(matches!(
@@ -1665,12 +1665,12 @@ fn try_it_records_and_plays_through_the_host() {
     assert_eq!(
         asked(&rt),
         [
-            PlatformRequest::HexMicrophoneDemo(DemoRequest::Record),
-            PlatformRequest::HexMicrophoneDemo(DemoRequest::Play(
-                crate::audio::hex_microphone::DemoPlaybackTrack::CallHears
+            PlatformRequest::OpcodeMicrophoneDemo(DemoRequest::Record),
+            PlatformRequest::OpcodeMicrophoneDemo(DemoRequest::Play(
+                crate::audio::opcode_microphone::DemoPlaybackTrack::CallHears
             )),
-            PlatformRequest::HexMicrophoneDemo(DemoRequest::SelectSource(
-                crate::audio::hex_microphone::DemoSourceKind::Recording
+            PlatformRequest::OpcodeMicrophoneDemo(DemoRequest::SelectSource(
+                crate::audio::opcode_microphone::DemoSourceKind::Recording
             )),
         ]
     );
@@ -1678,7 +1678,7 @@ fn try_it_records_and_plays_through_the_host() {
     tap(&mut rt, "fun-play-call-hears");
     assert_eq!(
         asked(&rt),
-        [PlatformRequest::HexMicrophoneDemo(
+        [PlatformRequest::OpcodeMicrophoneDemo(
             DemoRequest::StopPlayback
         )]
     );
@@ -1694,7 +1694,7 @@ fn hud_lab_and_activity_stay_out_of_the_window_sidebar() {
     assert!(rt.find("nav-activity").is_none());
     assert!(
         rt.find("nav-voice-filter").is_some(),
-        "Hex Microphone is on"
+        "Opcode Microphone is on"
     );
     let rt = runtime("mac-hud-lab", true, PANE_SIZE);
     assert!(rt.find("nav-hud-lab").is_none());
@@ -1704,13 +1704,13 @@ fn hud_lab_and_activity_stay_out_of_the_window_sidebar() {
 #[test]
 fn voice_filter_shows_only_while_its_labs_toggle_is_on() {
     let mut rt = runtime("mac-settings", true, PANE_SIZE);
-    rt.state.settings.experimental.hex_microphone = false;
-    rt.state.platform.hex_microphone = None;
+    rt.state.settings.experimental.opcode_microphone = false;
+    rt.state.platform.opcode_microphone = None;
     refresh(&mut rt);
     assert!(rt.find("nav-voice-filter").is_none());
     open_labs(&mut rt);
     tap(&mut rt, "lab-voice-filter");
-    assert!(rt.state.settings.experimental.hex_microphone);
+    assert!(rt.state.settings.experimental.opcode_microphone);
     assert!(
         rt.find("nav-voice-filter").is_some(),
         "a top-level sidebar item"
@@ -1774,8 +1774,8 @@ fn hud_lab_picks_dot_scope_processing_placement_and_level() {
 #[test]
 fn labs_lists_every_toggle_off_by_default() {
     let mut rt = runtime("mac-production", true, (980.0, 2000.0));
-    rt.state.settings.experimental.hex_microphone = false;
-    rt.state.platform.hex_microphone = None;
+    rt.state.settings.experimental.opcode_microphone = false;
+    rt.state.platform.opcode_microphone = None;
     refresh(&mut rt);
     for hidden in [
         "nav-meetings",
@@ -1793,7 +1793,7 @@ fn labs_lists_every_toggle_off_by_default() {
     let settings = &rt.state.settings;
     for (row, on) in [
         ("lab-meetings", settings.meetings.enabled),
-        ("lab-voice-filter", settings.experimental.hex_microphone),
+        ("lab-voice-filter", settings.experimental.opcode_microphone),
         ("lab-playground", settings.labs.playground),
         ("lab-live-text", settings.labs.live_text),
         ("lab-live-chapters", settings.labs.live_chapters),
@@ -2281,33 +2281,33 @@ fn ducking_goldens() {
 fn an_installed_driver_keeps_the_voice_filter_on() {
     let mut rt = runtime("mac-voice-filter", true, (980.0, 1400.0));
     assert!(fun_driver_installed(&rt));
-    rt.state.settings.experimental.hex_microphone = false;
+    rt.state.settings.experimental.opcode_microphone = false;
     refresh(&mut rt);
     assert!(
         rt.find("nav-voice-filter").is_some(),
         "the driver keeps it in the sidebar"
     );
-    assert!(rt.find("fun-hex-microphone").is_some());
+    assert!(rt.find("fun-opcode-microphone").is_some());
     tap(&mut rt, "uninstall");
     assert!(matches!(
         asked(&rt).last(),
-        Some(PlatformRequest::UninstallHexMicrophone)
-    ));
+        Some(PlatformRequest::UninstallOpcodeMicrophone)
+    }));
     open_labs(&mut rt);
     tap(&mut rt, "lab-voice-filter");
     assert!(
-        !rt.state.settings.experimental.hex_microphone,
+        !rt.state.settings.experimental.opcode_microphone,
         "the toggle is locked"
     );
     assert!(
         texts(&rt)
             .iter()
-            .any(|t| t.starts_with("On while the Hex Microphone driver is installed")),
+            .any(|t| t.starts_with("On while the Opcode Microphone driver is installed")),
         "its card says why"
     );
     assert!(rt.find("nav-voice-filter").is_some());
 
-    if let Some(driver) = &mut rt.state.platform.hex_microphone {
+    if let Some(driver) = &mut rt.state.platform.opcode_microphone {
         driver.driver_bundle_installed = false;
     }
     refresh(&mut rt);
@@ -2317,7 +2317,7 @@ fn an_installed_driver_keeps_the_voice_filter_on() {
     );
     tap(&mut rt, "lab-voice-filter");
     assert!(
-        rt.state.settings.experimental.hex_microphone,
+        rt.state.settings.experimental.opcode_microphone,
         "without the driver the toggle works"
     );
 }
@@ -2332,15 +2332,15 @@ fn a_stable_build_offers_only_uninstall_for_an_installed_driver() {
         rt.find("nav-voice-filter").is_some(),
         "the driver keeps its pane"
     );
-    assert!(rt.find("hex-mic-driver").is_some());
+    assert!(rt.find("opcode-mic-driver").is_some());
     assert!(rt.find("fun-mode").is_none(), "but no filter to tune");
     assert!(rt.find("fun-try-it").is_none());
     tap(&mut rt, "uninstall");
     assert!(matches!(
         asked(&rt).last(),
-        Some(PlatformRequest::UninstallHexMicrophone)
+        Some(PlatformRequest::UninstallOpcodeMicrophone)
     ));
-    if let Some(driver) = &mut rt.state.platform.hex_microphone {
+    if let Some(driver) = &mut rt.state.platform.opcode_microphone {
         driver.driver_bundle_installed = false;
     }
     refresh(&mut rt);
@@ -2355,7 +2355,7 @@ fn a_stable_build_has_no_playground_or_voice_filter_lab() {
     let _stable = crate::dev_build::pretend_stable();
     let mut rt = runtime("mac-settings", true, (980.0, 4000.0));
     rt.state.settings.labs.playground = true;
-    rt.state.settings.experimental.hex_microphone = true;
+    rt.state.settings.experimental.opcode_microphone = true;
     refresh(&mut rt);
     assert!(rt.find("nav-playground").is_none());
     open_labs(&mut rt);
@@ -2368,7 +2368,7 @@ fn a_stable_build_has_no_playground_or_voice_filter_lab() {
 fn fun_driver_installed(rt: &rune::Runtime<Ui>) -> bool {
     rt.state
         .platform
-        .hex_microphone
+        .opcode_microphone
         .as_ref()
         .is_some_and(|status| status.driver_bundle_installed)
 }

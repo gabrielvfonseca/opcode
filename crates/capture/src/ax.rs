@@ -224,9 +224,9 @@ pub fn hit_test(x: f64, y: f64) -> Option<Hit> {
                     && y <= wy + wh
             })?
             .pid;
-        // Over the host's own normal window (Hex's Settings), `element` may still be its
+        // Over the host's own normal window (Opcode's Settings), `element` may still be its
         // chrome's (the capsule panel above it): AX finds elements by position per app, not
-        // per window. Unused in Hex, whose agent context is off.
+        // per window. Unused in Opcode, whose agent context is off.
         if pid != own {
             let app = Owned(unsafe { AXUIElementCreateApplication(pid) });
             unsafe { AXUIElementSetMessagingTimeout(app.0, MESSAGE_TIMEOUT_S) };
@@ -313,7 +313,7 @@ pub(crate) fn percent_decode(raw: &str) -> String {
             && i + 2 < bytes.len()
             && let Some(byte) = std::str::from_utf8(&bytes[i + 1..i + 3])
                 .ok()
-                .and_then(|hex| u8::from_str_radix(hex, 16).ok())
+                .and_then(|opcode| u8::from_str_radix(opcode, 16).ok())
         {
             out.push(byte);
             i += 3;

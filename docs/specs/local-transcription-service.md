@@ -1,7 +1,7 @@
-# Hex Local Transcription Service and SDK
+# Opcode Local Transcription Service and SDK
 
 **Status:** The internal service and direct-child mode are implemented.
-`@kitlangton/hex@0.3.0` publishes ready transcribers through Promise and Effect
+`@kitlangton/opcode@0.3.0` publishes ready transcribers through Promise and Effect
 entrypoints. Local Electron integration has been exercised, but the native helper
 package remains private and is not included as a client dependency. An explicit
 helper command is still required; signed consumer distribution remains unverified.
@@ -13,11 +13,11 @@ is the current consumer guide. Delivery scope, evidence, and acceptance gates li
 
 ## Product Boundary
 
-HEX Service owns local transcription models and inference. Host applications
+OPCODE Service owns local transcription models and inference. Host applications
 own recording.
 
 ```text
-Host application                         HEX Service
+Host application                         OPCODE Service
 ----------------                         -----------
 microphone permission                    service discovery and authentication
 device selection                         model download and verification
@@ -28,7 +28,7 @@ settings and model choice
 ```
 
 The host's signed app owns the microphone grant. A correctly configured packaged
-host prompts under its own identity, not Hex; a development Electron runtime may
+host prompts under its own identity, not Opcode; a development Electron runtime may
 appear as Electron. The embedded helper never opens the microphone.
 
 ## Decisions
@@ -56,14 +56,14 @@ without an npm install script, administrator access, login-item approval, Dock i
 or foreground window. The host must not launch the helper through Launch Services.
 
 Because the embedded service does not capture audio, it does not need microphone
-TCC identity. Full `Hex.app` already owns its global-hotkey capture and
+TCC identity. Full `Opcode.app` already owns its global-hotkey capture and
 transcription pipeline; desktop `connect()` can also use the app's microphone
 through its separate capture API.
 
 Verified model artifacts remain shared per user under Application Support.
 Each embedded helper has its own warm model and inference queue. Multiple hosts
 may reuse the same verified file, but they do not share Metal allocations or
-runtime selection. Inside `Hex.app`, a clip of up to 30 seconds for the GGUF
+runtime selection. Inside `Opcode.app`, a clip of up to 30 seconds for the GGUF
 model dictation has loaded runs on dictation's model between dictations, so
 the app holds one copy; another model, or a longer clip, uses the service's own,
 and a longer clip's copy is released when dictation holds the model. The current cache is filename-based; immutable revision-safe
@@ -71,7 +71,7 @@ storage for independently versioned helpers remains planned.
 
 ## Embedded Startup and Authentication
 
-The host spawns `hex-service service --embedded` with piped stdin and stdout.
+The host spawns `opcode-service service --embedded` with piped stdin and stdout.
 The helper binds `127.0.0.1:0` and writes exactly one JSON line to stdout after
 the authenticated API is ready:
 
@@ -79,7 +79,7 @@ the authenticated API is ready:
 {
   "type": "ready",
   "url": "http://127.0.0.1:49731",
-  "token": "hex_a1b2c3...",
+  "token": "opcode_a1b2c3...",
   "apiVersion": "2",
   "pid": 12345
 }
@@ -99,7 +99,7 @@ Every request requires `Authorization: Bearer <token>`. The token is delivered
 only over the child's stdout pipe. The server deliberately sends no CORS
 headers. A parsed request with a missing or incorrect bearer credential returns
 an empty `401` response; malformed HTTP can be rejected before authentication.
-The standalone Hex application may still publish owner-only discovery for its
+The standalone Opcode application may still publish owner-only discovery for its
 own existing local API. Embedded `create()` uses the child handshake; desktop
 `connect()` remains a separate discovery-based path.
 
@@ -198,7 +198,7 @@ export interface ModelInfo {
   downloadBytes: number | null;
   languages: readonly string[];
   supportsLanguageDetection: boolean;
-  // download | hex | imported | found: owner/name@abcdef1 (another app's
+  // download | opcode | imported | found: owner/name@abcdef1 (another app's
   // Hugging Face download, used where it is). Older hosts omit it.
   source?: string;
 }
@@ -216,9 +216,9 @@ system-managed metadata do not make it a supported service model.
 
 For the available GGUF models, preparation means download if needed, checksum
 verification (or reuse of a matching verification receipt), strict-Metal load, and
-prewarm. `managed` means system-managed, not downloaded by Hex, so these models
+prewarm. `managed` means system-managed, not downloaded by Opcode, so these models
 report `managed: false`. Preparation activates the helper's warm model but does
-not change full `Hex.app` settings. The service serializes preparation, publishes
+not change full `Opcode.app` settings. The service serializes preparation, publishes
 only verified replacement files, and preserves the previous warm runtime if
 candidate loading fails. A verified download can remain installed after a load
 failure; artifact publication and runtime activation are separate steps.
@@ -240,10 +240,10 @@ warm and preparation succeeds at once.
 SDK `0.3.0` adds a model-bound operation to both entrypoints:
 
 ```ts
-import { create } from "@kitlangton/hex"
+import { create } from "@kitlangton/opcode"
 
 const transcriber = await create({
-  command: ["/path/to/hex-service", "service", "--embedded"],
+  command: ["/path/to/opcode-service", "service", "--embedded"],
   model: "parakeet_unified_en",
   language: "en",
   onProgress,
@@ -288,7 +288,7 @@ const result = await client.transcribe({
 input.insert(result.transcript);
 ```
 
-The `@kitlangton/hex/effect` entrypoint provides scoped helper acquisition,
+The `@kitlangton/opcode/effect` entrypoint provides scoped helper acquisition,
 schema-backed typed errors, Effect operations, an Effect `Stream` for model
 preparation progress, and a `Layer` for dependency injection. Closing the scope
 closes the host lease and bounds exact-child termination.

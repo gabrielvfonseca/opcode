@@ -144,7 +144,7 @@ pub(super) fn input_is_down(state: u32, code: u16) -> bool {
 /// Whether a key or mouse button the shortcut machine tracks still reads as
 /// held. Combined-session state can keep a key down for good after a system
 /// shortcut swallows its release (Tab after Command-Tab, Q after Command-Q;
-/// #612), which blocked every shortcut press until Hex restarted, so a
+/// #612), which blocked every shortcut press until Opcode restarted, so a
 /// keyboard key also needs HID state, the physical keyboard, to agree.
 pub(super) fn input_is_held(code: u16) -> bool {
     reads_held(code, input_is_down)
@@ -161,14 +161,14 @@ pub(super) fn reads_held(code: u16, down: impl Fn(u32, u16) -> bool) -> bool {
 /// drags already reach one of the session taps (`tap_masks`). The callback drops
 /// them at once unless a capture records (`capture_host::wants_input`); they
 /// never reach the listener.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub(super) const CAPTURE_POINTER_MASK: u64 =
     (1_u64 << EVENT_MOUSE_MOVED) | (1_u64 << EVENT_SCROLL_WHEEL);
 
 pub(super) fn observation_mask() -> u64 {
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     return OBSERVATION_MASK | CAPTURE_POINTER_MASK;
-    #[cfg(not(hex_capture))]
+    #[cfg(not(opcode_capture))]
     OBSERVATION_MASK
 }
 
@@ -473,7 +473,7 @@ unsafe extern "C" fn check_tap_health(_timer: *mut c_void, info: *mut c_void) {
     unsafe { &mut *info.cast::<TapSet>() }.check();
 }
 
-/// Keeps App Nap from throttling the event-tap thread while Hex sits idle in
+/// Keeps App Nap from throttling the event-tap thread while Opcode sits idle in
 /// the background: a napped callback can miss its deadline, and its health
 /// timer would stretch. Idle system sleep stays allowed.
 pub(super) struct AppNapOptOut(
@@ -485,7 +485,7 @@ impl AppNapOptOut {
         use objc2_foundation::{NSActivityOptions, NSProcessInfo, NSString};
         let activity = NSProcessInfo::processInfo().beginActivityWithOptions_reason(
             NSActivityOptions::UserInitiatedAllowingIdleSystemSleep,
-            &NSString::from_str("Hex listens for its dictation shortcut"),
+            &NSString::from_str("Opcode listens for its dictation shortcut"),
         );
         Self(activity)
     }

@@ -13,7 +13,7 @@ fn executable(path: &Path, text: &str) {
 #[test]
 #[ignore = "paired remote transport benchmark, one warmup and seven measured sends"]
 fn paired_remote_delivery() {
-    let root = std::env::temp_dir().join(format!("hex-remote-bench-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("opcode-remote-bench-{}", std::process::id()));
     fs::create_dir_all(root.join("opencode")).unwrap();
     fs::create_dir_all(root.join("bin")).unwrap();
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();

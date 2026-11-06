@@ -1,6 +1,6 @@
-# Scrawl App UI Handover Spec (for Hex)
+# Scrawl App UI Handover Spec (for Opcode)
 
-This spec describes the user-facing flows and edge cases that live in Scrawl's macOS app shell (`src/`) above `scrawl-capture` and `scrawl-router`. Pure geometry, state machines, and protocol logic (`capture::pure_shift_state`, `capture::InputSink`, `sketch::freehand_outline`, `routing::*`) already live in the crates; Hex implements the native Swift/Rust UI flows below.
+This spec describes the user-facing flows and edge cases that live in Scrawl's macOS app shell (`src/`) above `scrawl-capture` and `scrawl-router`. Pure geometry, state machines, and protocol logic (`capture::pure_shift_state`, `capture::InputSink`, `sketch::freehand_outline`, `routing::*`) already live in the crates; Opcode implements the native Swift/Rust UI flows below.
 
 ---
 
@@ -114,7 +114,7 @@ Scrawl requires two permissions to record and two optional permissions for riche
 
 ## 5. Settings Surface
 
-In Hex, these settings live in Hex's own config store and construct `scrawl_capture::EngineConfig` and `scrawl_router::RouterConfig` (with one-time migration from `~/.config/scrawl/config.json` via `scrawl_router::parse_scrawl_config(&str)` and `handoff::import_or_ensure_ingest_token_file`):
+In Opcode, these settings live in Opcode's own config store and construct `scrawl_capture::EngineConfig` and `scrawl_router::RouterConfig` (with one-time migration from `~/.config/scrawl/config.json` via `scrawl_router::parse_scrawl_config(&str)` and `handoff::import_or_ensure_ingest_token_file`):
 
 1. **Shortcuts:**
    - **Record shortcut:** Default `⌥⇧S`. Cannot be unset (`ShortcutKind::Record.can_unset() == false`).
@@ -130,7 +130,7 @@ In Hex, these settings live in Hex's own config store and construct `scrawl_capt
    - **Site & App rules (`routing.sites`, `routing.apps`, `routing.servers`, `routing.aliases`):** Editable list of URL prefixes and app bundle IDs mapped to project folders or `ses_…` IDs. Reject general-purpose browsers, terminals, and OpenCode (`routing::policy::is_general_app`) from `routing.apps`.
 3. **Recording & Transcription (`EngineConfig`):**
    - **Microphone (`microphone`):** Follow macOS system default (`None`) or pin a specific CoreAudio device UID (`MicChoice { id, name }`). If a pinned mic is unplugged, fall back to the system default for that recording and surface a note (`mic::Pick::note`).
-   - **Transcriber (`transcriber`):** `hex` (Hex's local model server), `apple` (`SpeechAnalyzer` on macOS 26+ with locale picker `appleLocale`), or `command` (custom CLI program).
+   - **Transcriber (`transcriber`):** `opcode` (Opcode's local model server), `apple` (`SpeechAnalyzer` on macOS 26+ with locale picker `appleLocale`), or `command` (custom CLI program).
    - **Auto-crop (`autocrop`):** On by default for full-display captures; crops keyframes to the active window/region while preserving full frames in `full/`.
 4. **Storage & Retention (`retention.rs`):**
    - **Captures folder (`capturesDir`):** Must be an absolute or `~/…` writable directory; if a configured external drive is unplugged or read-only, log once and fall back to the built-in Application Support directory so a capture is never lost.

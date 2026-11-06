@@ -79,13 +79,13 @@ checksum fetch, isolated installation/uninstallation, app identity/signature,
 stapled-ticket, and Gatekeeper checks. An existing-app fixture was refused without
 replacement. The test cask was removed; the real installed app's Info.plist and
 executable hashes were unchanged. Release replies were posted and
-[#73](https://github.com/anomalyco/hex/issues/73) and
-[#74](https://github.com/anomalyco/hex/issues/74) were closed after publication.
+[#73](https://github.com/anomalyco/opcode/issues/73) and
+[#74](https://github.com/anomalyco/opcode/issues/74) were closed after publication.
 
 Screen Recording preflight remains unavailable. This release has no physical
 menu-click, installed-app model switch, microphone/paste, or Sparkle installation
 proof. No Linux binary is published. The
-[Linux/Nix CI run](https://github.com/anomalyco/hex/actions/runs/33891943549)
+[Linux/Nix CI run](https://github.com/anomalyco/opcode/actions/runs/33891943549)
 passed for release commit `76dc552`: the Linux job completed in 3m50s and Nix in
 40m10s. This includes isolated X11 grabs, Wayland paste into GTK, virtual-microphone
 capture/inference/paste, signed-installer tamper rejection, and the installed Nix
@@ -121,7 +121,7 @@ selected legacy Ctrl-Shift-V while the GTK target expects Ctrl-V. The fixture no
 sets `paste_with_shift:false` explicitly. The failed target check remains a failed
 run, not native paste proof; see the subsequent CI result for verification.
 
-**Subsequent CI passed:** [run 34927405408](https://github.com/anomalyco/hex/actions/runs/34927405408)
+**Subsequent CI passed:** [run 34927405408](https://github.com/anomalyco/opcode/actions/runs/34927405408)
 on `cd3a8d9` passed both Ubuntu (4m15s) and Nix (39m58s). This includes the
 corrected virtual-microphone capture/inference/paste fixture, X11 grabs, Wayland
 paste into GTK, signed-installer tamper rejection, service IPC/lifecycle, strict
@@ -240,7 +240,7 @@ verification added for this release.
 **Published October 21, 2026:** [2.3.1](../releases/2.3.1.md), release commit
 `c4b3287` (version bump `985c78e`, driver plist `8531c8d` on top of `7bfb51d`),
 build `20301`. CI (macOS, Linux `test` and `nix`, Windows x64 and ARM64) passed
-on `c4b3287`; the first run on `985c78e` failed because the Hex Microphone
+on `c4b3287`; the first run on `985c78e` failed because the Opcode Microphone
 driver plist still said 2.3.0. Both notarizations were accepted and the DMG
 passed Gatekeeper. The DMG SHA-256 is
 `56de94665da8fefbe0fe6310368fd7b62497dff593b6818475f9c5fa751def7a`; the ZIP
@@ -252,10 +252,10 @@ run.
 
 ## Linux And Windows 2.3.1
 
-Built from `9f8fd71` by [Release desktop run 39654195736](https://github.com/anomalyco/hex/actions/runs/39654195736)
+Built from `9f8fd71` by [Release desktop run 39654195736](https://github.com/anomalyco/opcode/actions/runs/39654195736)
 and published from the Pro with `scripts/publish-desktop-release.sh`. The run
 from `c4b3287` failed the x64 Setup.exe test twice: the build's
-`hex.exe --version` check created `%APPDATA%\hex` before parsing the
+`opcode.exe --version` check created `%APPDATA%\opcode` before parsing the
 CLI, so the installer test saw a dirty machine. `9f8fd71` parses first. The
 three feeds serve 2.3.1 and verify; the Setup.exe SHA-256s are
 `f9c04f6e85db256d43f3539a992e674026aa44935fb59d5fd9d1bf6af1fe3952` (x64) and
@@ -373,7 +373,7 @@ checks, not browser interaction evidence.
 [Homebrew cask PR #23](https://github.com/anomalyco/homebrew-tap/pull/23) merged
 after Ruby syntax, style, and livecheck (`2.1.23 ==> 2.1.23`) passed using a
 temporary verification tap, since removed. The strict online audit now reports a
-token conflict with a homebrew-core formula named `hex`, unrelated to this bump.
+token conflict with a homebrew-core formula named `opcode`, unrelated to this bump.
 No Bluetooth headset, physical dictation, or update from an older installed
 build was exercised.
 
@@ -390,7 +390,7 @@ The installed executable SHA-256 was
 
 The installed Settings client had no audio handles or runtime locks. Closing its
 window left the same systemd service PID running and Listening. The screenshot
-at `/tmp/opencode/hex-service-settings.png` also retained an empty-transcript
+at `/tmp/opencode/opcode-service-settings.png` also retained an empty-transcript
 failure; it was not dismissed to make the lifecycle check pass. This validates
 client-independent ownership, not transcription accuracy. The modified virtual
 microphone/Wayland smokes, Nix evaluation, physical logout, and signed
@@ -403,9 +403,9 @@ feedback):** 134 Rust tests passed
 (seven native/opt-in tests skipped), along with formatting, strict Linux
 bin/tests Clippy, and the release build. The locally modified `4ff6c4c` build
 (executable SHA-256 `609f16cac11eb66cea7054092e7c4caee3f02c3bd1b8828f5232cf3b2b67df31`)
-was installed and launched with `hex app` on Arch/i3/X11. It reached Listening
+was installed and launched with `opcode app` on Arch/i3/X11. It reached Listening
 and opened a PipeWire ALSA playback stream; existing settings were unchanged.
-The installed Settings capture at `/tmp/opencode/hex-linux-sounds.png` showed
+The installed Settings capture at `/tmp/opencode/opcode-linux-sounds.png` showed
 the new volume control with 50% selected. Actual tone audibility, physical
 hotkey-to-sound timing, Wayland UI, and macOS regressions were not exercised.
 
@@ -419,7 +419,7 @@ There is no measured native key-to-sound latency or additional macOS/Wayland pro
 ## Linux And Windows 2.3.0
 
 The first Linux x86_64, Windows x64, and Windows ARM64 releases were built from
-`cfb4eb4` by [Release desktop run 39340404218](https://github.com/anomalyco/hex/actions/runs/39340404218)
+`cfb4eb4` by [Release desktop run 39340404218](https://github.com/anomalyco/opcode/actions/runs/39340404218)
 and published from the Pro with `scripts/publish-desktop-release.sh`. The three
 public feeds serve 2.3.0, their signatures verify against the embedded public
 key, the downloaded artifacts match the signed size and SHA-256, and both

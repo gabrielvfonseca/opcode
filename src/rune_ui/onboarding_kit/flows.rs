@@ -8,7 +8,7 @@ use rune_kit::{Button, ButtonVariant, glyphs};
 use super::super::controls::{Paint, PushSize};
 use super::cards::{ADAM, DAX, FRANK, JAY, Notice, Reply, floating, notice};
 use super::fixture::Download;
-use super::hex_meter::hex_meter;
+use super::opcode_meter::opcode_meter;
 use super::landing::{LEAD, arrives, heading, keys, language_pick, ready};
 use super::mic::mic_level;
 use super::mic_line::mic_line;
@@ -157,9 +157,9 @@ fn pill_flow(p: Paint, s: &Onboard) -> Vec<El> {
             }))
             .child(mic_line(p, parked && s.can_hear(), s.listening_peak()));
     let words = if s.can_hear() {
-        "Hold a key and talk. Hex types it wherever your cursor is."
+        "Hold a key and talk. Opcode types it wherever your cursor is."
     } else {
-        "Hex starts listening once the speech model has downloaded."
+        "Opcode starts listening once the speech model has downloaded."
     };
     let (key, title, lead) = match s.step {
         Step::Pick | Step::Started => ("intro", "Talk instead of typing", words),
@@ -167,7 +167,7 @@ fn pill_flow(p: Paint, s: &Onboard) -> Vec<El> {
         Step::Heard | Step::Done => (
             "heard",
             "That's it",
-            "Hex pastes wherever your cursor is, in any app.",
+            "Opcode pastes wherever your cursor is, in any app.",
         ),
         _ => ("turn", "Your turn", "Answer Jay with your voice."),
     };
@@ -210,7 +210,7 @@ fn fill_flow(p: Paint, s: &Onboard) -> Vec<El> {
                     p,
                     "intro",
                     "Talk instead of typing",
-                    "Hold a key and talk. Hex types it wherever your cursor is.",
+                    "Hold a key and talk. Opcode types it wherever your cursor is.",
                 ))
                 .child(action(language_pick(p, Onboard::pick))),
         ];
@@ -304,7 +304,7 @@ fn shared_meter(p: Paint, size: f32, progress: f32, closed: f32) -> El {
     el().key(PILL)
         .matched(PILL)
         .motion(FLY)
-        .child(hex_meter(p, "meter", size, progress, closed))
+        .child(opcode_meter(p, "meter", size, progress, closed))
 }
 
 fn sentence(p: Paint, s: &Onboard, finished: bool) -> El {
@@ -341,7 +341,7 @@ fn shout_flow(p: Paint, s: &Onboard) -> Vec<El> {
             p,
             "intro",
             "Say something",
-            "Hold a key and talk. Hex types it wherever your cursor is.",
+            "Hold a key and talk. Opcode types it wherever your cursor is.",
         ),
         Step::Parked if !s.can_hear() => heading(
             p,
@@ -353,7 +353,7 @@ fn shout_flow(p: Paint, s: &Onboard) -> Vec<El> {
             p,
             "heard",
             "That's it",
-            "Hex pastes wherever your cursor is, in any app.",
+            "Opcode pastes wherever your cursor is, in any app.",
         ),
         _ => heading(p, "turn", "Say anything", "It doesn't have to be good."),
     };

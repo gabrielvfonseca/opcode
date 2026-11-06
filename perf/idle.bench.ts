@@ -1,4 +1,4 @@
-// Hex at rest, measured from outside (docs/perf.md): no input, no listener.
+// Opcode at rest, measured from outside (docs/perf.md): no input, no listener.
 // Each run waits 8 s; strobe counts the process's CPU, thread wakeups and
 // memory over it.
 import { bench, native } from "@hona/strobe"
@@ -7,9 +7,9 @@ export default bench({
   targets: {
     // The Settings window open on General. Needs an unlocked session. A block
     // on another screen (a first-run dialog, another pane) is refused.
-    window: native("hex", { expect: { title: "Hex", heading: "General" } }),
+    window: native("opcode", { expect: { title: "Opcode", heading: "General" } }),
     // A login launch: the tray only, no window. Runs on a locked session too.
-    tray: native("hex", { args: ["--hidden"], window: false }),
+    tray: native("opcode", { args: ["--hidden"], window: false }),
   },
   // Startup work (fonts, GPU, first frames) finishes before any run.
   async setup({ page }) {
@@ -34,7 +34,7 @@ export default bench({
     },
     // The same tray, judged by what it holds. The capture capsule, picker,
     // and ink wait hidden from launch; a GPU device, and their swapchains,
-    // count here and in gpu.vram. memory.app.host is Hex's own memory
+    // count here and in gpu.vram. memory.app.host is Opcode's own memory
     // without the VRAM a driver maps into the process.
     "window-closed-memory": {
       targets: ["tray"],

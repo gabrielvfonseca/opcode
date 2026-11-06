@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [[ ${1:-} != --inside ]]; then
   if [[ $# != 3 || $(id -u) == 0 ]]; then
-    echo "Usage: $0 /path/to/hex /path/to/model.gguf /path/to/jfk.wav (non-root)" >&2
+    echo "Usage: $0 /path/to/opcode /path/to/model.gguf /path/to/jfk.wav (non-root)" >&2
     exit 1
   fi
   for command in cc pkg-config pulseaudio pactl paplay xdotool xvfb-run timeout; do
@@ -45,21 +45,21 @@ trap finish EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 export HOME="$work/home" XDG_RUNTIME_DIR="$work/runtime"
-export HEX_APPLICATION_SUPPORT_DIR="$work/support" NO_COLOR=1
-export PULSE_SERVER="unix:$work/pulse" PULSE_SOURCE=hex-fixture.monitor
+export OPCODE_APPLICATION_SUPPORT_DIR="$work/support" NO_COLOR=1
+export PULSE_SERVER="unix:$work/pulse" PULSE_SOURCE=opcode-fixture.monitor
 # The window uses software Vulkan on Xvfb; only inference uses the CPU in this fixture.
 export GDK_BACKEND=x11 GGML_VK_VISIBLE_DEVICES=""
 unset WAYLAND_DISPLAY VK_ICD_FILENAMES
-mkdir -m 700 "$HOME" "$XDG_RUNTIME_DIR" "$HEX_APPLICATION_SUPPORT_DIR"
-mkdir "$HEX_APPLICATION_SUPPORT_DIR/models"
+mkdir -m 700 "$HOME" "$XDG_RUNTIME_DIR" "$OPCODE_APPLICATION_SUPPORT_DIR"
+mkdir "$OPCODE_APPLICATION_SUPPORT_DIR/models"
 # This GTK target uses Ctrl-V. Omitting the preference from an existing settings
 # file deliberately selects the legacy terminal Ctrl-Shift-V behavior.
-printf '{"sound_effects":false,"paste_with_shift":false,"migrations":["streaming-english-model"]}\n' > "$HEX_APPLICATION_SUPPORT_DIR/settings.json"
-ln -s "$model" "$HEX_APPLICATION_SUPPORT_DIR/models/$(basename "$model")"
+printf '{"sound_effects":false,"paste_with_shift":false,"migrations":["streaming-english-model"]}\n' > "$OPCODE_APPLICATION_SUPPORT_DIR/settings.json"
+ln -s "$model" "$OPCODE_APPLICATION_SUPPORT_DIR/models/$(basename "$model")"
 printf 'pcm.!default { type pulse server "%s" }\n' "$PULSE_SERVER" > "$HOME/.asoundrc"
 pulseaudio -n --daemonize=no --use-pid-file=no --exit-idle-time=-1 \
   --load="module-native-protocol-unix socket=$work/pulse auth-anonymous=1" \
-  --load='module-null-sink sink_name=hex-fixture rate=16000 channels=1' \
+  --load='module-null-sink sink_name=opcode-fixture rate=16000 channels=1' \
   >"$work/pulse.log" 2>&1 &
 pulse=$!
 for ((attempt = 0; attempt < 100; attempt++)); do
@@ -70,21 +70,21 @@ pactl info >/dev/null
 cc "$root/tests/fixtures/wayland-paste-target.c" $(pkg-config --cflags --libs gtk+-3.0) -o "$work/target"
 "$work/target" "$work/pasted.txt" >"$work/target.log" 2>&1 &
 target=$!
-window=$(xdotool search --sync --name '^Hex Wayland Test$' | head -n 1)
+window=$(xdotool search --sync --name '^Opcode Wayland Test$' | head -n 1)
 xdotool windowfocus --sync "$window"
 "$binary" service >"$work/listener.log" 2>&1 &
 listener=$!
 echo 'Waiting for the model and virtual microphone...'
 for ((attempt = 0; attempt < 1200; attempt++)); do
   kill -0 "$listener"
-  if grep -q 'Hex dictation is ready' "$work/listener.log"; then break; fi
+  if grep -q 'Opcode dictation is ready' "$work/listener.log"; then break; fi
   sleep 0.05
 done
-grep -q 'Hex dictation is ready' "$work/listener.log"
-# A second launch forwards to the running Hex, which opens its window; the
+grep -q 'Opcode dictation is ready' "$work/listener.log"
+# A second launch forwards to the running Opcode, which opens its window; the
 # complete dictation below runs beside it in the same process.
 "$binary" app >"$work/app.log" 2>&1
-xdotool search --sync --onlyvisible --all --pid "$listener" --name '^Hex$' >/dev/null
+xdotool search --sync --onlyvisible --all --pid "$listener" --name '^Opcode$' >/dev/null
 kill -0 "$listener"
 # Holds the shortcut over the speech, then waits until the target holds
 # `$1` transcripts of it.
@@ -93,7 +93,7 @@ dictate() {
   echo 'Replaying speech through the held dictation shortcut...'
   xdotool keydown Alt_L keydown space
   sleep 0.5
-  paplay --device=hex-fixture "$audio"
+  paplay --device=opcode-fixture "$audio"
   sleep 0.5
   xdotool keyup space keyup Alt_L
   echo 'Waiting for transcribed text in the focused GTK target...'
@@ -113,11 +113,11 @@ kill -TERM "$listener"
 wait "$listener"
 # Force a live stream on the CPU to exercise capture-time feeding, the finish,
 # and (when the stream lags behind real time) the whole-clip fallback.
-HEX_STREAMING=1 "$binary" service >"$work/stream.log" 2>&1 &
+OPCODE_STREAMING=1 "$binary" service >"$work/stream.log" 2>&1 &
 listener=$!
 for ((attempt = 0; attempt < 1200; attempt++)); do
   kill -0 "$listener"
-  if grep -q 'Hex dictation is ready' "$work/stream.log"; then break; fi
+  if grep -q 'Opcode dictation is ready' "$work/stream.log"; then break; fi
   sleep 0.05
 done
 grep -q 'streaming transcription is available' "$work/stream.log"

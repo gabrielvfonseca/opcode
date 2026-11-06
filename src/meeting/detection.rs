@@ -274,7 +274,7 @@ impl CallPresence {
 /// Labs › Stop when the call ends (#835).
 pub const AUTO_STOP_GRACE: Duration = Duration::from_secs(30);
 
-/// Labs › Stop when the call ends: the deadline at which a recording Hex
+/// Labs › Stop when the call ends: the deadline at which a recording Opcode
 /// started on its own stops, armed when [`CallPresence`] reports the call
 /// ended and dropped when the call app comes back or the user keeps
 /// recording.
@@ -1965,21 +1965,21 @@ mod tests {
     }
 
     #[test]
-    fn the_site_is_resolved_while_hex_is_in_front() {
+    fn the_site_is_resolved_while_opcode_is_in_front() {
         let t0 = Instant::now();
         let mut memory = BrowserPageMemory::default();
-        let hex = context("Hex", None, "Hex");
+        let opcode = context("Opcode", None, "Opcode");
 
         // Nothing seen yet: the site is unknown.
-        let page = memory.recall(&brave(), hex.clone(), t0);
+        let page = memory.recall(&brave(), opcode.clone(), t0);
         assert_eq!(
             candidate_from_microphone(&brave(), &page).unwrap().source,
             MeetingSource::BrowserCall
         );
 
-        // Brave was in front on Banshee, then Hex came forward.
+        // Brave was in front on Banshee, then Opcode came forward.
         memory.recall(&brave(), banshee_page(), t0);
-        let page = memory.recall(&brave(), hex, t0 + Duration::from_secs(30));
+        let page = memory.recall(&brave(), opcode, t0 + Duration::from_secs(30));
         let candidate = candidate_from_microphone(&brave(), &page).unwrap();
         assert_eq!(candidate.source, MeetingSource::Banshee);
         assert_eq!(candidate.site.as_deref(), Some("banshee.app"));
@@ -1989,10 +1989,10 @@ mod tests {
     fn a_page_seen_minutes_ago_no_longer_names_the_call() {
         let t0 = Instant::now();
         let mut memory = BrowserPageMemory::default();
-        let hex = context("Hex", None, "Hex");
+        let opcode = context("Opcode", None, "Opcode");
         memory.recall(&brave(), banshee_page(), t0);
-        let page = memory.recall(&brave(), hex.clone(), t0 + Duration::from_secs(61));
-        assert_eq!(page, hex);
+        let page = memory.recall(&brave(), opcode.clone(), t0 + Duration::from_secs(61));
+        assert_eq!(page, opcode);
         assert!(
             candidate_from_microphone(&brave(), &page)
                 .unwrap()
@@ -2005,7 +2005,7 @@ mod tests {
     fn a_remembered_page_belongs_to_its_browser_and_its_call() {
         let t0 = Instant::now();
         let mut memory = BrowserPageMemory::default();
-        let hex = context("Hex", None, "Hex");
+        let opcode = context("Opcode", None, "Opcode");
         memory.recall(&brave(), banshee_page(), t0);
 
         let chrome = ActiveMicrophoneApplication {
@@ -2013,18 +2013,18 @@ mod tests {
             bundle_id: "com.google.Chrome.helper".into(),
             name: "Google Chrome Helper".into(),
         };
-        assert_eq!(memory.recall(&chrome, hex.clone(), t0), hex);
+        assert_eq!(memory.recall(&chrome, opcode.clone(), t0), opcode);
 
         // The microphone is released: the next call starts fresh.
         memory.recall(&brave(), banshee_page(), t0);
         memory.forget();
-        assert_eq!(memory.recall(&brave(), hex.clone(), t0), hex);
+        assert_eq!(memory.recall(&brave(), opcode.clone(), t0), opcode);
 
         // A fresh page replaces the remembered one.
         memory.recall(&brave(), banshee_page(), t0);
         let other = context("Brave Browser", Some("https://example.com/"), "Example");
         assert_eq!(memory.recall(&brave(), other.clone(), t0), other);
-        assert_eq!(memory.recall(&brave(), hex, t0), other);
+        assert_eq!(memory.recall(&brave(), opcode, t0), other);
     }
 
     #[test]

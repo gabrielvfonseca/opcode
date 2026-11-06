@@ -1,4 +1,4 @@
-//! Hex on macOS (`hex app`): one menu-bar process.
+//! Opcode on macOS (`opcode app`): one menu-bar process.
 //!
 //! - The main thread runs Rune's event loop (`rune::App`, windowless and
 //!   kept running, as an accessory app) and, beside it on the same AppKit
@@ -14,7 +14,7 @@
 //! - The listener (`recognition::listen`), the meeting controller, and the
 //!   local API keep their own threads.
 //!
-//! Closing the window hides it; Quit (menu bar, ⌘Q, `hex quit`, `hex restart`
+//! Closing the window hides it; Quit (menu bar, ⌘Q, `opcode quit`, `opcode restart`
 //! and the onboarding relaunch after scheduling the new copy, or Ctrl-C) ends
 //! the loop, then stops and joins everything and ends the process with
 //! `_exit` ([`crate::desktop::process_exit`]). AppKit's own terminate
@@ -113,7 +113,7 @@ pub(crate) enum Request {
     },
     /// The menu bar's model list: only installed models, never a download.
     SelectInstalledModel(TranscriptionModelId),
-    /// `hex model use`: this exact selection, installed only, never a download.
+    /// `opcode model use`: this exact selection, installed only, never a download.
     UseInstalledSelection(TranscriptionSelection),
     /// Snapshot from the main-thread TIS observer, not a shortcut event.
     InputSourceChanged(Option<String>),
@@ -128,10 +128,10 @@ pub(crate) enum ShortcutTarget {
     #[default]
     Dictation,
     PasteLast,
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     Capture,
     /// Labs › Annotate 15 s replay shortcut.
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     CaptureReplay,
     RawDictation,
     /// Labs › Second dictation shortcut.
@@ -203,11 +203,11 @@ impl RuntimeHandle {
             // choice, so it cannot later undo the newer manual choice.
             self.requests
                 .send(Request::InputSourceChanged(source))
-                .map_err(|_| eyre!("Hex's runtime stopped"))?;
+                .map_err(|_| eyre!("Opcode's runtime stopped"))?;
         }
         self.requests
             .send(request)
-            .map_err(|_| eyre!("Hex's runtime stopped"))
+            .map_err(|_| eyre!("Opcode's runtime stopped"))
     }
 
     pub(crate) fn published(&self) -> Option<Arc<Published>> {
@@ -241,7 +241,7 @@ pub(crate) fn runtime() -> Option<RuntimeHandle> {
     RUNTIME.get().cloned()
 }
 
-/// Carries out an update control from the window, a menu, or `hex`. Restart
+/// Carries out an update control from the window, a menu, or `opcode`. Restart
 /// to update finishes on the updater's worker; the pump then quits.
 pub(crate) fn update_action(action: &crate::desktop::host::DesktopAction) -> Result<()> {
     UPDATER
@@ -257,7 +257,7 @@ pub(crate) fn update_status() -> DesktopUpdateStatus {
     )
 }
 
-/// Quits Hex from any thread.
+/// Quits Opcode from any thread.
 pub(crate) fn quit() {
     if let Some(window) = WINDOW.get() {
         window.quit();
@@ -288,19 +288,19 @@ fn lock<T>(mutex: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     mutex.lock().unwrap_or_else(|error| error.into_inner())
 }
 
-/// Asks a running 2.3.1 or Swift Hex to quit once this Hex is ready to
+/// Asks a running 2.3.1 or Swift Opcode to quit once this Opcode is ready to
 /// listen, so the two never answer the same shortcut. The old app stays
 /// installed.
-fn quit_legacy_hex() {
+fn quit_legacy_opcode() {
     objc2::rc::autoreleasepool(|_| {
         for bundle_id in crate::desktop::onboarding::LEGACY_MAC_BUNDLE_IDS {
             for app in objc2_app_kit::NSRunningApplication::runningApplicationsWithBundleIdentifier(
                 &NSString::from_str(bundle_id),
             ) {
                 if app.terminate() {
-                    tracing::info!(bundle_id, "asked the old Hex to quit");
+                    tracing::info!(bundle_id, "asked the old Opcode to quit");
                 } else {
-                    tracing::warn!(bundle_id, "the old Hex did not agree to quit");
+                    tracing::warn!(bundle_id, "the old Opcode did not agree to quit");
                 }
             }
         }
@@ -311,9 +311,9 @@ fn quit_legacy_hex() {
 /// builds) and logs a warning on a large footprint, steady growth, or a busy core.
 fn watch_process() {
     let config = if cfg!(debug_assertions) {
-        procwatch::Config::dev("hex")
+        procwatch::Config::dev("opcode")
     } else {
-        procwatch::Config::release("hex")
+        procwatch::Config::release("opcode")
     };
     procwatch::watch_with(config, |event, _| tracing::warn!(%event, "process watch"));
 }
@@ -377,7 +377,7 @@ pub fn run(shutdown: &'static AtomicBool, listener: ListenerConfig, hidden: bool
     // The controller idles without inspecting microphone activity until the
     // user opts in to meetings (always available in developer builds).
     let controller = thread::Builder::new()
-        .name("hex-meetings".into())
+        .name("opcode-meetings".into())
         .spawn(move || {
             if let Err(error) = crate::meeting::watcher::controller_loop(
                 shutdown,
@@ -400,7 +400,7 @@ pub fn run(shutdown: &'static AtomicBool, listener: ListenerConfig, hidden: bool
     let listener_failure = Arc::new(Mutex::new(None::<String>));
     let recognition_failure = listener_failure.clone();
     let recognition = thread::Builder::new()
-        .name("hex-listener".into())
+        .name("opcode-listener".into())
         .spawn(move || {
             if !setup_ready {
                 loop {
@@ -414,7 +414,7 @@ pub fn run(shutdown: &'static AtomicBool, listener: ListenerConfig, hidden: bool
                     }
                 }
             }
-            quit_legacy_hex();
+            quit_legacy_opcode();
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 crate::recognition::listen(
                     event_log,
@@ -455,10 +455,10 @@ pub fn run(shutdown: &'static AtomicBool, listener: ListenerConfig, hidden: bool
     };
     RUNTIME
         .set(handle.clone())
-        .map_err(|_| eyre!("the Hex runtime already started"))?;
+        .map_err(|_| eyre!("the Opcode runtime already started"))?;
     let runtime_settings = settings.clone();
     let runtime = thread::Builder::new()
-        .name("hex-runtime".into())
+        .name("opcode-runtime".into())
         .spawn(move || {
             run_runtime(
                 runtime_settings,
@@ -486,9 +486,9 @@ pub fn run(shutdown: &'static AtomicBool, listener: ListenerConfig, hidden: bool
     }
     let window = app.handle();
     let _ = WINDOW.set(window.clone());
-    // The status item is created inside the loop; Hex can't run without a
+    // The status item is created inside the loop; Opcode can't run without a
     // way back to its window, so a failed item opens the window there.
-    // With the Dock icon shown, Hex starts windowless and opens the window
+    // With the Dock icon shown, Opcode starts windowless and opens the window
     // once AppKit says the launch wasn't a login item.
     let launch_window = if settings_error.is_some() {
         LaunchWindow::Open
@@ -531,18 +531,18 @@ pub fn run(shutdown: &'static AtomicBool, listener: ListenerConfig, hidden: bool
     let hud = crate::rune_hud::install(&mut app);
     crate::rune_ui::live_text::install(&mut app, crate::rune_hud::live_text_place);
     // The capture capsule, picker, and ink.
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     let capture_overlays =
         Some(crate::rune_ui::capture_capsule::feed::CaptureOverlays::install(&mut app));
     // Labs › Screenshots: its own picker and the thumbnail.
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     crate::screenshots::install(&mut app);
-    // `hex dictation` and `hex paste-last` go straight to the listener; the
+    // `opcode dictation` and `opcode paste-last` go straight to the listener; the
     // rest reach the main thread's pump.
     let (pump_calls, pump_call_receiver) = mpsc::sync_channel(8);
     let control_runtime = handle.clone();
     thread::Builder::new()
-        .name("hex-control".into())
+        .name("opcode-control".into())
         .spawn(move || {
             for call in control_receiver {
                 if let Some(call) = control::answer_off_main(&control_runtime, call) {
@@ -554,12 +554,12 @@ pub fn run(shutdown: &'static AtomicBool, listener: ListenerConfig, hidden: bool
             }
         })?;
     // The pump idles between events, so its other senders wake it.
-    let controller_events = relay("hex-meeting-events", controller_events, 32)?;
-    let developer_receiver = relay("hex-developer-calls", developer_receiver, 8)?;
+    let controller_events = relay("opcode-meeting-events", controller_events, 32)?;
+    let developer_receiver = relay("opcode-developer-calls", developer_receiver, 8)?;
     let pump = Pump {
         window: window.clone(),
         capsules,
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         capture_overlays,
         runtime: handle,
         shutdown,
@@ -732,7 +732,7 @@ impl Runtime {
             }
             Request::UseInstalledSelection(selection) => {
                 self.manual_choice();
-                // `hex model use` replies "already in use" on the same test.
+                // `opcode model use` replies "already in use" on the same test.
                 if !same_model_and_language(&selection, &self.settings.transcription) {
                     self.preparation.start(selection, true);
                 }
@@ -879,7 +879,7 @@ impl Runtime {
 struct Pump {
     window: rune::AppHandle<Ui>,
     capsules: crate::rune_ui::meeting_capsules::MeetingCapsules,
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     capture_overlays: Option<crate::rune_ui::capture_capsule::feed::CaptureOverlays>,
     runtime: RuntimeHandle,
     shutdown: &'static AtomicBool,
@@ -919,7 +919,7 @@ struct Launch {
 }
 
 /// AppKit's terminate (the quit Apple event, logout) calls `exit` right after
-/// this notification, so Hex finishes there ([`crate::desktop::process_exit`]).
+/// this notification, so Opcode finishes there ([`crate::desktop::process_exit`]).
 fn observe_termination(target: &MenuTarget) {
     // SAFETY: the target outlives the observer (kept in LAUNCH, then PUMP,
     // for the app's life), and the selector matches its method.
@@ -948,18 +948,18 @@ fn start_main_thread_after(seconds: f64) {
 /// the pump's timer; the first call does, later ones do nothing.
 fn start_main_thread() {
     let Some(mtm) = MainThreadMarker::new() else {
-        tracing::error!("Hex's main-thread setup ran off the main thread");
+        tracing::error!("Opcode's main-thread setup ran off the main thread");
         return;
     };
     let Some(Launch { mut pump, target }) = LAUNCH.with(|slot| slot.borrow_mut().take()) else {
         return;
     };
     pump.status_actions = match crate::macos_rune::status_item::install().and_then(|actions| {
-        relay("hex-status-actions", actions, 8).map_err(color_eyre::Report::from)
+        relay("opcode-status-actions", actions, 8).map_err(color_eyre::Report::from)
     }) {
         Ok(actions) => Some(actions),
         Err(error) => {
-            tracing::error!(%error, "could not install Hex status item; opening the window");
+            tracing::error!(%error, "could not install Opcode status item; opening the window");
             show(&pump.window, Destination::Settings);
             None
         }
@@ -1042,7 +1042,7 @@ pub(crate) fn bring_window_forward() {
 
 fn bring_forward(window: &rune::AppHandle<Ui>) {
     // An open window always shows the Dock icon: hiding it
-    // would deactivate Hex and drop the window behind other apps.
+    // would deactivate Opcode and drop the window behind other apps.
     crate::app_settings::set_dock_icon_visible(true);
     if let Some(mtm) = MainThreadMarker::new() {
         let app = NSApplication::sharedApplication(mtm);
@@ -1096,7 +1096,7 @@ impl Pump {
             self.meeting_menu_at = Instant::now();
         }
         self.settle_meeting_waiters(None);
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         if let Some(overlays) = &mut self.capture_overlays {
             overlays.follow_recordings();
         }
@@ -1347,12 +1347,12 @@ objc2::define_class!(
         }
 
         #[unsafe(method(hideHex:))]
-        fn hide_hex(&self, _sender: Option<&AnyObject>) {
+        fn hide_opcode(&self, _sender: Option<&AnyObject>) {
             crate::app_settings::hide_application();
         }
 
         #[unsafe(method(quitHex:))]
-        fn quit_hex(&self, _sender: Option<&AnyObject>) {
+        fn quit_opcode(&self, _sender: Option<&AnyObject>) {
             with_window(|window| window.quit());
         }
 

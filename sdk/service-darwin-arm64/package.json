@@ -1,13 +1,13 @@
 {
-  "name": "@hex-ai/service-darwin-arm64",
+  "name": "@opcode-ai/service-darwin-arm64",
   "version": "0.0.0",
   "private": true,
-  "description": "Signed native HEX transcription helper for Apple Silicon macOS",
+  "description": "Signed native Opcode transcription helper for Apple Silicon macOS",
   "license": "MIT",
   "os": ["darwin"],
   "cpu": ["arm64"],
   "files": [
-    "bin/hex-service",
+    "bin/opcode-service",
     "README.md"
   ],
   "exports": {

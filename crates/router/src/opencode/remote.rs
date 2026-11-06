@@ -29,7 +29,7 @@ pub(super) fn reuse_connection(command: &mut Command) {
         // Keep below sockaddr_un's 104-byte limit, even on macOS where TMPDIR
         // alone can exceed it. This user owns the directory and its sockets.
         let uid = unsafe { libc::geteuid() };
-        let directory = std::path::PathBuf::from(format!("/tmp/hex-router-ssh-{uid}"));
+        let directory = std::path::PathBuf::from(format!("/tmp/opcode-router-ssh-{uid}"));
         let _ = std::fs::DirBuilder::new().mode(0o700).create(&directory);
         if let Ok(meta) = std::fs::symlink_metadata(&directory)
             && meta.is_dir()
@@ -197,7 +197,7 @@ mod tests {
             let listener = TcpListener::bind("127.0.0.1:0").unwrap();
             let address = listener.local_addr().unwrap();
             let root =
-                std::env::temp_dir().join(format!("hex-remote-{}-{status}", std::process::id()));
+                std::env::temp_dir().join(format!("opcode-remote-{}-{status}", std::process::id()));
             std::fs::create_dir_all(root.join("opencode")).unwrap();
             std::fs::write(
                 root.join("opencode/service.json"),

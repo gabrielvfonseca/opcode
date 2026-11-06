@@ -2,11 +2,11 @@
 set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-support="$HOME/Library/Application Support/hex"
+support="$HOME/Library/Application Support/opcode"
 discovery="$support/local-api.json"
-model=${HEX_SMOKE_MODEL:-parakeet_unified_en}
-audio="${TMPDIR:-/tmp}/hex-transcription-smoke.wav"
-events="${TMPDIR:-/tmp}/hex-transcription-prepare.ndjson"
+model=${OPCODE_SMOKE_MODEL:-parakeet_unified_en}
+audio="${TMPDIR:-/tmp}/opcode-transcription-smoke.wav"
+events="${TMPDIR:-/tmp}/opcode-transcription-prepare.ndjson"
 service_pid=
 
 cleanup() {
@@ -38,7 +38,7 @@ if [ -e "$discovery" ]; then
 fi
 
 cargo build --manifest-path "$root/Cargo.toml"
-"$root/target/debug/hex" service >/dev/null 2>&1 &
+"$root/target/debug/opcode" service >/dev/null 2>&1 &
 service_pid=$!
 
 attempts=100
@@ -59,7 +59,7 @@ curl --fail --silent --show-error --no-buffer \
   "http://127.0.0.1:$port/models/$model/prepare" > "$events"
 grep -Fq '"type":"ok"' "$events"
 
-/usr/bin/say "Hello from the local Hex transcription service." -o "$audio.aiff"
+/usr/bin/say "Hello from the local Opcode transcription service." -o "$audio.aiff"
 /usr/bin/afconvert -f WAVE -d LEI16@16000 "$audio.aiff" "$audio"
 rm -f "$audio.aiff"
 

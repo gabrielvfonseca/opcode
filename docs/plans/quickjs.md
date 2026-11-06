@@ -1,15 +1,15 @@
 # Personal Commands In Embedded QuickJS
 
-**Status:** implemented. Bun is gone from Hex: the user's config runs
+**Status:** implemented. Bun is gone from Opcode: the user's config runs
 in-process in QuickJS, with no external runtime and no child process.
 
 ## What Bun Hosted
 
 Before this change, `personal_commands` spawned Bun on the managed
-`@hex/commands` SDK (`sdk/commands`: built `dist` in the macOS bundle,
+`@opcode/commands` SDK (`sdk/commands`: built `dist` in the macOS bundle,
 embedded TypeScript `src` on Windows and Linux) inside a provisioned
-`~/.config/hex` workspace (`package.json`, `bun.lock`, `node_modules`,
-`.hex-sdk`, Effect pinned to the SDK's version, `bun update` on SDK changes).
+`~/.config/opcode` workspace (`package.json`, `bun.lock`, `node_modules`,
+`.opcode-sdk`, Effect pinned to the SDK's version, `bun update` on SDK changes).
 Rust talked to the host over NDJSON: a registration, then `invoke` and
 `transform` requests, `toolCall` frames for every native action and
 `toolResult` replies, generations, retirement, and restart backoff.
@@ -19,9 +19,9 @@ What a config could do:
 - **Commands:** `phrases`, `group`, `description`, `when` (application or
   browser host), typed `captures` (`digit`, `letter`, `choice`, `union`,
   `text`), and either a fixed `action` or a `run` handler. Handlers got
-  `{ hex, context, captures }`, where `hex.openUrl/openApplication/openPath/press/typeText`
+  `{ opcode, context, captures }`, where `opcode.openUrl/openApplication/openPath/press/typeText`
   sent a native tool call and resolved with its result. Effect handlers used
-  `@hex/commands/effect`.
+  `@opcode/commands/effect`.
 - **Transformations:** `(text, context) => string | Promise<string>`, chained
   as one stage.
 - **Dictation controls:** declarative `start`/`stop`/`send`/`cancel` phrases.
@@ -34,7 +34,7 @@ transformations were already native.
 ## Decisions
 
 - **Engine:** `rquickjs` 0.14 (QuickJS-ng 0.16.2), features `std` and
-  `loader` only. It ships pregenerated bindings for every Hex target (Linux
+  `loader` only. It ships pregenerated bindings for every Opcode target (Linux
   x64/ARM64, macOS ARM64, Windows x64/ARM64), so builds need no bindgen.
 - **One worker thread** owns the runtime. A load builds a fresh runtime and
   context, evaluates the config module graph once (QuickJS compiles it to
@@ -46,12 +46,12 @@ transformations were already native.
 - **Limits:** an interrupt handler stops any call after 1 s and a load after
   2 s; the runtime is capped at 64 MiB and a 1 MiB JS stack.
 - **No ambient authority:** the context has standard JavaScript only, plus a
-  `console` that writes to Hex's log. No filesystem, network, process,
-  environment, or timers. Imports resolve to `@hex/commands` or files inside
+  `console` that writes to Opcode's log. No filesystem, network, process,
+  environment, or timers. Imports resolve to `@opcode/commands` or files inside
   the config folder (`.ts`, `.js`, `.mjs`, `.json`); anything else is refused.
 - **Commands return actions.** A handler returns an action, a list, or
-  nothing; `hex.*` still exists and queues actions (resolving at once), so
-  most existing handlers keep working. Hex validates every action, then runs
+  nothing; `opcode.*` still exists and queues actions (resolving at once), so
+  most existing handlers keep working. Opcode validates every action, then runs
   them in order on its native executor on a separate thread after the handler
   returns. The tool-call protocol, and with it the late-reply gap (#20), is
   gone.
@@ -79,23 +79,23 @@ source map. It costs a third of the transformer's size and is faster
 generated code: enums, namespaces, constructor parameter properties, and
 `import =`; the shipped `tsconfig.json` sets `erasableSyntaxOnly` so editors
 flag the same things. JavaScript with JSDoc would save the 0.79 MiB, but
-existing configs and the typed `defineHexConfig` capture inference are
+existing configs and the typed `defineOpcodeConfig` capture inference are
 TypeScript, so erasure keeps them loading unchanged.
 
 ## What Changed For Users
 
-- No install. `hex commands init` (or Create Config / Set up) writes
-  `hex.config.ts` if missing, `tsconfig.json` if missing, and the Hex-owned
-  `hex.d.ts` (types for `@hex/commands`) and `AGENTS.md`.
-- Existing `hex.config.ts` files load as they are when they use only
-  `@hex/commands`, local files, and plain functions: the template, typed
-  captures, `hex.*` calls, and transformations all work.
-- **Breaks:** Effect handlers (`@hex/commands/effect`), npm packages,
+- No install. `opcode commands init` (or Create Config / Set up) writes
+  `opcode.config.ts` if missing, `tsconfig.json` if missing, and the Opcode-owned
+  `opcode.d.ts` (types for `@opcode/commands`) and `AGENTS.md`.
+- Existing `opcode.config.ts` files load as they are when they use only
+  `@opcode/commands`, local files, and plain functions: the template, typed
+  captures, `opcode.*` calls, and transformations all work.
+- **Breaks:** Effect handlers (`@opcode/commands/effect`), npm packages,
   Node/Bun APIs (`fetch`, `fs`, `process`, timers), handlers that read an
   action's result or interleave work between actions, and TypeScript enums or
   namespaces. The old workspace files (`package.json`, `bun.lock`,
-  `node_modules`, `.hex-sdk`, `.agents`) are ignored and can be deleted.
-- `hex commands check` (macOS) loads the config as Hex does and prints what it
+  `node_modules`, `.opcode-sdk`, `.agents`) are ignored and can be deleted.
+- `opcode commands check` (macOS) loads the config as Opcode does and prints what it
   registers or why it fails, replacing `bun run check`.
 
 ## Measurements
@@ -117,7 +117,7 @@ The Bun host it replaces, measured the same way on the same machine:
 ```text
 host start to registration   87-98 ms (a child process)
 host memory                  about 90 MiB RSS
-transformation round trip    p50 23 µs, p99 209 µs   // stdin/stdout only, before Hex's own queueing
+transformation round trip    p50 23 µs, p99 209 µs   // stdin/stdout only, before Opcode's own queueing
 ```
 
 QuickJS interprets where Bun's JIT compiles, so a regex-heavy transformation

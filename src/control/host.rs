@@ -1,4 +1,4 @@
-//! The Linux and Windows host of `hex` control commands. Each OS supplies a
+//! The Linux and Windows host of `opcode` control commands. Each OS supplies a
 //! [`Host`], its thin adapter to the running process (the listener's
 //! queue, the window, model preparation, the updater); [`answer`] carries
 //! out every command the same way on both, with the rules the window and
@@ -21,7 +21,7 @@ use crate::transcription::models::TranscriptionSelection;
 /// How long `model use` waits to confirm, inside the transport's deadline.
 const CONFIRM_WAIT: Duration = Duration::from_secs(8);
 
-/// What the running Hex published last.
+/// What the running Opcode published last.
 pub(crate) struct HostState {
     pub(crate) settings: AppSettings,
     pub(crate) listener: DesktopListenerSnapshot,
@@ -61,7 +61,7 @@ pub(crate) trait Host {
     /// Launch at login, after setting it when `enabled` is given; `None`
     /// when this OS has no login item.
     fn launch_at_login(&self, enabled: Option<bool>) -> Option<Result<bool, String>>;
-    /// Quits Hex (and, for `restart`, reopens it) once this reply is out.
+    /// Quits Opcode (and, for `restart`, reopens it) once this reply is out.
     fn quit(&self, restart: bool) -> Result<(), ControlError>;
     fn shortcut_rules(&self) -> settings::ShortcutRules;
     /// Annotate's commands, where this OS has a capture engine.
@@ -81,12 +81,12 @@ pub(crate) fn serve(
     host: std::sync::Arc<dyn Host + Send + Sync>,
 ) {
     let spawned = std::thread::Builder::new()
-        .name("hex-control".into())
+        .name("opcode-control".into())
         .spawn(move || {
             for super::ControlCall { request, reply } in calls {
                 let host = host.clone();
                 let answered = std::thread::Builder::new()
-                    .name("hex-control-call".into())
+                    .name("opcode-control-call".into())
                     .spawn(move || {
                         let _ = reply.send(answer(host.as_ref(), request));
                     });
@@ -96,7 +96,7 @@ pub(crate) fn serve(
             }
         });
     if let Err(error) = spawned {
-        tracing::warn!(%error, "`hex` control commands will not reach this Hex");
+        tracing::warn!(%error, "`opcode` control commands will not reach this Opcode");
     }
 }
 
@@ -121,9 +121,9 @@ fn command(host: &dyn Host, command: ControlCommand) -> ControlReply {
                     .and_then(|()| host.quit(restart))
                     .map(|()| {
                         ControlReply::done(if restart {
-                            "Restarting Hex"
+                            "Restarting Opcode"
                         } else {
-                            "Quitting Hex"
+                            "Quitting Opcode"
                         })
                     }),
             )
@@ -213,11 +213,11 @@ fn command(host: &dyn Host, command: ControlCommand) -> ControlReply {
                 | DesktopUpdateStatus::SourceBuild
                 | DesktopUpdateStatus::PackageManager => Err(ControlError::new(
                     "unavailable",
-                    "this Hex build doesn't update itself",
+                    "this Opcode build doesn't update itself",
                 )),
                 _ => host
                     .check_for_updates()
-                    .map(|()| ControlReply::done("Checking for updates; Hex shows what it finds")),
+                    .map(|()| ControlReply::done("Checking for updates; Opcode shows what it finds")),
             }
         })),
         ControlCommand::LaunchAtLogin { enabled } => launch_at_login(host, enabled),
@@ -274,7 +274,7 @@ fn meeting_report() -> MeetingReport {
     }
 }
 
-/// `hex meetings record|stop`, as the tray's items do; waits a moment for
+/// `opcode meetings record|stop`, as the tray's items do; waits a moment for
 /// the recorder to confirm.
 fn meeting(stop: bool, title: Option<String>) -> ControlReply {
     use crate::meeting::MeetingRequest;
@@ -317,7 +317,7 @@ fn meeting(stop: bool, title: Option<String>) -> ControlReply {
         match (crate::meeting::runtime::state(), stop) {
             (MeetingMenuState::Recording { title, .. }, false) => {
                 return ControlReply::done(format!(
-                    "Recording “{title}”; `hex meetings stop` stops and transcribes it"
+                    "Recording “{title}”; `opcode meetings stop` stops and transcribes it"
                 ));
             }
             (MeetingMenuState::Transcribing | MeetingMenuState::Idle, true) => {
@@ -327,9 +327,9 @@ fn meeting(stop: bool, title: Option<String>) -> ControlReply {
         }
     }
     ControlReply::done(if stop {
-        "Asked the meeting to stop; `hex status` shows when it's transcribing"
+        "Asked the meeting to stop; `opcode status` shows when it's transcribing"
     } else {
-        "Hex is starting the recording; `hex status` shows when it's recording"
+        "Opcode is starting the recording; `opcode status` shows when it's recording"
     })
 }
 
@@ -396,7 +396,7 @@ fn commit(
     Ok(ControlReply::done(change.message))
 }
 
-/// `hex model use` (installed only) and `hex model install` (downloads
+/// `opcode model use` (installed only) and `opcode model install` (downloads
 /// first). Both switch once the model is ready.
 fn use_model(
     host: &dyn Host,
@@ -418,7 +418,7 @@ fn use_model(
         return Err(ControlError::new(
             "not-installed",
             format!(
-                "{} isn't installed; `hex model install {}` downloads it ({})",
+                "{} isn't installed; `opcode model install {}` downloads it ({})",
                 definition.name,
                 selection.model.as_str(),
                 definition.size_label()
@@ -428,8 +428,8 @@ fn use_model(
     host.choose_model(selection.clone())?;
     if !installed {
         return Ok(ControlReply::done(format!(
-            "Downloading {} ({}); Hex switches to it once it's ready. \
-             `hex status` shows progress, `hex model cancel` stops it",
+            "Downloading {} ({}); Opcode switches to it once it's ready. \
+             `opcode status` shows progress, `opcode model cancel` stops it",
             definition.name,
             definition.size_label()
         )));
@@ -472,7 +472,7 @@ fn wait_for_model(
         }
     }
     Ok(ControlReply::done(format!(
-        "Loading {name}; `hex status` shows when it's ready"
+        "Loading {name}; `opcode status` shows when it's ready"
     )))
 }
 

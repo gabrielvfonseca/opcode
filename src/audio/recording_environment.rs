@@ -22,7 +22,7 @@ mod ducking;
 
 const VIRTUAL_MAIN_VOLUME: u32 = u32::from_be_bytes(*b"vmvc");
 
-/// A media player Hex may pause while recording and resume afterwards.
+/// A media player Opcode may pause while recording and resume afterwards.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum MediaPlayer {
     Music,
@@ -175,7 +175,7 @@ pub fn wait_until_restored(deadline: Duration) -> bool {
             return true;
         }
         if started.elapsed() >= deadline {
-            tracing::warn!("Hex quit before restoring output or media after recording");
+            tracing::warn!("Opcode quit before restoring output or media after recording");
             return false;
         }
         thread::sleep(Duration::from_millis(10));
@@ -262,7 +262,7 @@ impl RecordingEnvironmentController {
     /// A capture session: applies `audio` ("While dictating") until the
     /// session ends. It is not a dictation, so it neither prevents sleep
     /// nor holds back meeting transcription.
-    #[cfg(any(hex_capture, test))]
+    #[cfg(any(opcode_capture, test))]
     pub fn begin_capture(&self, audio: RecordingAudioBehavior) -> RecordingEnvironmentSession {
         self.begin_as(Hold {
             dictation: false,

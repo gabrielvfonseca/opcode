@@ -8,7 +8,7 @@
 //! The voice is drawn three ways (the story's variants): Dot scope's braid,
 //! from its real simulation and HUD Lab's tuning, bars, and a line. Only
 //! the capture adds the screen cue, a red dot or a small screen (each
-//! loop shows the other), so "Hex is listening" and "Hex is
+//! loop shows the other), so "Opcode is listening" and "Opcode is
 //! recording your screen" read apart at a glance. A prototype: the real
 //! HUD and capsule don't place or draw this way yet.
 
@@ -48,7 +48,7 @@ const FLOAT_GAP: f32 = hud_placement::TOP_OFFSET as f32;
 /// The island's room under the notch.
 const ISLAND: f32 = ISLAND_PAD as f32;
 
-const DESTINATIONS: [&str; 3] = ["#design", "Linear · HEX", "Notes"];
+const DESTINATIONS: [&str; 3] = ["#design", "Linear · OPCODE", "Notes"];
 
 /// How much of each screen's top middle the story shows, in points.
 const CROP: (f32, f32) = (480.0, 236.0);

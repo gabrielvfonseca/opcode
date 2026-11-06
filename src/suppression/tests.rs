@@ -78,7 +78,7 @@ fn callback_input_with(
     receiver.try_iter().collect()
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 #[test]
 fn a_capture_logs_only_keys_that_reach_the_app() {
     const ESCAPE: u16 = 53;
@@ -88,7 +88,7 @@ fn a_capture_logs_only_keys_that_reach_the_app() {
         callback_input_with(
             true,
             &[
-                // Hex takes Escape (the capsule's picker): it consumes it.
+                // Opcode takes Escape (the capsule's picker): it consumes it.
                 (
                     now,
                     InputEvent::Key {
@@ -2938,7 +2938,7 @@ fn short_taps_chords_and_other_bindings_never_break_the_chord() {
 }
 
 #[test]
-fn locked_and_toggle_captures_break_the_chord_only_for_presses_hex_owns() {
+fn locked_and_toggle_captures_break_the_chord_only_for_presses_opcode_owns() {
     let now = capture_time();
     let at = |ms| now + Duration::from_millis(ms);
 
@@ -2950,7 +2950,7 @@ fn locked_and_toggle_captures_break_the_chord_only_for_presses_hex_owns() {
     locked.process(InputEvent::Flags(NO_FLAGS), at(300));
     assert!(locked.is_locked());
     assert!(!locked.take_chord_break(at(2_000)));
-    // The press that finishes the lock is Hex's.
+    // The press that finishes the lock is Opcode's.
     assert_eq!(
         locked.process(InputEvent::Flags(OPTION_KEY_MASK), at(3_000)),
         Some(HotkeyAction::Finish)
@@ -2964,7 +2964,7 @@ fn locked_and_toggle_captures_break_the_chord_only_for_presses_hex_owns() {
     programmatic.process(InputEvent::Flags(NO_FLAGS), at(1_060));
     assert!(!programmatic.take_chord_break(at(1_060)));
 
-    // Toggle: the starting press is Hex's once past the chord grace.
+    // Toggle: the starting press is Opcode's once past the chord grace.
     let grace = crate::feedback::CHORD_GRACE;
     let mut toggle = test_hotkey(false, now);
     toggle.set_toggle(true);
@@ -2990,7 +2990,7 @@ fn locked_and_toggle_captures_break_the_chord_only_for_presses_hex_owns() {
 
 /// The chord breaker is posted through both taps; its mark keeps it from
 /// becoming the user's chord or HID chord evidence, and the key tap drops
-/// it so the focused app never beeps at it. Hex's other synthetic keys,
+/// it so the focused app never beeps at it. Opcode's other synthetic keys,
 /// such as the paste shortcut, still reach the app.
 #[test]
 fn marked_chord_breaker_never_reaches_the_shortcut_machines_or_the_app() {
@@ -3540,7 +3540,7 @@ fn hid_evidence_while_locked_is_ignored() {
 }
 
 #[test]
-fn chord_evidence_skips_escape_and_hex_shortcuts() {
+fn chord_evidence_skips_escape_and_opcode_shortcuts() {
     let hotkeys = RuntimeHotkeys::default();
     assert!(is_chord_evidence(18, OPTION_KEY_MASK, hotkeys));
     assert!(is_chord_evidence(49, OPTION_KEY_MASK, hotkeys));
@@ -3625,7 +3625,7 @@ fn escape_never_ends_a_held_capture() {
 }
 
 /// A capsule list left open when captures are turned off takes no keys.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 #[test]
 fn the_list_takes_keys_only_while_captures_are_on() {
     assert!(list_takes_keys(true, true, false));
@@ -3637,7 +3637,7 @@ fn the_list_takes_keys_only_while_captures_are_on() {
 /// Escape during a dictation hold while a screen capture records ends
 /// neither: the capture shortcut lets it pass, and the dictation keeps
 /// recording.
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 #[test]
 fn escape_during_a_capture_ends_nothing() {
     use crate::capture_host::{CaptureShortcut, ShortcutAction, ShortcutActivity};
@@ -3662,7 +3662,7 @@ fn escape_during_a_capture_ends_nothing() {
 }
 
 #[test]
-fn escape_is_suppressed_only_while_hex_takes_it() {
+fn escape_is_suppressed_only_while_opcode_takes_it() {
     let mut suppression = ShortcutSuppression::default();
     let hotkeys = RuntimeHotkeys::default();
     let down = InputEvent::Key {
@@ -3681,7 +3681,7 @@ fn escape_is_suppressed_only_while_hex_takes_it() {
     assert!(!suppression.process_all(down, hotkeys, false, true));
     assert!(!suppression.process_all(up, hotkeys, false, true));
 
-    // Hex can stop taking Escape before the key lifts;
+    // Opcode can stop taking Escape before the key lifts;
     // the repeat and release keep the press's suppression decision.
     assert!(suppression.process_all(down, hotkeys, true, true));
     assert!(suppression.process_all(down, hotkeys, true, false));

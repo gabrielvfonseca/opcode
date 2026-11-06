@@ -1,14 +1,14 @@
 //! Permissions step for `"Prototypes/Onboarding/First run"`:
 //!
-//! - One `440 pt` column shared by Hex's setup card, System Settings, and the
+//! - One `440 pt` column shared by Opcode's setup card, System Settings, and the
 //!   floating drag guide, with every app icon aligned on one vertical spine
 //!   (`x = 26 pt`).
 //! - Calm, zero-bounce permission state pills (`Allow` -> `Asking…` ->
 //!   `✓ Allowed`) with no harsh blinking or glow.
 //! - Escaping Accessibility panel: when Accessibility is requested, the helper
-//!   panel inside Hex's card detaches, leaving a recessed outline socket
+//!   panel inside Opcode's card detaches, leaving a recessed outline socket
 //!   behind, and floats down across the screen to dock underneath System
-//!   Settings. Then the Hex row lifts cleanly out of that guide into an
+//!   Settings. Then the Opcode row lifts cleanly out of that guide into an
 //!   expanding slot in System Settings' Accessibility list.
 
 use rune::{Anim, Color, El, Spring, TextStyle, Transition, col, el, icon, row, text};
@@ -17,7 +17,7 @@ use rune_kit::{Button, ButtonVariant, glyphs};
 use super::super::controls::{Paint, PushSize};
 use super::super::paste_access::PasteAccess;
 use super::flows::continue_button;
-use super::hex_meter::hex_meter;
+use super::opcode_meter::opcode_meter;
 use super::landing::{LEAD, Motion, arrives, title_font};
 use super::live::Live;
 use super::stories::Onboard;
@@ -97,7 +97,7 @@ pub(super) fn page(p: Paint, s: &Onboard) -> El {
     let head = heading(
         p,
         s.motion,
-        "Let Hex hear you and type for you",
+        "Let Opcode hear you and type for you",
         "macOS asks once. You can change these any time in System Settings.",
     );
 
@@ -138,7 +138,7 @@ fn heading(p: Paint, motion: Motion, title: &str, lead: &str) -> El {
 }
 
 /// The real first run's permissions, following what the OS reports. macOS:
-/// its own prompt and System Settings with Hex's guide, for Microphone and
+/// its own prompt and System Settings with Opcode's guide, for Microphone and
 /// Accessibility. Windows asks nothing, so this page shows only while its
 /// microphone privacy switch is off, with the one row that opens Settings.
 fn live_page(p: Paint, live: &Live, motion: Motion) -> El {
@@ -152,12 +152,8 @@ fn live_page(p: Paint, live: &Live, motion: Motion) -> El {
         ItemStatus::Denied | ItemStatus::Waiting if windows => {
             tr("Turn on “Let desktop apps access your microphone” in Windows Settings.")
         }
-        ItemStatus::Denied => tr("Switch on Hex in System Settings"),
-        _ if live.release_microphone => tr("Opens only while you dictate"),
-        _ if windows => tr("Ready the moment you press the shortcut"),
-        _ => tr(
-            "Ready the moment you press the shortcut. macOS shows the mic in use while Hex runs; you can change that in Settings",
-        ),
+        ItemStatus::Denied => tr("Switch on Opcode in System Settings"),
+        _ => tr("Hears you only while you hold the shortcut"),
     };
     let mut card = col()
         .key("setup-card")
@@ -182,9 +178,9 @@ fn live_page(p: Paint, live: &Live, motion: Motion) -> El {
         ));
     if live.accessibility_row {
         let ax_desc = match live.accessibility {
-            ItemStatus::Stale => tr("An older Hex entry can keep this off"),
-            ItemStatus::Waiting => tr("Switch on Hex in System Settings"),
-            ItemStatus::Restart => tr("Turns on when Hex restarts"),
+            ItemStatus::Stale => tr("An older Opcode entry can keep this off"),
+            ItemStatus::Waiting => tr("Switch on Opcode in System Settings"),
+            ItemStatus::Restart => tr("Turns on when Opcode restarts"),
             _ => tr("Notices the shortcut and pastes your words in any app"),
         };
         card = card.child(separator(p, "sep0")).child(perm_row(
@@ -204,9 +200,9 @@ fn live_page(p: Paint, live: &Live, motion: Motion) -> El {
         ));
     }
     let action = if live.restart {
-        Button::new(tr("Restart Hex"))
+        Button::new(tr("Restart Opcode"))
             .variant(ButtonVariant::Contrast)
-            .on_press(super::live::restart_hex)
+            .on_press(super::live::restart_opcode)
             .build_push(k)
             .key("restart")
             .default_button()
@@ -216,18 +212,18 @@ fn live_page(p: Paint, live: &Live, motion: Motion) -> El {
     };
     let (title, lead) = if windows {
         (
-            tr("Let Hex hear you"),
+            tr("Let Opcode hear you"),
             tr("Windows has the microphone turned off for desktop apps."),
         )
     } else {
         (
-            tr("Let Hex hear you and type for you"),
+            tr("Let Opcode hear you and type for you"),
             tr("macOS asks once. You can change these any time in System Settings."),
         )
     };
     let relaunch = live.relaunch_failed.then(|| {
         text(tr(
-            "Quit and reopen Hex to finish setup. macOS applies some permissions only after a restart.",
+            "Quit and reopen Opcode to finish setup. macOS applies some permissions only after a restart.",
         ))
         .key("relaunch-notice")
         .font(LEAD)
@@ -247,15 +243,15 @@ fn live_page(p: Paint, live: &Live, motion: Motion) -> El {
         .child(row().key("action").h(ACTION_H).center().child(action))
 }
 
-/// GNOME and KDE on Wayland: Hex pastes through the desktop's
+/// GNOME and KDE on Wayland: Opcode pastes through the desktop's
 /// RemoteDesktop portal, whose dialog asks once (#932). This page says what
 /// it is for before Allow opens it.
 fn paste_page(p: Paint, paste: PasteAccess, motion: Motion) -> El {
     let k = p.k;
     let desc = if paste == PasteAccess::Declined {
-        tr("Without it, Hex copies your words and you press Ctrl+V.")
+        tr("Without it, Opcode copies your words and you press Ctrl+V.")
     } else {
-        tr("Hex only sends the paste keystroke. It never sees your screen.")
+        tr("Opcode only sends the paste keystroke. It never sees your screen.")
     };
     let allow = |label: &str, primary: bool| {
         Button::new(label)
@@ -309,13 +305,13 @@ fn paste_page(p: Paint, paste: PasteAccess, motion: Motion) -> El {
                 .gap(8.0)
                 .items_center()
                 .child(
-                    text(tr("Let Hex paste for you"))
+                    text(tr("Let Opcode paste for you"))
                         .key("title")
                         .font(title_font(p))
                         .color(p.text()),
                 )
                 .child(
-                    text(tr("Hex needs this to type your words into your apps. Your desktop asks once, and may call it remote desktop."))
+                    text(tr("Opcode needs this to type your words into your apps. Your desktop asks once, and may call it remote desktop."))
                         .key("lead")
                         .font(LEAD)
                         .color(p.muted())
@@ -384,7 +380,7 @@ fn stage(p: Paint, e: f64, mic: PermState, ax: PermState, reduced: bool) -> El {
 
     let mut stage = el().key("permissions-stage").size(COL_W, STAGE_H);
 
-    // 1. Hex's own permissions card at the top of the `440 pt` column.
+    // 1. Opcode's own permissions card at the top of the `440 pt` column.
     stage = stage.child(setup_card(p, mic, ax, tray_open, escaped));
 
     // 2. macOS Microphone permission alert (`MIC_ASK .. MIC_GRANT`).
@@ -405,7 +401,7 @@ fn stage(p: Paint, e: f64, mic: PermState, ax: PermState, reduced: bool) -> El {
         );
     }
 
-    // 4. The Accessibility helper panel: sits inside Hex's card at `AX_TRAY_OPEN`,
+    // 4. The Accessibility helper panel: sits inside Opcode's card at `AX_TRAY_OPEN`,
     //    then escapes out of the card at `AX_ESCAPE` and floats down to dock
     //    underneath System Settings (`GUIDE_Y`), then launches the drag row!
     if tray_open {
@@ -418,7 +414,7 @@ fn stage(p: Paint, e: f64, mic: PermState, ax: PermState, reduced: bool) -> El {
 fn setup_card(p: Paint, mic: PermState, ax: PermState, tray_open: bool, escaped: bool) -> El {
     let k = p.k;
     let ax_desc = if ax == PermState::Asking {
-        "Drag Hex into System Settings below"
+        "Drag Opcode into System Settings below"
     } else {
         "Notices the shortcut and pastes your words in any app"
     };
@@ -461,7 +457,7 @@ fn setup_card(p: Paint, mic: PermState, ax: PermState, tray_open: bool, escaped:
     k.elevate(card, &k.elevation.raised)
 }
 
-/// Recessed outline left behind inside Hex's card once the helper panel escapes.
+/// Recessed outline left behind inside Opcode's card once the helper panel escapes.
 fn socket_outline(p: Paint, escaped: bool) -> El {
     let k = p.k;
     row()
@@ -603,7 +599,7 @@ fn microphone_prompt(p: Paint, pressed: bool) -> El {
         .center()
         .fill(k.c.surface_raised)
         .border(p.hair, k.c.border_weak)
-        .child(hex_meter(p, "icon", 22.0, 1.0, 1.0));
+        .child(opcode_meter(p, "icon", 22.0, 1.0, 1.0));
     let alert = col()
         .key("mic-prompt")
         .w(PROMPT_W)
@@ -616,7 +612,7 @@ fn microphone_prompt(p: Paint, pressed: bool) -> El {
         .border(p.hair, k.c.border_weak)
         .child(badge)
         .child(
-            text("“Hex” would like to access the microphone.")
+            text("“Opcode” would like to access the microphone.")
                 .key("title")
                 .font(TextStyle {
                     weight: if k.dark { 560.0 } else { 600.0 },
@@ -628,7 +624,7 @@ fn microphone_prompt(p: Paint, pressed: bool) -> El {
                 .w(PROMPT_W - 36.0),
         )
         .child(
-            text("Hex listens only while you hold your shortcut.")
+            text("Opcode listens only while you hold your shortcut.")
                 .key("body")
                 .font(k.ty.small)
                 .color(p.muted())
@@ -729,11 +725,11 @@ fn settings_window(p: Paint, e: f64, reduced: bool) -> El {
         );
         if landed {
             list = list.child(
-                settings_app_row(p, "hex-landed", "Hex", hex_app_icon(p), e >= SWITCH_ON)
+                settings_app_row(p, "opcode-landed", "Opcode", opcode_app_icon(p), e >= SWITCH_ON)
                     .transition(Transition::opacity()),
             );
         } else {
-            // Subtle drop-target highlight waiting to catch the dragged Hex row.
+            // Subtle drop-target highlight waiting to catch the dragged Opcode row.
             list = list.child(
                 row()
                     .key("drop-slot")
@@ -765,9 +761,9 @@ fn settings_window(p: Paint, e: f64, reduced: bool) -> El {
     k.elevate(win, &k.elevation.floating)
 }
 
-/// The panel that sits inside Hex's card, detaches at `AX_ESCAPE` leaving an
+/// The panel that sits inside Opcode's card, detaches at `AX_ESCAPE` leaving an
 /// outline behind, floats down underneath System Settings, and then launches
-/// the `Hex` drag row straight up the `x = 26 pt` spine into the list.
+/// the `Opcode` drag row straight up the `x = 26 pt` spine into the list.
 fn escaping_guide_and_drag(p: Paint, e: f64, reduced: bool) -> El {
     let k = p.k;
     let esc_u = if e < AX_ESCAPE {
@@ -795,7 +791,7 @@ fn escaping_guide_and_drag(p: Paint, e: f64, reduced: bool) -> El {
     let tile_w = LIST_W;
 
     let instruction = (esc_u > 0.35).then(|| {
-        text("↑  Drag Hex into the Accessibility list above")
+        text("↑  Drag Opcode into the Accessibility list above")
             .key("guide-instruction")
             .font(k.ty.small_medium)
             .color(p.text())
@@ -805,7 +801,7 @@ fn escaping_guide_and_drag(p: Paint, e: f64, reduced: bool) -> El {
     });
 
     // When `tile_taken`, ONLY the empty recessed slot remains — zero duplicate
-    // ghost `"Hex"` text underneath the lifted chip!
+    // ghost `"Opcode"` text underneath the lifted chip!
     let inner_slot = if tile_taken {
         el().key("guide-tile-empty")
             .absolute(tile_x, tile_y)
@@ -825,9 +821,9 @@ fn escaping_guide_and_drag(p: Paint, e: f64, reduced: bool) -> El {
             .fill(k.c.surface_raised)
             .border(p.hair, k.c.border_base)
             .offset_motion(Anim::INSTANT)
-            .child(hex_app_icon(p))
+            .child(opcode_app_icon(p))
             .child(
-                text("Hex")
+                text("Opcode")
                     .key("name")
                     .font(k.ty.small_medium)
                     .color(p.text()),
@@ -893,7 +889,7 @@ fn drag_progress(e: f64, reduced: bool) -> Option<f32> {
     Some(smoothstep(((e - DRAG.0) / (DRAG.1 - DRAG.0)) as f32))
 }
 
-/// The lifted `Hex` row travelling up the `x = 26 pt` icon spine from the
+/// The lifted `Opcode` row travelling up the `x = 26 pt` icon spine from the
 /// docked guide into Row 3 of System Settings' Accessibility list.
 fn dragged_row(p: Paint, u: f32) -> El {
     let k = p.k;
@@ -914,9 +910,9 @@ fn dragged_row(p: Paint, u: f32) -> El {
         .border(p.hair, k.c.border_focus)
         .scale(lift)
         .offset_motion(Anim::INSTANT)
-        .child(hex_app_icon(p))
+        .child(opcode_app_icon(p))
         .child(
-            text("Hex")
+            text("Opcode")
                 .key("name")
                 .font(k.ty.small_medium)
                 .color(p.text()),
@@ -932,15 +928,15 @@ fn squircle_icon(color: Color) -> El {
         .fill(color)
 }
 
-fn hex_app_icon(p: Paint) -> El {
-    el().key("hex-app-icon")
+fn opcode_app_icon(p: Paint) -> El {
+    el().key("opcode-app-icon")
         .size(18.0, 18.0)
         .radius(4.5)
         .continuous_corners()
         .center()
         .fill(p.k.c.bg_deep)
         .border(p.hair, p.k.c.border_base)
-        .child(hex_meter(p, "hex", 12.0, 1.0, 1.0))
+        .child(opcode_meter(p, "opcode", 12.0, 1.0, 1.0))
 }
 
 fn settings_app_row(p: Paint, key: &str, name: &str, icon: El, on: bool) -> El {

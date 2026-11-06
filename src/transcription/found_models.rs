@@ -6,7 +6,7 @@
 //! result is kept per path, size, modification time, and file ID, so an
 //! unchanged file is never read twice.
 //!
-//! Hex never writes or deletes inside the cache. A file whose blob name is a
+//! Opcode never writes or deletes inside the cache. A file whose blob name is a
 //! catalog model's pinned SHA-256 (with its size) counts as that model
 //! already downloaded, used in place; any other compatible file is offered
 //! under "Found on this computer" and, once chosen, is hashed in full once
@@ -28,7 +28,7 @@ use super::models::{MODELS, ModelDefinition, ModelRuntime, TranscriptionModelId,
 /// One compatible GGUF found in the cache.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Found {
-    /// The snapshot path, which Hex reads in place.
+    /// The snapshot path, which Opcode reads in place.
     pub path: PathBuf,
     /// `owner/name` from the cache folder (`models--owner--name`).
     pub repository: String,
@@ -250,14 +250,14 @@ fn inspect(path: &Path, repository: &str, revision: &str, bytes: u64) -> Option<
     let header = match super::gguf_header::read(path) {
         Ok(header) => header,
         Err(error) => {
-            tracing::debug!(path = %path.display(), %error, "skipping a cached file Hex can't read");
+            tracing::debug!(path = %path.display(), %error, "skipping a cached file Opcode can't read");
             return None;
         }
     };
     let profile = match super::custom_models::profile_of(&header, &file_name) {
         Ok(profile) => profile,
         Err(error) => {
-            tracing::debug!(path = %path.display(), %error, "skipping a cached model Hex can't run");
+            tracing::debug!(path = %path.display(), %error, "skipping a cached model Opcode can't run");
             return None;
         }
     };
@@ -351,8 +351,8 @@ fn catalog_found(
     }
 }
 
-/// A catalog model Hex uses from another app's download: where it is, and
-/// the receipt of the full check Hex made when it was first used.
+/// A catalog model Opcode uses from another app's download: where it is, and
+/// the receipt of the full check Opcode made when it was first used.
 #[derive(Deserialize, Serialize)]
 struct Adopted {
     path: PathBuf,
@@ -393,7 +393,7 @@ pub fn catalog_candidate(model: &ModelDefinition) -> Option<PathBuf> {
     })
 }
 
-/// Hex's note of the found file the person forgot for a catalog model, so
+/// Opcode's note of the found file the person forgot for a catalog model, so
 /// the next scan doesn't count it as downloaded again.
 fn forgotten_file(model: &ModelDefinition) -> Result<PathBuf> {
     Ok(models_dir()?
@@ -411,7 +411,7 @@ pub fn is_forgotten(model: &ModelDefinition, path: &Path) -> bool {
     forgotten(model).is_some_and(|forgotten| forgotten == path)
 }
 
-/// Whether the adopted file still holds the receipt of Hex's full check.
+/// Whether the adopted file still holds the receipt of Opcode's full check.
 pub fn catalog_verified(model: &ModelDefinition) -> bool {
     adopted(model).is_some_and(|adopted| {
         fs::metadata(&adopted.path).is_ok_and(|metadata| adopted.receipt.holds(&metadata))
@@ -420,7 +420,7 @@ pub fn catalog_verified(model: &ModelDefinition) -> bool {
 
 /// Uses `path`, another app's download of `model`, where it is: hashed in
 /// full against the pinned SHA-256 the first time, and again only when its
-/// size, modification time, or file ID change. Hex writes only its own record.
+/// size, modification time, or file ID change. Opcode writes only its own record.
 pub fn adopt_catalog(
     model: &ModelDefinition,
     path: &Path,
@@ -438,14 +438,14 @@ pub fn adopt_catalog(
     let metadata = fs::metadata(path)?;
     if metadata.len() != artifact.bytes {
         bail!(
-            "{} found on this computer is not the size Hex pins",
+            "{} found on this computer is not the size Opcode pins",
             model.name
         );
     }
-    let sha256 = super::models::sha256_hex(path, Some(canceled))?;
+    let sha256 = super::models::sha256_opcode(path, Some(canceled))?;
     if sha256 != artifact.sha256 {
         bail!(
-            "{} found on this computer doesn't match the checksum Hex pins",
+            "{} found on this computer doesn't match the checksum Opcode pins",
             model.name
         );
     }
@@ -469,7 +469,7 @@ pub fn adopt_catalog(
     Ok(path.to_path_buf())
 }
 
-/// Forgets a catalog model found on this computer: Hex's record goes and
+/// Forgets a catalog model found on this computer: Opcode's record goes and
 /// the file no longer counts as downloaded; the file stays where it is.
 pub fn forget_catalog(model: &ModelDefinition) -> Result<()> {
     let candidate = catalog_candidate(model);
@@ -555,7 +555,7 @@ mod tests {
 
     fn temporary(name: &str) -> PathBuf {
         let directory =
-            std::env::temp_dir().join(format!("hex-found-{name}-{}", std::process::id()));
+            std::env::temp_dir().join(format!("opcode-found-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&directory);
         fs::create_dir_all(&directory).unwrap();
         directory
@@ -631,7 +631,7 @@ mod tests {
             Some(&contents),
             0,
         );
-        // Not a model Hex can run, and not a GGUF at all.
+        // Not a model Opcode can run, and not a GGUF at all.
         cache(
             &hub,
             "someone/broken",
@@ -679,7 +679,7 @@ mod tests {
         let contents = whisper();
         let staged = hub.join("staged.gguf");
         fs::write(&staged, &contents).unwrap();
-        let sha256 = super::super::models::sha256_hex(&staged, None).unwrap();
+        let sha256 = super::super::models::sha256_opcode(&staged, None).unwrap();
         fs::remove_file(staged).unwrap();
         let path = cache(
             &hub,

@@ -1,5 +1,5 @@
 //! A screenshot's file and clipboard: a PNG named as macOS names its own
-//! (`Hex Screenshot 2026-11-04 at 14.03.22.png`), saved to the folder and
+//! (`Opcode Screenshot 2026-11-04 at 14.03.22.png`), saved to the folder and
 //! put on the clipboard as the image and the file.
 
 use std::path::{Path, PathBuf};
@@ -34,7 +34,7 @@ impl Stamp {
     }
 }
 
-/// `Hex Screenshot 2026-11-04 at 14.03.22`, then ` (2)`, ` (3)`… for
+/// `Opcode Screenshot 2026-11-04 at 14.03.22`, then ` (2)`, ` (3)`… for
 /// `copy` past the first.
 pub(crate) fn file_name(at: Stamp, copy: u32) -> String {
     let Stamp {
@@ -46,7 +46,7 @@ pub(crate) fn file_name(at: Stamp, copy: u32) -> String {
         second,
     } = at;
     let base = format!(
-        "Hex Screenshot {year:04}-{month:02}-{day:02} at {hour:02}.{minute:02}.{second:02}"
+        "Opcode Screenshot {year:04}-{month:02}-{day:02} at {hour:02}.{minute:02}.{second:02}"
     );
     if copy <= 1 {
         format!("{base}.png")
@@ -142,17 +142,17 @@ mod tests {
     fn a_screenshot_is_named_as_macos_names_its_own() {
         assert_eq!(
             file_name(AT, 1),
-            "Hex Screenshot 2026-11-04 at 14.03.22.png"
+            "Opcode Screenshot 2026-11-04 at 14.03.22.png"
         );
         assert_eq!(
             file_name(AT, 2),
-            "Hex Screenshot 2026-11-04 at 14.03.22 (2).png"
+            "Opcode Screenshot 2026-11-04 at 14.03.22 (2).png"
         );
     }
 
     #[test]
     fn a_second_screenshot_in_the_same_second_gets_its_own_file() {
-        let folder = std::env::temp_dir().join(format!("hex-screenshot-{}", std::process::id()));
+        let folder = std::env::temp_dir().join(format!("opcode-screenshot-{}", std::process::id()));
         std::fs::create_dir_all(&folder).unwrap();
         std::fs::write(folder.join(file_name(AT, 1)), b"").unwrap();
         assert_eq!(free_path(&folder, AT), folder.join(file_name(AT, 2)));

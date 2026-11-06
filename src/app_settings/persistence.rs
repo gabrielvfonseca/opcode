@@ -30,7 +30,7 @@ impl AppSettings {
                 (
                     Self::default(),
                     Some(format!(
-                        "Hex couldn't read its settings and started with defaults. ({error:#})"
+                        "Opcode couldn't read its settings and started with defaults. ({error:#})"
                     )),
                 )
             }
@@ -250,7 +250,7 @@ fn needs_backup(data: &[u8]) -> bool {
         || crate::transcription::models::validate_saved(&settings.transcription).is_err()
 }
 
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 pub(super) fn healthy_file(path: &Path) -> bool {
     fs::read(path).is_ok_and(|data| !needs_backup(&data))
 }

@@ -36,7 +36,7 @@ impl Meetings {
         let (requests, request_receiver) = mpsc::sync_channel(8);
         let _ = REQUESTS.set(requests);
         let controller = thread::Builder::new()
-            .name("hex-meetings".into())
+            .name("opcode-meetings".into())
             .spawn(move || {
                 if let Err(error) = crate::meeting::watcher::controller_loop(
                     shutdown,
@@ -70,7 +70,7 @@ impl Meetings {
             )
         };
         let events = thread::Builder::new()
-            .name("hex-meeting-events".into())
+            .name("opcode-meeting-events".into())
             .spawn(move || {
                 for event in events {
                     capsules.event(&event);
@@ -145,7 +145,7 @@ pub(crate) fn copy_last_transcript() -> Result<(), String> {
 fn offer_unshown(window: &rune::AppHandle<Ui>, reason: String) {
     tracing::warn!(%reason, "meeting recording offer could not show; opening the Meetings pane");
     let mut message = format!(
-        "Hex detected a call but couldn't show its recording offer on this desktop ({reason}). Record it from here."
+        "Opcode detected a call but couldn't show its recording offer on this desktop ({reason}). Record it from here."
     );
     if !crate::labs::gnome_meeting_capsules() {
         message.push_str(

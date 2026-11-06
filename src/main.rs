@@ -1,10 +1,10 @@
-// A GUI program on Windows, so launching Hex opens no console window (#850).
+// A GUI program on Windows, so launching Opcode opens no console window (#850).
 // Commands run from a terminal attach to it (`windows::attach_parent_console`).
 #![cfg_attr(all(target_os = "windows", not(test)), windows_subsystem = "windows")]
 
-/// The version Hex reports: the release version, or `0.0.0-dev-local-<commit>`
+/// The version Opcode reports: the release version, or `0.0.0-dev-local-<commit>`
 /// for a build outside the Release workflow (build.rs).
-const VERSION: &str = env!("HEX_BUILD_VERSION");
+const VERSION: &str = env!("OPCODE_BUILD_VERSION");
 
 #[cfg(target_os = "macos")]
 mod accessibility;
@@ -20,7 +20,7 @@ mod application_catalog;
 mod audio;
 #[cfg_attr(any(target_os = "linux", target_os = "windows"), allow(dead_code))]
 mod calendar;
-#[cfg(hex_capture)]
+#[cfg(opcode_capture)]
 mod capture_host;
 #[cfg_attr(any(target_os = "linux", target_os = "windows"), allow(dead_code))]
 mod control;
@@ -61,7 +61,7 @@ mod policy;
 mod recognition;
 mod rune_hud;
 mod rune_ui;
-#[cfg(all(target_os = "macos", hex_capture))]
+#[cfg(all(target_os = "macos", opcode_capture))]
 mod screenshots;
 #[cfg(target_os = "macos")]
 mod suppression;
@@ -83,15 +83,15 @@ use color_eyre::eyre::eyre;
 #[cfg(target_os = "macos")]
 #[derive(Parser)]
 #[command(
-    name = "hex",
+    name = "opcode",
     version = crate::VERSION,
     about = "Local, observable voice control",
     long_about = "Local, observable voice control.\n\n\
         Control commands (status, dictation, meetings record, settings, model, window, …) drive \
-        the one running Hex over its owner-only local API and never launch it, except `start` \
+        the one running Opcode over its owner-only local API and never launch it, except `start` \
         and `restart`. Every one takes --json for a versioned reply (docs/cli.md). Exit codes: \
-        0 done or nothing to change, 1 refused or failed, 2 usage, 3 Hex isn't running.",
-    after_help = "Run `hex <command> --help` for details, or `hex settings list` for every setting."
+        0 done or nothing to change, 1 refused or failed, 2 usage, 3 Opcode isn't running.",
+    after_help = "Run `opcode <command> --help` for details, or `opcode settings list` for every setting."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -143,7 +143,7 @@ enum Command {
     },
     /// The Scrawl capture capsule in a window of its own, driven by a fake
     /// host, with live tuning. Records and sends nothing.
-    #[cfg(hex_capture)]
+    #[cfg(opcode_capture)]
     #[command(name = "capsule-playground", hide = true)]
     CapsulePlayground {
         /// Rune's flags, such as `--snap out.png --scene rule`.
@@ -204,7 +204,7 @@ enum DevCommand {
         #[arg(value_enum)]
         pane: control::developer_control::DeveloperPane,
     },
-    #[cfg(all(debug_assertions, hex_capture))]
+    #[cfg(all(debug_assertions, opcode_capture))]
     /// Run a capture headlessly, feeding WAV files in place of the
     /// microphone, and write its bundle (needs the `capture` experiment).
     CaptureReplay {
@@ -212,7 +212,7 @@ enum DevCommand {
         #[arg(required = true)]
         wavs: Vec<PathBuf>,
     },
-    /// Render offline audio through the Hex Microphone voice filter.
+    /// Render offline audio through the Opcode Microphone voice filter.
     VoiceFilter {
         #[command(subcommand)]
         command: VoiceFilterCommand,
@@ -303,15 +303,15 @@ fn main() -> Result<()> {
         rune::prewarm_gpu();
     }
     // A window of its own: no data folder, log, lock, or settings, so it
-    // runs beside the installed Hex.
-    #[cfg(hex_capture)]
+    // runs beside the installed Opcode.
+    #[cfg(opcode_capture)]
     if let Some(Command::CapsulePlayground { rune_args }) = &cli.command {
         keyboard::initialize_layout()?;
         rune_ui::capture_capsule::playground::run(rune_args.clone());
         return Ok(());
     }
     // Control and read commands (status, settings, history, meetings, mcp,
-    // labs, …) talk to the running Hex or read files: no data folder, log,
+    // labs, …) talk to the running Opcode or read files: no data folder, log,
     // lock, GUI, or permission setup of their own, so an agent may run them
     // over SSH while the app is running.
     let cli = match cli.command {
@@ -369,8 +369,8 @@ fn main() -> Result<()> {
             output,
         );
     }
-    // A headless render (`hex app -- --snap …`) draws fixtures: no data
-    // folder, log, lock, or settings, so it never touches the user's Hex.
+    // A headless render (`opcode app -- --snap …`) draws fixtures: no data
+    // folder, log, lock, or settings, so it never touches the user's Opcode.
     if let Some(Command::App { rune_args, .. }) = &cli.command
         && !rune_args.is_empty()
     {
@@ -380,7 +380,7 @@ fn main() -> Result<()> {
     let log_dir = app_paths::init_process_logging(&SHUTDOWN)?;
 
     let event_path = log_dir.join("live.ndjson");
-    let bundled_service = executable_name.as_deref() == Some(std::ffi::OsStr::new("hex-service"));
+    let bundled_service = executable_name.as_deref() == Some(std::ffi::OsStr::new("opcode-service"));
     let command = cli.command.unwrap_or({
         if bundled_watcher {
             Command::App {
@@ -400,7 +400,7 @@ fn main() -> Result<()> {
             let _instance = desktop::instance::acquire("listener")?;
             labs::log_launch();
             let settings = app_settings::AppSettings::load()?;
-            audio::hex_microphone::host_service();
+            audio::opcode_microphone::host_service();
             let events = desktop::events::EventLog::create(&event_path)?;
             let history = match history::History::open_default(settings.history_retention) {
                 Ok(history) => Some(history),
@@ -418,7 +418,7 @@ fn main() -> Result<()> {
             local_api::run_service(&log_dir, event_path, embedded, &SHUTDOWN)
         }
         Command::Control(_) => unreachable!("handled before startup"),
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         Command::CapsulePlayground { .. } => unreachable!("handled before startup"),
         Command::Dev { command } => {
             #[cfg(debug_assertions)]
@@ -431,7 +431,7 @@ fn main() -> Result<()> {
                     DevCommand::Status => DeveloperCommand::Status,
                     DevCommand::Hud { state } => DeveloperCommand::Hud { state },
                     DevCommand::Show { pane } => DeveloperCommand::ShowPane { pane },
-                    #[cfg(all(debug_assertions, hex_capture))]
+                    #[cfg(all(debug_assertions, opcode_capture))]
                     DevCommand::CaptureReplay { wavs } => {
                         labs::log_launch();
                         app_settings::AppSettings::load()?;
@@ -587,7 +587,7 @@ fn main() -> Result<()> {
 fn open_app(event_path: PathBuf, device: Option<String>, hidden: bool) -> Result<()> {
     let _instance = desktop::instance::acquire("listener")?;
     labs::log_launch();
-    audio::hex_microphone::host_service();
+    audio::opcode_microphone::host_service();
     macos_rune::run(
         &SHUTDOWN,
         meeting::watcher::ListenerConfig { event_path, device },
@@ -595,14 +595,14 @@ fn open_app(event_path: PathBuf, device: Option<String>, hidden: bool) -> Result
     )
 }
 
-/// A copy installed as `hex-meetings-mcp` only serves meetings: its
-/// arguments are those of `hex mcp`, and it never falls back to listening.
+/// A copy installed as `opcode-meetings-mcp` only serves meetings: its
+/// arguments are those of `opcode mcp`, and it never falls back to listening.
 #[cfg(target_os = "macos")]
 fn mcp_alias_arguments(mut arguments: Vec<std::ffi::OsString>) -> Vec<std::ffi::OsString> {
     let alias = arguments
         .first()
         .and_then(|program| std::path::Path::new(program).file_stem())
-        .is_some_and(|stem| stem == "hex-meetings-mcp");
+        .is_some_and(|stem| stem == "opcode-meetings-mcp");
     if alias && arguments.get(1).is_none_or(|argument| argument != "mcp") {
         arguments.insert(1, "mcp".into());
     }
@@ -611,10 +611,10 @@ fn mcp_alias_arguments(mut arguments: Vec<std::ffi::OsString>) -> Vec<std::ffi::
 
 #[cfg(target_os = "macos")]
 fn is_bundled_app_executable(name: Option<&std::ffi::OsStr>) -> bool {
-    name.is_some_and(|name| name == "hex")
+    name.is_some_and(|name| name == "opcode")
 }
 
-/// Whether this launch runs the app: `hex app` without `--hidden` or Rune's
+/// Whether this launch runs the app: `opcode app` without `--hidden` or Rune's
 /// own (headless) flags, or the bundled executable with no command. A
 /// menu-bar-only or login launch counts too, though it opens no window and
 /// Rune drops the prewarmed GPU: whether the window opens depends on
@@ -646,18 +646,18 @@ mod tests {
             .command
         };
         assert!(matches!(
-            parse(&["/Users/kit/.local/bin/hex-meetings-mcp"]),
+            parse(&["/Users/kit/.local/bin/opcode-meetings-mcp"]),
             Some(Command::Control(ControlCli::Mcp { meetings_dir: None }))
         ));
         assert!(matches!(
-            parse(&["hex-meetings-mcp", "--meetings-dir", "/tmp/mirror"]),
+            parse(&["opcode-meetings-mcp", "--meetings-dir", "/tmp/mirror"]),
             Some(Command::Control(ControlCli::Mcp { meetings_dir: Some(directory) })) if directory.ends_with("mirror")
         ));
         assert!(matches!(
-            parse(&["hex-meetings-mcp", "mcp"]),
+            parse(&["opcode-meetings-mcp", "mcp"]),
             Some(Command::Control(ControlCli::Mcp { .. }))
         ));
-        assert!(parse(&["hex"]).is_none());
+        assert!(parse(&["opcode"]).is_none());
     }
 
     #[cfg(debug_assertions)]
@@ -670,7 +670,7 @@ mod tests {
             ("hud-lab", DeveloperPane::HudLab),
             ("history", DeveloperPane::History),
         ] {
-            let cli = Cli::try_parse_from(["hex", "dev", "show", pane]).unwrap();
+            let cli = Cli::try_parse_from(["opcode", "dev", "show", pane]).unwrap();
             let Some(Command::Dev {
                 command: DevCommand::Show { pane },
             }) = cli.command
@@ -679,8 +679,8 @@ mod tests {
             };
             assert_eq!(pane, expected);
         }
-        assert!(Cli::try_parse_from(["hex", "dev", "show", "hudlab"]).is_err());
-        assert!(Cli::try_parse_from(["hex", "dev", "hud", "recording"]).is_ok());
+        assert!(Cli::try_parse_from(["opcode", "dev", "show", "hudlab"]).is_err());
+        assert!(Cli::try_parse_from(["opcode", "dev", "hud", "recording"]).is_ok());
     }
 
     #[test]
@@ -691,20 +691,20 @@ mod tests {
 
         Cli::command().debug_assert();
         let parse = |arguments: &[&str]| Cli::try_parse_from(arguments).map(|cli| cli.command);
-        #[cfg(hex_capture)]
+        #[cfg(opcode_capture)]
         {
             assert!(matches!(
-                parse(&["hex", "capture", "stop", "--json"]),
+                parse(&["opcode", "capture", "stop", "--json"]),
                 Ok(Some(Command::Control(ControlCli::Annotate { command: crate::control::cli::CaptureCommand::Stop { output } }))) if output.json
             ));
             assert!(matches!(
-                parse(&["hex", "capture", "send", "latest", "--to", "ses_1"]),
+                parse(&["opcode", "capture", "send", "latest", "--to", "ses_1"]),
                 Ok(Some(Command::Control(ControlCli::Annotate {
                     command: crate::control::cli::CaptureCommand::Send { capture, to: Some(to), .. }
                 }))) if capture == "latest" && to == "ses_1"
             ));
             assert!(matches!(
-                parse(&["hex", "capture", "send", "latest", "--always"]),
+                parse(&["opcode", "capture", "send", "latest", "--always"]),
                 Ok(Some(Command::Control(ControlCli::Annotate {
                     command: crate::control::cli::CaptureCommand::Send {
                         to: None,
@@ -713,19 +713,19 @@ mod tests {
                     }
                 })))
             ));
-            assert!(parse(&["hex", "capture", "route", "latest", "--explain"]).is_ok());
+            assert!(parse(&["opcode", "capture", "route", "latest", "--explain"]).is_ok());
         }
         assert!(matches!(
-            parse(&["hex", "status", "--json"]),
+            parse(&["opcode", "status", "--json"]),
             Ok(Some(Command::Control(ControlCli::Status { output }))) if output.json
         ));
         assert!(matches!(
-            parse(&["hex", "dictation", "toggle"]),
+            parse(&["opcode", "dictation", "toggle"]),
             Ok(Some(Command::Control(ControlCli::Dictation { .. })))
         ));
         assert!(matches!(
             parse(&[
-                "hex",
+                "opcode",
                 "settings",
                 "set",
                 "release_microphone_while_idle",
@@ -734,17 +734,17 @@ mod tests {
             Ok(Some(Command::Control(ControlCli::Settings { .. })))
         ));
         assert!(matches!(
-            parse(&["hex", "window", "show", "history"]),
+            parse(&["opcode", "window", "show", "history"]),
             Ok(Some(Command::Control(ControlCli::Window { .. })))
         ));
         for verb in ["reset", "restart"] {
             assert!(matches!(
-                parse(&["hex", "onboarding", verb]),
+                parse(&["opcode", "onboarding", verb]),
                 Ok(Some(Command::Control(ControlCli::Onboarding { .. })))
             ));
         }
         assert!(matches!(
-            parse(&["hex", "history", "clear", "--yes"]),
+            parse(&["opcode", "history", "clear", "--yes"]),
             Ok(Some(Command::Control(ControlCli::History(
                 transcript_cli::HistoryArgs {
                     action: Some(transcript_cli::HistoryAction::Clear { yes: true, .. }),
@@ -753,28 +753,28 @@ mod tests {
             ))))
         ));
         assert!(matches!(
-            parse(&["hex", "history", "--json"]),
+            parse(&["opcode", "history", "--json"]),
             Ok(Some(Command::Control(ControlCli::History(
                 transcript_cli::HistoryArgs { action: None, .. }
             ))))
         ));
-        assert!(parse(&["hex", "history", "--limit", "5", "clear", "--yes"]).is_err());
+        assert!(parse(&["opcode", "history", "--limit", "5", "clear", "--yes"]).is_err());
         assert!(matches!(
-            parse(&["hex", "meetings", "record", "--title", "Design sync"]),
+            parse(&["opcode", "meetings", "record", "--title", "Design sync"]),
             Ok(Some(Command::Control(ControlCli::Meetings {
                 command: transcript_cli::MeetingsCommand::Record { title: Some(_), .. }
             })))
         ));
         assert!(matches!(
-            parse(&["hex", "commands", "check"]),
+            parse(&["opcode", "commands", "check"]),
             Ok(Some(Command::Control(ControlCli::Commands {
                 command: CommandsCommand::Check
             })))
         ));
-        assert!(parse(&["hex", "meetings", "cancel"]).is_err());
+        assert!(parse(&["opcode", "meetings", "cancel"]).is_err());
         assert!(matches!(
             parse(&[
-                "hex",
+                "opcode",
                 "vocabulary",
                 "add",
                 "cappuccino",
@@ -789,12 +789,12 @@ mod tests {
             })))
         ));
         assert!(matches!(
-            parse(&["hex", "vocabulary", "list", "--json"]),
+            parse(&["opcode", "vocabulary", "list", "--json"]),
             Ok(Some(Command::Control(ControlCli::Vocabulary {
                 command: crate::control::cli::VocabularyCommand::List { output }
             }))) if output.json
         ));
-        assert!(parse(&["hex", "vocabulary", "remove"]).is_err());
+        assert!(parse(&["opcode", "vocabulary", "remove"]).is_err());
     }
 
     #[test]
@@ -802,25 +802,25 @@ mod tests {
         use super::labs::LabsCommand;
 
         assert!(matches!(
-            Cli::try_parse_from(["hex", "labs", "on", "live-text"]).map(|cli| cli.command),
+            Cli::try_parse_from(["opcode", "labs", "on", "live-text"]).map(|cli| cli.command),
             Ok(Some(Command::Control(ControlCli::Labs {
                 command: Some(LabsCommand::On { feature })
             }))) if feature == "live-text"
         ));
         assert!(matches!(
-            Cli::try_parse_from(["hex", "labs"]).map(|cli| cli.command),
+            Cli::try_parse_from(["opcode", "labs"]).map(|cli| cli.command),
             Ok(Some(Command::Control(ControlCli::Labs { command: None })))
         ));
-        assert!(Cli::try_parse_from(["hex", "labs", "off"]).is_err());
+        assert!(Cli::try_parse_from(["opcode", "labs", "off"]).is_err());
         #[cfg(target_os = "macos")]
         assert!(matches!(
-            Cli::try_parse_from(["hex", "labs", "link", "live-text"]).map(|cli| cli.command),
+            Cli::try_parse_from(["opcode", "labs", "link", "live-text"]).map(|cli| cli.command),
             Ok(Some(Command::Control(ControlCli::Labs {
                 command: Some(LabsCommand::Link { feature })
             }))) if feature == "live-text"
         ));
         assert!(matches!(
-            Cli::try_parse_from(["hex", "experiments", "enable", "live-text"])
+            Cli::try_parse_from(["opcode", "experiments", "enable", "live-text"])
                 .map(|cli| cli.command),
             Ok(Some(Command::Control(ControlCli::Experiments { .. })))
         ));
@@ -828,8 +828,8 @@ mod tests {
 
     #[test]
     fn the_packaged_executable_launches_the_app() {
-        assert!(is_bundled_app_executable(Some("hex".as_ref())));
-        assert!(!is_bundled_app_executable(Some("hex-service".as_ref())));
+        assert!(is_bundled_app_executable(Some("opcode".as_ref())));
+        assert!(!is_bundled_app_executable(Some("opcode-service".as_ref())));
     }
 
     #[test]
@@ -840,14 +840,14 @@ mod tests {
                 is_bundled_app_executable(std::path::Path::new(&arguments[0]).file_stem());
             opens_app(Cli::parse_from(arguments).command.as_ref(), bundled)
         };
-        assert!(opens(&["hex"]));
-        assert!(opens(&["/Applications/Hex.app/Contents/MacOS/hex"]));
-        assert!(opens(&["hex", "app"]));
-        assert!(opens(&["hex", "app", "--device", "MacBook Pro Microphone"]));
-        assert!(!opens(&["hex", "app", "--", "--snap", "/tmp/a.png"]));
-        assert!(!opens(&["hex", "app", "--hidden"]));
-        assert!(!opens(&["hex-service"]));
-        assert!(!opens(&["hex-meetings-mcp"]));
+        assert!(opens(&["opcode"]));
+        assert!(opens(&["/Applications/Opcode.app/Contents/MacOS/opcode"]));
+        assert!(opens(&["opcode", "app"]));
+        assert!(opens(&["opcode", "app", "--device", "MacBook Pro Microphone"]));
+        assert!(!opens(&["opcode", "app", "--", "--snap", "/tmp/a.png"]));
+        assert!(!opens(&["opcode", "app", "--hidden"]));
+        assert!(!opens(&["opcode-service"]));
+        assert!(!opens(&["opcode-meetings-mcp"]));
         for command in [
             &["status"][..],
             &["quit"],
@@ -859,7 +859,7 @@ mod tests {
             &["capture", "status"],
             &["dev", "dashboard"],
         ] {
-            let arguments = [&["hex"][..], command].concat();
+            let arguments = [&["opcode"][..], command].concat();
             assert!(!opens(&arguments), "{command:?}");
         }
     }
@@ -877,10 +877,10 @@ fn main() -> Result<()> {
 fn main() -> Result<()> {
     // DLL search hardening first: the CPU check's message box loads DLLs.
     let dll_search = windows::restrict_dll_search();
-    // Then, before anything prints, join the terminal that ran `hex`.
+    // Then, before anything prints, join the terminal that ran `opcode`.
     windows::attach_parent_console();
     if let Err(error) = dll_search {
-        eprintln!("hex: SetDefaultDllDirectories failed: {error}");
+        eprintln!("opcode: SetDefaultDllDirectories failed: {error}");
     }
     windows::vulkan::check();
     windows::gpu_fallback::choose();

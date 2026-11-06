@@ -11,7 +11,7 @@ private let storeLock = NSLock()
 private var changes: UInt64 = 0
 private var observer: NSObjectProtocol?
 /// This process's request was granted. EventKit's class-level status can
-/// keep answering from before the prompt (still not determined) until Hex
+/// keep answering from before the prompt (still not determined) until Opcode
 /// relaunches, so the answer itself is the evidence.
 private var grantedHere = false
 
@@ -93,7 +93,7 @@ private func currentStatus() -> EKAuthorizationStatus {
     return status == .notDetermined && grantedHere ? .fullAccess : status
 }
 
-@_cdecl("hex_calendar_authorization")
+@_cdecl("opcode_calendar_authorization")
 public func hexCalendarAuthorization() -> Int32 {
     statusCode(currentStatus())
 }
@@ -107,7 +107,7 @@ private final class AccessAnswer: @unchecked Sendable {
 /// (background) thread until the user answers. Returns EventKit's status
 /// afterwards and stores whether the request was granted, and any error's
 /// description (owned; free it with `hex_calendar_free_string`).
-@_cdecl("hex_calendar_request_access")
+@_cdecl("opcode_calendar_request_access")
 public func hexCalendarRequestAccess(
     _ granted: UnsafeMutablePointer<Bool>,
     _ error: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>
@@ -132,7 +132,7 @@ public func hexCalendarRequestAccess(
 }
 
 /// Counts EventKit store changes since the first call with access.
-@_cdecl("hex_calendar_change_count")
+@_cdecl("opcode_calendar_change_count")
 public func hexCalendarChangeCount() -> UInt64 {
     guard currentStatus() == .fullAccess else { return 0 }
     startObserving()
@@ -141,7 +141,7 @@ public func hexCalendarChangeCount() -> UInt64 {
     return changes
 }
 
-@_cdecl("hex_calendar_calendars")
+@_cdecl("opcode_calendar_calendars")
 public func hexCalendarCalendars() -> UnsafeMutablePointer<CChar>? {
     guard currentStatus() == .fullAccess else { return nil }
     storeLock.lock()
@@ -157,7 +157,7 @@ public func hexCalendarCalendars() -> UnsafeMutablePointer<CChar>? {
 }
 
 /// Events overlapping the window, soonest first, at most `limit`.
-@_cdecl("hex_calendar_events")
+@_cdecl("opcode_calendar_events")
 public func hexCalendarEvents(_ fromMs: Double, _ toMs: Double, _ limit: Int32) -> UnsafeMutablePointer<CChar>? {
     guard currentStatus() == .fullAccess else { return nil }
     storeLock.lock()
@@ -195,7 +195,7 @@ public func hexCalendarEvents(_ fromMs: Double, _ toMs: Double, _ limit: Int32) 
     return json(Array(events))
 }
 
-@_cdecl("hex_calendar_free_string")
+@_cdecl("opcode_calendar_free_string")
 public func hexCalendarFreeString(_ string: UnsafeMutablePointer<CChar>?) {
     free(string)
 }
